@@ -1,5 +1,5 @@
 message("Adding Library: renderer")
-add_library(renderer src/device.cpp src/renderer.cpp)
+add_library(renderer src/device.cpp src/swapchain.cpp src/renderer.cpp)
 target_include_directories(renderer
         PUBLIC include)
 target_link_libraries(renderer PUBLIC core Vulkan::Vulkan)

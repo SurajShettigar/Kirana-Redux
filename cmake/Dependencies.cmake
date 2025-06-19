@@ -1,7 +1,3 @@
-# Catch2 (Testing Framework)
-# Link: https://github.com/catchorg/Catch2
-add_subdirectory(ext/Catch2)
-
 # CPPCodec (Base64 encoding-decoding)
 # Link: https://github.com/tplgy/cppcodec
 add_library(cppcodec INTERFACE)

@@ -5,9 +5,9 @@
 #define KIRANA_RENDERER_DEVICE_HPP
 
 #include <vulkan/vulkan.hpp>
-
 #include "common.hpp"
-#include "no_copy.hpp"
+
+#include <no_copy.hpp>
 
 namespace kirana::renderer
 {
@@ -19,40 +19,44 @@ class Device : core::NoCopy
         const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
         void *p_user_data);
 
+    friend class Swapchain;
 public:
     Device() = default;
-    ~Device();
+    ~Device()
+    {
+        destroy();
+    }
 
     bool init(const DeviceInitializationData &init_data);
+    void destroy();
 
-    bool isInitialized() const
+    [[nodiscard]] bool isValid() const
     {
         return m_instance != nullptr && m_device != nullptr && !m_queues.empty();
     }
 
-    bool supportsAsyncCompute() const
+    [[nodiscard]] bool supportsAsyncCompute() const
     {
         return m_queue_index_compute > 0;
     }
 
-    bool supportsAsyncTransfer() const
+    [[nodiscard]] bool supportsAsyncTransfer() const
     {
         return m_queue_index_transfer > 0;
     }
 
-    void destroy();
-
 private:
-    vk::Instance m_instance = nullptr;
-    vk::DebugUtilsMessengerEXT m_debug_messenger = nullptr;
-    vk::SurfaceKHR m_surface = nullptr;
+    vk::Instance m_instance{nullptr};
+    vk::DebugUtilsMessengerEXT m_debug_messenger{nullptr};
 
-    vk::PhysicalDevice m_gpu = nullptr;
-    vk::Device m_device = nullptr;
+    vk::SurfaceKHR m_surface{nullptr};
 
-    std::vector<Queue> m_queues = {};
-    uint32_t m_queue_index_compute = 0;
-    uint32_t m_queue_index_transfer = 0;
+    vk::PhysicalDevice m_gpu{nullptr};
+    vk::Device m_device{nullptr};
+
+    std::vector<Queue> m_queues{};
+    uint32_t m_queue_index_compute{0};
+    uint32_t m_queue_index_transfer{0};
 };
 }
 #endif // KIRANA_RENDERER_DEVICE_HPP

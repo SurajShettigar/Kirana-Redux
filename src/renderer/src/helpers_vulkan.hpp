@@ -12,6 +12,239 @@ namespace kirana::renderer
 {
 const auto LOG_CHANNEL_VULKAN = "RENDERER_VULKAN";
 
+inline vk::Extent2D getExtent2D(const Size2D &size)
+{
+    return vk::Extent2D{size.width, size.height};
+}
+
+inline vk::Format getFormat(const TextureFormat format)
+{
+    switch (format)
+    {
+    case TextureFormat::R8_UNORM:
+        return vk::Format::eR8Unorm;
+    case TextureFormat::R8_SNORM:
+        return vk::Format::eR8Snorm;
+    case TextureFormat::R8_USCALED:
+        return vk::Format::eR8Uscaled;
+    case TextureFormat::R8_SSCALED:
+        return vk::Format::eR8Sscaled;
+    case TextureFormat::R8_UINT:
+        return vk::Format::eR8Uint;
+    case TextureFormat::R8_SINT:
+        return vk::Format::eR8Sint;
+    case TextureFormat::R8_SRGB:
+        return vk::Format::eR8Srgb;
+
+    case TextureFormat::R8G8_UNORM:
+        return vk::Format::eR8G8Unorm;
+    case TextureFormat::R8G8_SNORM:
+        return vk::Format::eR8G8Snorm;
+    case TextureFormat::R8G8_USCALED:
+        return vk::Format::eR8G8Uscaled;
+    case TextureFormat::R8G8_SSCALED:
+        return vk::Format::eR8G8Sscaled;
+    case TextureFormat::R8G8_UINT:
+        return vk::Format::eR8G8Uint;
+    case TextureFormat::R8G8_SINT:
+        return vk::Format::eR8G8Sint;
+    case TextureFormat::R8G8_SRGB:
+        return vk::Format::eR8G8Srgb;
+
+    case TextureFormat::R8G8B8_UNORM:
+        return vk::Format::eR8G8B8Unorm;
+    case TextureFormat::R8G8B8_SNORM:
+        return vk::Format::eR8G8B8Snorm;
+    case TextureFormat::R8G8B8_USCALED:
+        return vk::Format::eR8G8B8Uscaled;
+    case TextureFormat::R8G8B8_SSCALED:
+        return vk::Format::eR8G8B8Sscaled;
+    case TextureFormat::R8G8B8_UINT:
+        return vk::Format::eR8G8B8Uint;
+    case TextureFormat::R8G8B8_SINT:
+        return vk::Format::eR8G8B8Sint;
+    case TextureFormat::R8G8B8_SRGB:
+        return vk::Format::eR8G8B8Srgb;
+
+    case TextureFormat::B8G8R8_UNORM:
+        return vk::Format::eB8G8R8Unorm;
+    case TextureFormat::B8G8R8_SNORM:
+        return vk::Format::eB8G8R8Snorm;
+    case TextureFormat::B8G8R8_USCALED:
+        return vk::Format::eB8G8R8Uscaled;
+    case TextureFormat::B8G8R8_SSCALED:
+        return vk::Format::eB8G8R8Sscaled;
+    case TextureFormat::B8G8R8_UINT:
+        return vk::Format::eB8G8R8Uint;
+    case TextureFormat::B8G8R8_SINT:
+        return vk::Format::eB8G8R8Sint;
+    case TextureFormat::B8G8R8_SRGB:
+        return vk::Format::eB8G8R8Srgb;
+
+    case TextureFormat::R8G8B8A8_UNORM:
+        return vk::Format::eR8G8B8A8Unorm;
+    case TextureFormat::R8G8B8A8_SNORM:
+        return vk::Format::eR8G8B8A8Snorm;
+    case TextureFormat::R8G8B8A8_USCALED:
+        return vk::Format::eR8G8B8A8Uscaled;
+    case TextureFormat::R8G8B8A8_SSCALED:
+        return vk::Format::eR8G8B8A8Sscaled;
+    case TextureFormat::R8G8B8A8_UINT:
+        return vk::Format::eR8G8B8A8Uint;
+    case TextureFormat::R8G8B8A8_SINT:
+        return vk::Format::eR8G8B8A8Sint;
+    case TextureFormat::R8G8B8A8_SRGB:
+        return vk::Format::eR8G8B8A8Srgb;
+
+    case TextureFormat::B8G8R8A8_UNORM:
+        return vk::Format::eB8G8R8A8Unorm;
+    case TextureFormat::B8G8R8A8_SNORM:
+        return vk::Format::eB8G8R8A8Snorm;
+    case TextureFormat::B8G8R8A8_USCALED:
+        return vk::Format::eB8G8R8A8Uscaled;
+    case TextureFormat::B8G8R8A8_SSCALED:
+        return vk::Format::eB8G8R8A8Sscaled;
+    case TextureFormat::B8G8R8A8_UINT:
+        return vk::Format::eB8G8R8A8Uint;
+    case TextureFormat::B8G8R8A8_SINT:
+        return vk::Format::eB8G8R8A8Sint;
+    case TextureFormat::B8G8R8A8_SRGB:
+        return vk::Format::eB8G8R8A8Srgb;
+
+    case TextureFormat::R16_UNORM:
+        return vk::Format::eR16Unorm;
+    case TextureFormat::R16_SNORM:
+        return vk::Format::eR16Snorm;
+    case TextureFormat::R16_USCALED:
+        return vk::Format::eR16Uscaled;
+    case TextureFormat::R16_SSCALED:
+        return vk::Format::eR16Sscaled;
+    case TextureFormat::R16_UINT:
+        return vk::Format::eR16Uint;
+    case TextureFormat::R16_SINT:
+        return vk::Format::eR16Sint;
+    case TextureFormat::R16_SFLOAT:
+        return vk::Format::eR16Sfloat;
+
+    case TextureFormat::R16G16_UNORM:
+        return vk::Format::eR16G16Unorm;
+    case TextureFormat::R16G16_SNORM:
+        return vk::Format::eR16G16Snorm;
+    case TextureFormat::R16G16_USCALED:
+        return vk::Format::eR16G16Uscaled;
+    case TextureFormat::R16G16_SSCALED:
+        return vk::Format::eR16G16Sscaled;
+    case TextureFormat::R16G16_UINT:
+        return vk::Format::eR16G16Uint;
+    case TextureFormat::R16G16_SINT:
+        return vk::Format::eR16G16Sint;
+    case TextureFormat::R16G16_SFLOAT:
+        return vk::Format::eR16G16Sfloat;
+
+    case TextureFormat::R16G16B16_UNORM:
+        return vk::Format::eR16G16B16Unorm;
+    case TextureFormat::R16G16B16_SNORM:
+        return vk::Format::eR16G16B16Snorm;
+    case TextureFormat::R16G16B16_USCALED:
+        return vk::Format::eR16G16B16Uscaled;
+    case TextureFormat::R16G16B16_SSCALED:
+        return vk::Format::eR16G16B16Sscaled;
+    case TextureFormat::R16G16B16_UINT:
+        return vk::Format::eR16G16B16Uint;
+    case TextureFormat::R16G16B16_SINT:
+        return vk::Format::eR16G16B16Sint;
+    case TextureFormat::R16G16B16_SFLOAT:
+        return vk::Format::eR16G16B16Sfloat;
+
+    case TextureFormat::R16G16B16A16_UNORM:
+        return vk::Format::eR16G16B16A16Unorm;
+    case TextureFormat::R16G16B16A16_SNORM:
+        return vk::Format::eR16G16B16A16Snorm;
+    case TextureFormat::R16G16B16A16_USCALED:
+        return vk::Format::eR16G16B16A16Uscaled;
+    case TextureFormat::R16G16B16A16_SSCALED:
+        return vk::Format::eR16G16B16A16Sscaled;
+    case TextureFormat::R16G16B16A16_UINT:
+        return vk::Format::eR16G16B16A16Uint;
+    case TextureFormat::R16G16B16A16_SINT:
+        return vk::Format::eR16G16B16A16Sint;
+    case TextureFormat::R16G16B16A16_SFLOAT:
+        return vk::Format::eR16G16B16A16Sfloat;
+
+    case TextureFormat::R32_UINT:
+        return vk::Format::eR32Uint;
+    case TextureFormat::R32_SINT:
+        return vk::Format::eR32Sint;
+    case TextureFormat::R32_SFLOAT:
+        return vk::Format::eR32Sfloat;
+
+    case TextureFormat::R32G32_UINT:
+        return vk::Format::eR32G32Uint;
+    case TextureFormat::R32G32_SINT:
+        return vk::Format::eR32G32Sint;
+    case TextureFormat::R32G32_SFLOAT:
+        return vk::Format::eR32G32Sfloat;
+
+    case TextureFormat::R32G32B32_UINT:
+        return vk::Format::eR32G32B32Uint;
+    case TextureFormat::R32G32B32_SINT:
+        return vk::Format::eR32G32B32Sint;
+    case TextureFormat::R32G32B32_SFLOAT:
+        return vk::Format::eR32G32B32Sfloat;
+
+    case TextureFormat::R32G32B32A32_UINT:
+        return vk::Format::eR32G32B32A32Uint;
+    case TextureFormat::R32G32B32A32_SINT:
+        return vk::Format::eR32G32B32A32Sint;
+    case TextureFormat::R32G32B32A32_SFLOAT:
+        return vk::Format::eR32G32B32A32Sfloat;
+
+    case TextureFormat::R64_UINT:
+        return vk::Format::eR64Uint;
+    case TextureFormat::R64_SINT:
+        return vk::Format::eR64Sint;
+    case TextureFormat::R64_SFLOAT:
+        return vk::Format::eR64Sfloat;
+
+    case TextureFormat::R64G64_UINT:
+        return vk::Format::eR64G64Uint;
+    case TextureFormat::R64G64_SINT:
+        return vk::Format::eR64G64Sint;
+    case TextureFormat::R64G64_SFLOAT:
+        return vk::Format::eR64G64Sfloat;
+
+    case TextureFormat::R64G64B64_UINT:
+        return vk::Format::eR64G64B64Uint;
+    case TextureFormat::R64G64B64_SINT:
+        return vk::Format::eR64G64B64Sint;
+    case TextureFormat::R64G64B64_SFLOAT:
+        return vk::Format::eR64G64B64Sfloat;
+
+    case TextureFormat::R64G64B64A64_UINT:
+        return vk::Format::eR64G64B64A64Uint;
+    case TextureFormat::R64G64B64A64_SINT:
+        return vk::Format::eR64G64B64A64Sint;
+    case TextureFormat::R64G64B64A64_SFLOAT:
+        return vk::Format::eR64G64B64A64Sfloat;
+
+    case TextureFormat::D16_UNORM:
+        return vk::Format::eD16Unorm;
+    case TextureFormat::D32_SFLOAT:
+        return vk::Format::eD32Sfloat;
+    case TextureFormat::S8_UINT:
+        return vk::Format::eS8Uint;
+    case TextureFormat::D16_UNORM_S8_UINT:
+        return vk::Format::eD16UnormS8Uint;
+    case TextureFormat::D24_UNORM_S8_UINT:
+        return vk::Format::eD24UnormS8Uint;
+    case TextureFormat::D32_SFLOAT_S8_UINT:
+        return vk::Format::eD32SfloatS8Uint;
+    case TextureFormat::UNKNOWN:
+    default:
+        return vk::Format::eUndefined;
+    }
+}
+
 inline GPUType getGPUType(const vk::PhysicalDeviceType type)
 {
     switch (type)
@@ -1563,6 +1796,22 @@ inline std::vector<const char *> getEnabledDeviceExtensions(const GPUFeatures &f
         extensions.push_back(vk::KHRRayTracingPipelineExtensionName);
     }
     return extensions;
+}
+
+inline vk::PresentModeKHR getPresentMode(const PresentMode mode)
+{
+    switch (mode)
+    {
+    case PresentMode::MAILBOX:
+        return vk::PresentModeKHR::eMailbox;
+    case PresentMode::FIFO:
+        return vk::PresentModeKHR::eFifo;
+    case PresentMode::FIFO_RELAXED:
+        return vk::PresentModeKHR::eFifoRelaxed;
+    case PresentMode::IMMEDIATE:
+    default:
+        return vk::PresentModeKHR::eImmediate;
+    }
 }
 }
 #endif // KIRANA_RENDERER_HELPERS_VULKAN_HPP

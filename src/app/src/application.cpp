@@ -15,7 +15,7 @@ namespace kirana
 {
 int Application::init()
 {
-    const std::string app_name = std::string(APP_NAME);
+    std::string app_name = std::string(APP_NAME);
     std::transform(app_name.begin(), app_name.end(), app_name.begin(), ::toupper);
 
 
@@ -29,14 +29,13 @@ int Application::init()
     m_window_manager.showWindow(m_main_window);
 
     core::Window &window = m_window_manager.getWindow(m_main_window);
-    const renderer::NativeWindow surface{
-        window.getNativeWindowPointer(), window.getNativeAppInstancePointer(),
-        renderer::Size2D{window.getSize().width, window.getSize().height}};
+    const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
+    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}};
 
-    renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
+    const renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
 
     const bool is_initialized = m_renderer.
-        init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu});
+        init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain);
 
     return is_initialized ? 0 : 1;
 }

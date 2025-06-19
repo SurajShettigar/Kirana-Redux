@@ -33,6 +33,130 @@ struct Size3D
     }
 };
 
+enum class TextureFormat
+{
+    UNKNOWN = 0,
+
+    R8_UNORM = 1,
+    R8_SNORM = 2,
+    R8_USCALED = 3,
+    R8_SSCALED = 4,
+    R8_UINT = 5,
+    R8_SINT = 6,
+    R8_SRGB = 7,
+
+    R8G8_UNORM = 8,
+    R8G8_SNORM = 9,
+    R8G8_USCALED = 10,
+    R8G8_SSCALED = 11,
+    R8G8_UINT = 12,
+    R8G8_SINT = 13,
+    R8G8_SRGB = 14,
+
+    R8G8B8_UNORM = 15,
+    R8G8B8_SNORM = 16,
+    R8G8B8_USCALED = 17,
+    R8G8B8_SSCALED = 18,
+    R8G8B8_UINT = 19,
+    R8G8B8_SINT = 20,
+    R8G8B8_SRGB = 21,
+
+    B8G8R8_UNORM = 22,
+    B8G8R8_SNORM = 23,
+    B8G8R8_USCALED = 24,
+    B8G8R8_SSCALED = 25,
+    B8G8R8_UINT = 26,
+    B8G8R8_SINT = 27,
+    B8G8R8_SRGB = 28,
+
+    R8G8B8A8_UNORM = 29,
+    R8G8B8A8_SNORM = 30,
+    R8G8B8A8_USCALED = 31,
+    R8G8B8A8_SSCALED = 32,
+    R8G8B8A8_UINT = 33,
+    R8G8B8A8_SINT = 34,
+    R8G8B8A8_SRGB = 35,
+
+    B8G8R8A8_UNORM = 36,
+    B8G8R8A8_SNORM = 37,
+    B8G8R8A8_USCALED = 38,
+    B8G8R8A8_SSCALED = 39,
+    B8G8R8A8_UINT = 40,
+    B8G8R8A8_SINT = 41,
+    B8G8R8A8_SRGB = 42,
+
+    R16_UNORM = 43,
+    R16_SNORM = 44,
+    R16_USCALED = 45,
+    R16_SSCALED = 46,
+    R16_UINT = 47,
+    R16_SINT = 48,
+    R16_SFLOAT = 49,
+
+    R16G16_UNORM = 50,
+    R16G16_SNORM = 51,
+    R16G16_USCALED = 52,
+    R16G16_SSCALED = 53,
+    R16G16_UINT = 54,
+    R16G16_SINT = 55,
+    R16G16_SFLOAT = 56,
+
+    R16G16B16_UNORM = 57,
+    R16G16B16_SNORM = 58,
+    R16G16B16_USCALED = 59,
+    R16G16B16_SSCALED = 60,
+    R16G16B16_UINT = 61,
+    R16G16B16_SINT = 62,
+    R16G16B16_SFLOAT = 63,
+
+    R16G16B16A16_UNORM = 64,
+    R16G16B16A16_SNORM = 65,
+    R16G16B16A16_USCALED = 66,
+    R16G16B16A16_SSCALED = 67,
+    R16G16B16A16_UINT = 68,
+    R16G16B16A16_SINT = 69,
+    R16G16B16A16_SFLOAT = 70,
+
+    R32_UINT = 71,
+    R32_SINT = 72,
+    R32_SFLOAT = 73,
+
+    R32G32_UINT = 74,
+    R32G32_SINT = 75,
+    R32G32_SFLOAT = 76,
+
+    R32G32B32_UINT = 77,
+    R32G32B32_SINT = 78,
+    R32G32B32_SFLOAT = 79,
+
+    R32G32B32A32_UINT = 80,
+    R32G32B32A32_SINT = 81,
+    R32G32B32A32_SFLOAT = 82,
+
+    R64_UINT = 83,
+    R64_SINT = 84,
+    R64_SFLOAT = 85,
+
+    R64G64_UINT = 86,
+    R64G64_SINT = 87,
+    R64G64_SFLOAT = 88,
+
+    R64G64B64_UINT = 89,
+    R64G64B64_SINT = 90,
+    R64G64B64_SFLOAT = 91,
+
+    R64G64B64A64_UINT = 92,
+    R64G64B64A64_SINT = 93,
+    R64G64B64A64_SFLOAT = 94,
+
+    D16_UNORM = 95,
+    D32_SFLOAT = 96,
+    S8_UINT = 97,
+    D16_UNORM_S8_UINT = 98,
+    D24_UNORM_S8_UINT = 99,
+    D32_SFLOAT_S8_UINT = 100,
+};
+
 enum class SampleCountFlags
 {
     NONE = 0,
@@ -72,6 +196,23 @@ inline bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_fla
 {
     return (flags & req_flag) == req_flag;
 }
+
+enum class SwapchainBufferMode
+{
+    UNKNOWN = 0,
+    SINGLE = 1,
+    DOUBLE = 2,
+    TRIPLE = 3,
+};
+
+enum class PresentMode
+{
+    UNKNOWN = 0,
+    IMMEDIATE = 1,
+    MAILBOX = 2,
+    FIFO = 3,
+    FIFO_RELAXED = 4,
+};
 
 enum class GPUType
 {
@@ -433,17 +574,16 @@ struct Queue
     }
 };
 
-struct NativeWindow
+struct SurfaceData
 {
     /// HWND for Windows API, Window for X-LIB API.
-    void *window_handle = nullptr;
+    void *window_handle{nullptr};
     /// HINSTANCE for Windows API, Display for X-LIB API.
-    void *instance_handle = nullptr;
-    Size2D size{};
+    void *instance_handle{nullptr};
 
     [[nodiscard]] bool isValid() const
     {
-        return window_handle != nullptr && size.isValid();
+        return window_handle != nullptr && instance_handle != nullptr;
     }
 };
 
@@ -462,8 +602,17 @@ struct DeviceInitializationData
     bool debug_mode = {false};
     std::string app_name = {};
     core::VersionCode version = {};
-    NativeWindow surface = {};
+    SurfaceData surface = {};
     GPUSelectionPreference gpu_preference = {};
 };
+
+struct SwapchainData
+{
+    Size2D size{};
+    TextureFormat format{TextureFormat::UNKNOWN};
+    SwapchainBufferMode buffer_mode{SwapchainBufferMode::DOUBLE};
+    PresentMode present_mode{PresentMode::IMMEDIATE};
+};
+
 }
 #endif // KIRANA_RENDERER_COMMON_HPP

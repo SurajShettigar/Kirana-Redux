@@ -6,6 +6,7 @@
 
 #include "common.hpp"
 #include "device.hpp"
+#include "swapchain.hpp"
 
 namespace kirana::renderer
 {
@@ -19,19 +20,15 @@ public:
     Renderer(const Renderer &renderer) = delete;
     Renderer &operator=(const Renderer &renderer) = delete;
 
-    bool init(const DeviceInitializationData &init_data);
+    bool init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data = {});
     void update();
     void render();
     void lateUpdate();
     void clean();
 
-    [[nodiscard]] const Device &getDevice() const
-    {
-        return m_device;
-    }
-
 private:
-    Device m_device;
+    Device m_device{};
+    Swapchain m_swapchain{};
 };
 }
 

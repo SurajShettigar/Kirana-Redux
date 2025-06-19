@@ -35,8 +35,6 @@ validationCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT message_severi
                    void *p_user_data)
 {
     // const Device* device = reinterpret_cast<Device*>(p_user_data);
-    const auto &logger = core::Logger::get();
-
     const auto &message = [&]() -> std::string {
         return vk::to_string(message_types) + std::string(": ") + p_callback_data->pMessage;
     };
@@ -44,34 +42,34 @@ validationCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT message_severi
     switch (message_severity)
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
-        logger.error(LOG_CHANNEL_VULKAN, message());
+        core::Logger::error(LOG_CHANNEL_VULKAN, message());
     }
     break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: {
-        logger.warn(LOG_CHANNEL_VULKAN, message());
+        core::Logger::warn(LOG_CHANNEL_VULKAN, message());
     }
     break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: {
-        logger.info(LOG_CHANNEL_VULKAN, message());
+        core::Logger::info(LOG_CHANNEL_VULKAN, message());
     }
     break;
     default: {
-        logger.debug(LOG_CHANNEL_VULKAN, message());
+        core::Logger::debug(LOG_CHANNEL_VULKAN, message());
     }
     break;
     }
     return VK_FALSE;
 }
 
-vk::SurfaceKHR createSurface(vk::Instance instance, const NativeWindow &surface)
+vk::SurfaceKHR createSurfaceHandle(const vk::Instance instance, const SurfaceData &surface)
 {
     VkSurfaceKHR vk_surface = nullptr;
 #if PLATFORM == WINDOWS
     VkWin32SurfaceCreateInfoKHR create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     create_info.pNext = nullptr;
-    create_info.hinstance = reinterpret_cast<HINSTANCE>(surface.instance_handle);
-    create_info.hwnd = reinterpret_cast<HWND>(surface.window_handle);
+    create_info.hinstance = *reinterpret_cast<HINSTANCE *>(surface.instance_handle);
+    create_info.hwnd = *reinterpret_cast<HWND *>(surface.window_handle);
     vkCreateWin32SurfaceKHR(instance, &create_info, nullptr, &vk_surface);
 #elif PLATFORM == LINUX
     // TODO: Add vulkan surface creation for Linux Platform
@@ -174,7 +172,7 @@ bool Device::init(const DeviceInitializationData &init_data)
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 #endif
-    // region debug messenger info
+#pragma region DEBUG_MESSENGER_INFO
     auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT{
         {},
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose
@@ -188,9 +186,9 @@ bool Device::init(const DeviceInitializationData &init_data)
         validationCallback,
         this
     };
-    // endregion
+#pragma endregion
 
-    // region create instance
+#pragma region CREATE_INSTANCE
     {
         std::vector<const char *> instance_layers = {};
         std::vector<const char *> instance_extensions = {};
@@ -223,49 +221,44 @@ bool Device::init(const DeviceInitializationData &init_data)
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 #endif
     }
-    // endregion
+#pragma endregion
 
-    // region create surface
+#pragma region CREATE_SURFACE
     if (init_data.surface.isValid())
     {
-        m_surface = createSurface(m_instance, init_data.surface);
+        m_surface = createSurfaceHandle(m_instance, init_data.surface);
         if (m_surface == nullptr)
         {
-            core::Logger::get().error(LOG_CHANNEL_VULKAN,
-                                      "Failed to create surface for the current platform.");
+            core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create surface for the current platform.");
             return false;
         }
     }
+#pragma endregion
 
-    // region create debug messenger
+#pragma region CREATE_DEBUG_MESSENGER
     if (init_data.debug_mode)
     {
         m_debug_messenger =
             m_instance.createDebugUtilsMessengerEXT(debug_create_info);
     }
-    // endregion
+#pragma endregion
 
-    // region create device
+#pragma region CREATE_DEVICE_QUEUES
     {
         m_gpu = selectGPU(m_instance, m_surface, init_data.gpu_preference);
 
         m_queues = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
         if (m_queues.empty())
         {
-            core::Logger::get().error(LOG_CHANNEL_VULKAN,
-                                      "Selected GPU does not have any queue families.");
+            core::Logger::error(LOG_CHANNEL_VULKAN, "Selected GPU does not have any queue families.");
             return false;
         }
-
 
         std::vector<vk::DeviceQueueCreateInfo> queue_create_infos = {};
         std::vector<float> queue_priorities = {1.0f};
         for (const auto &q : m_queues)
         {
-            queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo{
-                vk::DeviceQueueCreateFlags{0}, q.family_index,
-                queue_priorities,
-            });
+            queue_create_infos.emplace_back(vk::DeviceQueueCreateFlags{0}, q.family_index, queue_priorities);
         }
         std::vector<const char *> device_layers = {};
         std::vector<const char *> device_extensions = getEnabledDeviceExtensions(init_data.gpu_preference.features);
@@ -278,20 +271,16 @@ bool Device::init(const DeviceInitializationData &init_data)
         {
             device_extensions.push_back(vk::KHRSwapchainExtensionName);
         }
-        vk::PhysicalDeviceFeatures2 features = getEnabledFeatures(init_data.gpu_preference.features);
         auto create_info = vk::DeviceCreateInfo{
             vk::DeviceCreateFlags{0}, queue_create_infos, device_layers, device_extensions,
         };
-        create_info.pNext = &features;
+        create_info.pNext = getEnabledFeatures(init_data.gpu_preference.features);
 
         m_device = m_gpu.createDevice(create_info);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
     }
-    // endregion
-}
-
-Device::~Device()
-{
-    destroy();
+    return true;
+#pragma endregion
 }
 
 void Device::destroy()
@@ -305,7 +294,7 @@ void Device::destroy()
         }
         if (m_surface)
         {
-            m_instance.destroy(m_surface);
+            m_instance.destroySurfaceKHR(m_surface);
             m_surface = nullptr;
         }
         if (m_debug_messenger)
