@@ -1,0 +1,9 @@
+[submodule "ext/OpenUSD"]
+	path = ext/OpenUSD
+	url = git@github.com:PixarAnimationStudios/OpenUSD.git
+[submodule "ext/cppcodec"]
+	path = ext/cppcodec
+	url = git@github.com:tplgy/cppcodec.git
+[submodule "ext/spdlog"]
+	path = ext/spdlog
+	url = git@github.com:gabime/spdlog.git

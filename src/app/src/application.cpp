@@ -1,0 +1,90 @@
+// Copyright 2025 Suraj Shettigar
+// SPDX-License-Identifier: Apache-2.0
+
+#include "application.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <iostream>
+
+#include "globals.hpp"
+
+#include <logger.hpp>
+
+namespace kirana
+{
+int Application::init()
+{
+    const std::string app_name = std::string(APP_NAME);
+    std::transform(app_name.begin(), app_name.end(), app_name.begin(), ::toupper);
+
+
+    core::Logger::get().init(app_name, core::Logger::Level::DEBUG);
+    m_time_manager.init();
+
+    m_input_manager.init();
+
+    m_window_manager.init();
+    m_main_window = m_window_manager.createWindow("Kirana", {1280, 720});
+    m_window_manager.showWindow(m_main_window);
+
+    core::Window &window = m_window_manager.getWindow(m_main_window);
+    const renderer::NativeWindow surface{
+        window.getNativeWindowPointer(), window.getNativeAppInstancePointer(),
+        renderer::Size2D{window.getSize().width, window.getSize().height}};
+
+    renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
+
+    const bool is_initialized = m_renderer.
+        init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu});
+
+    return is_initialized ? 0 : 1;
+}
+
+void Application::update()
+{
+    m_input_manager.pollInputs();
+    m_window_manager.pollEvents();
+    m_renderer.update();
+}
+
+void Application::render()
+{
+    m_renderer.render();
+}
+
+void Application::lateUpdate()
+{
+    m_renderer.lateUpdate();
+}
+
+void Application::clean()
+{
+    m_renderer.clean();
+    m_window_manager.closeWindow(m_main_window);
+}
+
+int Application::run()
+{
+    const int status = init();
+
+    core::Logger::get().debug("Application Initialized with status code: " +
+                              std::to_string(status));
+
+    if (!status)
+    {
+        while (m_window_manager.isAnyWindowActive())
+        {
+            m_time_manager.tick([&]() {
+                update();
+                render();
+                lateUpdate();
+            });
+        }
+    }
+    core::Logger::get().debug("Application Quitting...");
+    clean();
+
+    return status;
+}
+}
