@@ -4,28 +4,37 @@
 #ifndef KIRANA_RENDERER_SWAPCHAIN_HPP
 #define KIRANA_RENDERER_SWAPCHAIN_HPP
 
-#include <vulkan/vulkan.hpp>
-#include <no_copy.hpp>
-
-#include "device.hpp"
+#include "texture.hpp"
 
 namespace kirana::renderer
 {
-class Swapchain : core::NoCopy
+struct SwapchainTexture
+{
+    Texture texture{};
+    vk::Semaphore m_wait_semaphore{};
+    vk::Semaphore m_signal_semaphore{};
+};
+
+class Swapchain
 {
 public:
     Swapchain() = default;
-    ~Swapchain()
-    {
-        destroy();
-    }
+    ~Swapchain() = default;
 
     bool init(const Device &device, const SwapchainData &data);
     void destroy();
 
+    [[nodiscard]] size_t getTextureCount() const
+    {
+        return m_textures.size();
+    }
+
+    SwapchainTexture getTexture() const;
+    void present() const;
+
     [[nodiscard]] bool isValid() const
     {
-        return m_handle != nullptr && m_images.size() > 0 && m_image_views.size() > 0;
+        return m_handle != nullptr && !m_textures.empty();
     }
 
 private:
@@ -35,9 +44,15 @@ private:
     vk::PresentModeKHR m_present_mode{};
 
     vk::Device m_device{nullptr};
+    vk::Queue m_queue{nullptr};
     vk::SwapchainKHR m_handle{nullptr};
-    std::vector<vk::Image> m_images{};
-    std::vector<vk::ImageView> m_image_views{};
+    std::vector<Texture> m_textures{};
+
+    std::vector<vk::Semaphore> m_swapchain_semaphores{};
+    std::vector<vk::Semaphore> m_render_semaphores{};
+
+    mutable size_t m_current_index{0};
+    mutable uint32_t m_swapchain_image_index{0};
 };
 }
 

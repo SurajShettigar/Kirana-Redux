@@ -12,6 +12,10 @@ namespace kirana::renderer
 {
 const auto LOG_CHANNEL_VULKAN = "RENDERER_VULKAN";
 
+/// Timeout in nanoseconds.
+constexpr uint32_t FENCE_WAIT_TIMEOUT = 1000000000; // 1 second
+constexpr uint32_t SWAPCHAIN_FETCH_TIMEOUT = 1000000000; // 1 second
+
 inline vk::Extent2D getExtent2D(const Size2D &size)
 {
     return vk::Extent2D{size.width, size.height};

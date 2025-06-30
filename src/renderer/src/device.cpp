@@ -247,8 +247,8 @@ bool Device::init(const DeviceInitializationData &init_data)
     {
         m_gpu = selectGPU(m_instance, m_surface, init_data.gpu_preference);
 
-        m_queues = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
-        if (m_queues.empty())
+        m_queue_infos = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
+        if (m_queue_infos.empty())
         {
             core::Logger::error(LOG_CHANNEL_VULKAN, "Selected GPU does not have any queue families.");
             return false;
@@ -256,7 +256,7 @@ bool Device::init(const DeviceInitializationData &init_data)
 
         std::vector<vk::DeviceQueueCreateInfo> queue_create_infos = {};
         std::vector<float> queue_priorities = {1.0f};
-        for (const auto &q : m_queues)
+        for (const auto &q : m_queue_infos)
         {
             queue_create_infos.emplace_back(vk::DeviceQueueCreateFlags{0}, q.family_index, queue_priorities);
         }
@@ -278,6 +278,12 @@ bool Device::init(const DeviceInitializationData &init_data)
 
         m_device = m_gpu.createDevice(create_info);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
+
+        m_queues.resize(m_queue_infos.size());
+        for (const auto &q : m_queue_infos)
+        {
+            m_queues.emplace_back(m_device.getQueue(q.family_index, q.index));
+        }
     }
     return true;
 #pragma endregion

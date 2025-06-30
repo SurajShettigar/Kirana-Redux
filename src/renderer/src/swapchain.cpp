@@ -9,8 +9,6 @@
 
 namespace kirana::renderer
 {
-
-
 bool Swapchain::init(const Device &device, const SwapchainData &data)
 {
     if (!device.isValid() || device.m_surface == nullptr)
@@ -89,10 +87,15 @@ bool Swapchain::init(const Device &device, const SwapchainData &data)
                                                         vk::CompositeAlphaFlagBitsKHR::eOpaque, m_present_mode, true};
 
     m_device = device.m_device;
+    m_queue = device.getPresentQueue();
     m_handle = m_device.createSwapchainKHR(create_info);
 
-    m_images = m_device.getSwapchainImagesKHR(m_handle);
-    for (const auto &image : m_images)
+    const auto images = m_device.getSwapchainImagesKHR(m_handle);
+
+    m_textures.reserve(num_images);
+    m_swapchain_semaphores.reserve(num_images);
+    m_render_semaphores.reserve(num_images);
+    for (const auto &image : images)
     {
         const auto view_create_info = vk::ImageViewCreateInfo{vk::ImageViewCreateFlags{0}, image,
                                                               vk::ImageViewType::e2D,
@@ -100,8 +103,11 @@ bool Swapchain::init(const Device &device, const SwapchainData &data)
                                                               vk::ImageSubresourceRange{
                                                                   vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
-        vk::ImageView view = m_device.createImageView(view_create_info);
-        m_image_views.emplace_back(std::move(view));
+        const vk::ImageView view = m_device.createImageView(view_create_info);
+        m_textures.emplace_back(Texture{m_device, image, view, data.size, data.format});
+
+        m_swapchain_semaphores.emplace_back(m_device.createSemaphore(vk::SemaphoreCreateInfo{}));
+        m_render_semaphores.emplace_back(m_device.createSemaphore(vk::SemaphoreCreateInfo{}));
     }
     return true;
 }
@@ -110,13 +116,29 @@ void Swapchain::destroy()
 {
     if (m_device)
     {
-        if (!m_image_views.empty())
+        if (!m_swapchain_semaphores.empty())
         {
-            for (const auto &view : m_image_views)
+            for (const auto &sem : m_swapchain_semaphores)
             {
-                m_device.destroyImageView(view);
+                m_device.destroySemaphore(sem);
             }
-            m_image_views.clear();
+            m_swapchain_semaphores.clear();
+        }
+        if (!m_render_semaphores.empty())
+        {
+            for (const auto &sem : m_render_semaphores)
+            {
+                m_device.destroySemaphore(sem);
+            }
+            m_render_semaphores.clear();
+        }
+        if (!m_textures.empty())
+        {
+            for (const auto &tex : m_textures)
+            {
+                m_device.destroyImageView(tex.m_view);
+            }
+            m_textures.clear();
         }
         if (m_handle)
         {
@@ -124,5 +146,30 @@ void Swapchain::destroy()
             m_handle = nullptr;
         }
     }
+}
+
+SwapchainTexture Swapchain::getTexture() const
+{
+
+    const auto result = m_device.acquireNextImageKHR(m_handle, SWAPCHAIN_FETCH_TIMEOUT,
+                                                     m_swapchain_semaphores[m_current_index]);
+    if (result.result != vk::Result::eSuccess)
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to fetch swapchain image: " + vk::to_string(result.result));
+    }
+    m_swapchain_image_index = result.value;
+    return {m_textures[m_swapchain_image_index], m_swapchain_semaphores[m_current_index],
+            m_render_semaphores[m_current_index]};
+}
+
+void Swapchain::present() const
+{
+    if (const auto result = m_queue.presentKHR(
+            vk::PresentInfoKHR{{m_render_semaphores[m_current_index]}, {m_handle}, {m_swapchain_image_index}});
+        result != vk::Result::eSuccess)
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to present swapchain image: " + vk::to_string(result));
+    }
+    m_current_index = (m_current_index + 1) % m_textures.size();
 }
 }

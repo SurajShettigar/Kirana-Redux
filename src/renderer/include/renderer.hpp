@@ -4,9 +4,11 @@
 #ifndef KIRANA_RENDERER_RENDERER_HPP
 #define KIRANA_RENDERER_RENDERER_HPP
 
+#include <no_copy.hpp>
+
 #include "common.hpp"
-#include "device.hpp"
 #include "swapchain.hpp"
+#include "command_encoder.hpp"
 
 namespace kirana::renderer
 {
@@ -29,6 +31,9 @@ public:
 private:
     Device m_device{};
     Swapchain m_swapchain{};
+    std::vector<CommandEncoder> m_cmd_encoders_graphic {};
+
+    size_t m_current_index {0};
 };
 }
 
