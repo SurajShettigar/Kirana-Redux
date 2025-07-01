@@ -157,6 +157,68 @@ enum class TextureFormat
     D32_SFLOAT_S8_UINT = 100,
 };
 
+inline bool isDepthTextureFormat(const TextureFormat format)
+{
+    if (format == TextureFormat::D16_UNORM
+        || format == TextureFormat::D32_SFLOAT
+        || format == TextureFormat::D16_UNORM_S8_UINT
+        || format == TextureFormat::D24_UNORM_S8_UINT
+        || format == TextureFormat::D32_SFLOAT_S8_UINT)
+    {
+        return true;
+    }
+    return false;
+}
+
+inline bool isSRGBTextureFormat(const TextureFormat format)
+{
+    if (format == TextureFormat::R8_SRGB
+        || format == TextureFormat::R8G8_SRGB
+        || format == TextureFormat::R8G8B8_SRGB
+        || format == TextureFormat::R8G8B8A8_SRGB
+        || format == TextureFormat::B8G8R8_SRGB
+        || format == TextureFormat::B8G8R8A8_SRGB)
+    {
+        return true;
+    }
+    return false;
+}
+
+enum class TextureLayout
+{
+    UNKNOWN = 0,
+    GENERAL = 1,
+    COLOR_ATTACHMENT_OPTIMAL = 2,
+    DEPTH_STENCIL_ATTACHMENT_OPTIMAL = 3,
+    DEPTH_STENCIL_READ_ONLY_OPTIMAL = 4,
+    SHADER_READ_ONLY_OPTIMAL = 5,
+    TRANSFER_SRC_OPTIMAL = 6,
+    TRANSFER_DST_OPTIMAL = 7,
+    PREINITIALIZED = 8,
+    DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL = 9,
+    DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL = 10,
+    DEPTH_ATTACHMENT_OPTIMAL = 11,
+    DEPTH_READ_ONLY_OPTIMAL = 12,
+    STENCIL_ATTACHMENT_OPTIMAL = 13,
+    STENCIL_READ_ONLY_OPTIMAL = 14,
+    READ_ONLY_OPTIMAL = 15,
+    ATTACHMENT_OPTIMAL = 16,
+    RENDERING_LOCAL_READ = 17,
+    PRESENT_SRC = 18,
+    VIDEO_DECODE_DST = 19,
+    VIDEO_DECODE_SRC = 20,
+    VIDEO_DECODE_DPB = 21,
+    SHARED_PRESENT = 22,
+    FRAGMENT_DENSITY_MAP_OPTIMAL = 23,
+    FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL = 24,
+    SHADING_RATE_OPTIMAL = 25,
+    VIDEO_ENCODE_DST = 26,
+    VIDEO_ENCODE_SRC = 27,
+    VIDEO_ENCODE_DPB = 28,
+    ATTACHMENT_FEEDBACK_LOOP_OPTIMAL = 29,
+    VIDEO_ENCODE_QUANTIZATION_MAP = 30
+};
+
 enum class SampleCountFlags
 {
     NONE = 0,
@@ -558,19 +620,6 @@ struct QueueFamily
     {
         return supportsTransfer() &&
                !(supportsCompute() || supportsRendering());
-    }
-};
-
-struct Queue
-{
-    uint32_t index = std::numeric_limits<uint32_t>::max();
-    uint32_t family_index = std::numeric_limits<uint32_t>::max();
-    QueueFamilyFlags type = QueueFamilyFlags::NONE;
-
-    [[nodiscard]] bool isValid() const
-    {
-        return index < std::numeric_limits<uint32_t>::max() && family_index < std::numeric_limits<uint32_t>::max()
-               && type != QueueFamilyFlags::NONE;
     }
 };
 

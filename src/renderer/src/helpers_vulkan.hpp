@@ -249,6 +249,76 @@ inline vk::Format getFormat(const TextureFormat format)
     }
 }
 
+inline vk::ImageLayout getImageLayout(const TextureLayout &layout)
+{
+    switch (layout)
+    {
+    case TextureLayout::GENERAL:
+        return vk::ImageLayout::eGeneral;
+    case TextureLayout::COLOR_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eColorAttachmentOptimal;
+    case TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    case TextureLayout::DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+    case TextureLayout::SHADER_READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eShaderReadOnlyOptimal;
+    case TextureLayout::TRANSFER_SRC_OPTIMAL:
+        return vk::ImageLayout::eTransferSrcOptimal;
+    case TextureLayout::TRANSFER_DST_OPTIMAL:
+        return vk::ImageLayout::eTransferDstOptimal;
+    case TextureLayout::PREINITIALIZED:
+        return vk::ImageLayout::ePreinitialized;
+    case TextureLayout::DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
+    case TextureLayout::DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
+    case TextureLayout::DEPTH_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eDepthAttachmentOptimal;
+    case TextureLayout::DEPTH_READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eDepthReadOnlyOptimal;
+    case TextureLayout::STENCIL_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eStencilAttachmentOptimal;
+    case TextureLayout::STENCIL_READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eStencilReadOnlyOptimal;
+    case TextureLayout::READ_ONLY_OPTIMAL:
+        return vk::ImageLayout::eReadOnlyOptimal;
+    case TextureLayout::ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eAttachmentOptimal;
+    case TextureLayout::RENDERING_LOCAL_READ:
+        return vk::ImageLayout::eRenderingLocalRead;
+    case TextureLayout::PRESENT_SRC:
+        return vk::ImageLayout::ePresentSrcKHR;
+    case TextureLayout::VIDEO_DECODE_DST:
+        return vk::ImageLayout::eVideoDecodeDstKHR;
+    case TextureLayout::VIDEO_DECODE_SRC:
+        return vk::ImageLayout::eVideoDecodeSrcKHR;
+    case TextureLayout::VIDEO_DECODE_DPB:
+        return vk::ImageLayout::eVideoDecodeDpbKHR;
+    case TextureLayout::SHARED_PRESENT:
+        return vk::ImageLayout::eSharedPresentKHR;
+    case TextureLayout::FRAGMENT_DENSITY_MAP_OPTIMAL:
+        return vk::ImageLayout::eFragmentDensityMapOptimalEXT;
+    case TextureLayout::FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL:
+        return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
+    case TextureLayout::SHADING_RATE_OPTIMAL:
+        return vk::ImageLayout::eShadingRateOptimalNV;
+    case TextureLayout::VIDEO_ENCODE_DST:
+        return vk::ImageLayout::eVideoEncodeDstKHR;
+    case TextureLayout::VIDEO_ENCODE_SRC:
+        return vk::ImageLayout::eVideoEncodeSrcKHR;
+    case TextureLayout::VIDEO_ENCODE_DPB:
+        return vk::ImageLayout::eVideoEncodeDpbKHR;
+    case TextureLayout::ATTACHMENT_FEEDBACK_LOOP_OPTIMAL:
+        return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
+    case TextureLayout::VIDEO_ENCODE_QUANTIZATION_MAP:
+        return vk::ImageLayout::eVideoEncodeQuantizationMapKHR;
+    case TextureLayout::UNKNOWN:
+    default:
+        return vk::ImageLayout::eUndefined;
+    }
+}
+
 inline GPUType getGPUType(const vk::PhysicalDeviceType type)
 {
     switch (type)

@@ -33,12 +33,18 @@ void Renderer::update()
 
 void Renderer::render()
 {
-    auto &encoder = m_cmd_encoders_graphic[m_current_index];
-    const auto render_target = m_swapchain.getTexture();
-    encoder.begin(render_target);
-    encoder.finish();
-    // TODO: Queue submit
+    const auto &encoder = m_cmd_encoders_graphic[m_current_index];
+    const auto &queue = m_device.getGraphicsQueue();
+    auto render_target = m_swapchain.getTexture();
+
+    encoder.begin();
+    encoder.transitionTextureLayout(render_target.texture, TextureLayout::GENERAL);
+    encoder.clearTexture(render_target.texture, {1.0f, 0.0f, 0.0f, 1.0f});
+    encoder.transitionTextureLayout(render_target.texture, TextureLayout::PRESENT_SRC);
+
+    queue.submit(encoder.finish());
     m_swapchain.present();
+
     m_current_index = (m_current_index + 1) % m_cmd_encoders_graphic.size();
 }
 

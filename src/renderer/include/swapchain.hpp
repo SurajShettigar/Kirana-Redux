@@ -44,7 +44,7 @@ private:
     vk::PresentModeKHR m_present_mode{};
 
     vk::Device m_device{nullptr};
-    vk::Queue m_queue{nullptr};
+    Queue m_queue{};
     vk::SwapchainKHR m_handle{nullptr};
     std::vector<Texture> m_textures{};
 

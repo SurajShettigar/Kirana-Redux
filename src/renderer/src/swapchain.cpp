@@ -164,12 +164,12 @@ SwapchainTexture Swapchain::getTexture() const
 
 void Swapchain::present() const
 {
-    if (const auto result = m_queue.presentKHR(
-            vk::PresentInfoKHR{{m_render_semaphores[m_current_index]}, {m_handle}, {m_swapchain_image_index}});
-        result != vk::Result::eSuccess)
-    {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to present swapchain image: " + vk::to_string(result));
-    }
+    // if (const auto result = m_queue.presentKHR(
+    //         vk::PresentInfoKHR{{m_render_semaphores[m_current_index]}, {m_handle}, {m_swapchain_image_index}});
+    //     result != vk::Result::eSuccess)
+    // {
+    //     core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to present swapchain image: " + vk::to_string(result));
+    // }
     m_current_index = (m_current_index + 1) % m_textures.size();
 }
 }

@@ -7,6 +7,8 @@
 #include <vulkan/vulkan.hpp>
 #include "common.hpp"
 
+#include <queue.hpp>
+
 namespace kirana::renderer
 {
 class Device
@@ -20,7 +22,6 @@ class Device
     friend class CommandEncoder;
     friend class Swapchain;
     friend class Texture;
-
 public:
     Device() = default;
     ~Device() = default;
@@ -43,24 +44,24 @@ public:
         return m_queue_index_transfer > 0;
     }
 
-    [[nodiscard]] const Queue &getGraphicsQueueInfo() const
+    [[nodiscard]] const Queue &getGraphicsQueue() const
     {
-        return m_queue_infos[0];
+        return m_queues[0];
     }
 
-    [[nodiscard]] const Queue &getPresentQueueInfo() const
+    [[nodiscard]] const Queue &getPresentQueue() const
     {
-        return m_queue_infos[0];
+        return m_queues[0];
     }
 
-    [[nodiscard]] const Queue &getComputeQueueInfo() const
+    [[nodiscard]] const Queue &getComputeQueue() const
     {
-        return m_queue_infos[m_queue_index_compute];
+        return m_queues[m_queue_index_compute];
     }
 
-    [[nodiscard]] const Queue &getTransferQueueInfo() const
+    [[nodiscard]] const Queue &getTransferQueue() const
     {
-        return m_queue_infos[m_queue_index_transfer];
+        return m_queues[m_queue_index_transfer];
     }
 
 private:
@@ -72,29 +73,9 @@ private:
     vk::PhysicalDevice m_gpu{nullptr};
     vk::Device m_device{nullptr};
 
-    std::vector<Queue> m_queue_infos{};
-    std::vector<vk::Queue> m_queues{};
+    std::vector<Queue> m_queues{};
     uint32_t m_queue_index_compute{0};
     uint32_t m_queue_index_transfer{0};
-
-    [[nodiscard]] vk::Queue getGraphicsQueue() const
-    {
-        return m_queues[0];
-    }
-
-    [[nodiscard]] vk::Queue getPresentQueue() const
-    {
-        return m_queues[0];
-    }
-    [[nodiscard]] vk::Queue getComputeQueue() const
-    {
-        return m_queues[m_queue_index_compute];
-    }
-
-    [[nodiscard]] vk::Queue getTransferQueue() const
-    {
-        return m_queues[m_queue_index_transfer];
-    }
 };
 }
 #endif // KIRANA_RENDERER_DEVICE_HPP

@@ -8,6 +8,8 @@
 #include <map>
 #include <logger.hpp>
 
+#include "queue.hpp"
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #if PLATFORM == WINDOWS
@@ -28,6 +30,13 @@ const auto PLATFORM_SURFACE_EXTENSION_NAME = VK_EXT_METAL_SURFACE_EXTENSION_NAME
 
 namespace kirana::renderer
 {
+struct QueueInfo
+{
+    uint32_t index;
+    uint32_t family_index;
+    QueueFamilyFlags type;
+};
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 validationCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
                    const vk::DebugUtilsMessageTypeFlagsEXT message_types,
@@ -101,8 +110,8 @@ vk::PhysicalDevice selectGPU(const vk::Instance instance, const vk::SurfaceKHR s
     return scored_devices.rbegin()->second;
 }
 
-std::vector<Queue> createQueues(const vk::PhysicalDevice gpu, const vk::SurfaceKHR surface,
-                                uint32_t *out_queue_index_compute, uint32_t *out_queue_index_transfer)
+std::vector<QueueInfo> createQueues(const vk::PhysicalDevice gpu, const vk::SurfaceKHR surface,
+                                    uint32_t *out_queue_index_compute, uint32_t *out_queue_index_transfer)
 {
     const auto families = getQueueFamilies(gpu, surface);
     if (families.empty())
@@ -138,7 +147,7 @@ std::vector<Queue> createQueues(const vk::PhysicalDevice gpu, const vk::SurfaceK
         }
     }
 
-    std::vector<Queue> queues = {Queue{0, graphics_family_index, QueueFamilyFlags::GRAPHICS}};
+    std::vector queues = {QueueInfo{0, graphics_family_index, QueueFamilyFlags::GRAPHICS}};
     if (surface != nullptr)
     {
         queues[0].type = queues[0].type | QueueFamilyFlags::PRESENTATION;
@@ -146,7 +155,7 @@ std::vector<Queue> createQueues(const vk::PhysicalDevice gpu, const vk::SurfaceK
     if (compute_family_index != graphics_family_index)
     {
         *out_queue_index_compute = static_cast<uint32_t>(queues.size());
-        queues.emplace_back(Queue{0, compute_family_index, QueueFamilyFlags::COMPUTE});
+        queues.emplace_back(QueueInfo{0, compute_family_index, QueueFamilyFlags::COMPUTE});
     }
     else if (families[graphics_family_index].supportsCompute())
     {
@@ -157,7 +166,7 @@ std::vector<Queue> createQueues(const vk::PhysicalDevice gpu, const vk::SurfaceK
     if (transfer_family_index != graphics_family_index)
     {
         *out_queue_index_transfer = static_cast<uint32_t>(queues.size());
-        queues.emplace_back(Queue{0, transfer_family_index, QueueFamilyFlags::TRANSFER});
+        queues.emplace_back(QueueInfo{0, transfer_family_index, QueueFamilyFlags::TRANSFER});
     }
     else if (families[graphics_family_index].supportsTransfer())
     {
@@ -247,16 +256,16 @@ bool Device::init(const DeviceInitializationData &init_data)
     {
         m_gpu = selectGPU(m_instance, m_surface, init_data.gpu_preference);
 
-        m_queue_infos = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
-        if (m_queue_infos.empty())
+        const auto queue_infos = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
+        if (queue_infos.empty())
         {
             core::Logger::error(LOG_CHANNEL_VULKAN, "Selected GPU does not have any queue families.");
             return false;
         }
 
         std::vector<vk::DeviceQueueCreateInfo> queue_create_infos = {};
-        std::vector<float> queue_priorities = {1.0f};
-        for (const auto &q : m_queue_infos)
+        std::vector queue_priorities = {1.0f};
+        for (const auto &q : queue_infos)
         {
             queue_create_infos.emplace_back(vk::DeviceQueueCreateFlags{0}, q.family_index, queue_priorities);
         }
@@ -279,10 +288,10 @@ bool Device::init(const DeviceInitializationData &init_data)
         m_device = m_gpu.createDevice(create_info);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
 
-        m_queues.resize(m_queue_infos.size());
-        for (const auto &q : m_queue_infos)
+        m_queues.resize(queue_infos.size());
+        for (const auto &q : queue_infos)
         {
-            m_queues.emplace_back(m_device.getQueue(q.family_index, q.index));
+            m_queues.emplace_back(Queue{m_device, q.index, q.family_index, q.type});
         }
     }
     return true;

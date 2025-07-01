@@ -7,7 +7,7 @@
 
 namespace kirana::renderer
 {
-bool Texture::init(const Device &device, const Size2D &size, TextureFormat format)
+bool Texture::init(const Device &device, const Size2D &size, TextureFormat format, const TextureLayout layout)
 {
 
 }
@@ -28,5 +28,4 @@ void Texture::destroy()
         }
     }
 }
-
 }
