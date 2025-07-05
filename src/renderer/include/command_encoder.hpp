@@ -17,15 +17,16 @@ struct CommandSubmitInfo
 
 class CommandEncoder
 {
+    friend class Device;
+
 public:
     CommandEncoder() = default;
     ~CommandEncoder() = default;
 
-    bool init(const Device &device, QueueFamilyFlags supported_queue_type = QueueFamilyFlags::GRAPHICS);
-    void begin() const;
-    CommandSubmitInfo finish() const;
     void destroy();
 
+    void begin() const;
+    [[nodiscard]] CommandSubmitInfo finish() const;
     /**
      * Transitions the texture layout from current to the given one. The texture is updated with the new value, but it
      * does not take effect until the command encoder is submitted to the queue.
@@ -44,14 +45,14 @@ public:
 
     [[nodiscard]] bool isValid() const
     {
-        return m_pool != nullptr && m_buffer != nullptr && m_fence != nullptr;
+        return m_pool != nullptr && m_buffer != nullptr;
     }
-
 private:
     vk::Device m_device{nullptr};
     vk::CommandPool m_pool{nullptr};
     vk::CommandBuffer m_buffer{nullptr};
-    vk::Fence m_fence{nullptr};
+
+    bool init(vk::Device device, uint32_t queue_family);
 };
 }
 

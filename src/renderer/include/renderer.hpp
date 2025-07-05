@@ -7,11 +7,17 @@
 #include <no_copy.hpp>
 
 #include "common.hpp"
-#include "swapchain.hpp"
-#include "command_encoder.hpp"
+#include "device.hpp"
 
 namespace kirana::renderer
 {
+struct RenderContext
+{
+    CommandEncoder encoder{};
+    Semaphore swapchain_semaphore{};
+    Semaphore render_semaphore{};
+};
+
 class Renderer : core::NoCopy
 {
 public:
@@ -30,10 +36,11 @@ public:
 
 private:
     Device m_device{};
+    Fence m_fence{};
     Swapchain m_swapchain{};
-    std::vector<CommandEncoder> m_cmd_encoders_graphic {};
+    std::vector<RenderContext> m_ctxs{};
 
-    size_t m_current_index {0};
+    size_t m_current_index{0};
 };
 }
 

@@ -288,7 +288,7 @@ bool Device::init(const DeviceInitializationData &init_data)
         m_device = m_gpu.createDevice(create_info);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
 
-        m_queues.resize(queue_infos.size());
+        m_queues.reserve(queue_infos.size());
         for (const auto &q : queue_infos)
         {
             m_queues.emplace_back(Queue{m_device, q.index, q.family_index, q.type});
@@ -320,5 +320,80 @@ void Device::destroy()
         m_instance.destroy();
         m_instance = nullptr;
     }
+}
+
+Texture Device::createTexture(const Size2D &size, const TextureFormat format, const TextureLayout layout) const
+{
+    Texture texture;
+    if (m_device)
+    {
+        texture.init(m_device, size, format, layout);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create texture. Device is not initialized.");
+    }
+    return texture;
+}
+
+Swapchain Device::createSwapchain(const SwapchainData &data) const
+{
+    Swapchain swapchain;
+    if (m_gpu && m_device && m_surface)
+    {
+        swapchain.init(m_gpu, m_device, m_surface, data);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Swapchain. Device or surface is not initialized.");
+    }
+    return swapchain;
+}
+
+CommandEncoder Device::createCommandEncoder(const Queue &compatible_queue) const
+{
+    CommandEncoder encoder;
+    if (m_device && compatible_queue.isValid())
+    {
+        encoder.init(m_device, compatible_queue.getFamilyIndex());
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Command Encoder. Device or queue is not initialized.");
+    }
+    return encoder;
+}
+
+Semaphore Device::createSemaphore(const PipelineStageFlags stage_mask) const
+{
+    Semaphore semaphore;
+    if (m_device)
+    {
+        semaphore.init(m_device, stage_mask);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Semaphore. Device is not initialized.");
+    }
+    return semaphore;
+}
+
+Fence Device::createFence() const
+{
+    Fence fence;
+    if (m_device)
+    {
+        fence.init(m_device);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Fence. Device is not initialized.");
+    }
+    return fence;
 }
 }

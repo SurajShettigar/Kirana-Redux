@@ -231,30 +231,42 @@ enum class SampleCountFlags
     S_64 = 1 << 6,
 };
 
-inline SampleCountFlags operator|(SampleCountFlags lhs, SampleCountFlags rhs)
+constexpr SampleCountFlags operator|(const SampleCountFlags lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) |
-                                         static_cast<uint32_t>(rhs));
+    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
 }
 
-inline SampleCountFlags operator&(SampleCountFlags lhs, SampleCountFlags rhs)
+constexpr SampleCountFlags &operator|=(SampleCountFlags &lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) &
-                                         static_cast<uint32_t>(rhs));
+    return lhs = lhs | rhs;
 }
 
-inline SampleCountFlags operator^(SampleCountFlags lhs, SampleCountFlags rhs)
+constexpr SampleCountFlags operator&(const SampleCountFlags lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) ^
-                                         static_cast<uint32_t>(rhs));
+    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
 }
 
-inline SampleCountFlags operator~(SampleCountFlags flag)
+constexpr SampleCountFlags &operator&=(SampleCountFlags &lhs, const SampleCountFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr SampleCountFlags operator^(const SampleCountFlags lhs, const SampleCountFlags rhs)
+{
+    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr SampleCountFlags &operator^=(SampleCountFlags &lhs, const SampleCountFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr SampleCountFlags operator~(const SampleCountFlags flag)
 {
     return static_cast<SampleCountFlags>(~static_cast<uint32_t>(flag));
 }
 
-inline bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_flag)
+constexpr bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_flag)
 {
     return (flags & req_flag) == req_flag;
 }
@@ -341,6 +353,8 @@ struct GPUFeatures
     bool sparse_residency_aliased = false;
     bool variable_multisample_rate = false;
     bool inherited_queries = false;
+    // Synchronization 2
+    bool synchronization2 = false;
     // 16-bit float 8-bit int features
     bool shader_float16 = false;
     bool shader_int8 = false;
@@ -546,30 +560,42 @@ enum class QueueFamilyFlags
     TRANSFER = 1 << 3,
 };
 
-inline QueueFamilyFlags operator|(QueueFamilyFlags lhs, QueueFamilyFlags rhs)
+constexpr QueueFamilyFlags operator|(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
 {
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) |
-                                         static_cast<uint32_t>(rhs));
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
 }
 
-inline QueueFamilyFlags operator&(QueueFamilyFlags lhs, QueueFamilyFlags rhs)
+constexpr QueueFamilyFlags &operator|=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
 {
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) &
-                                         static_cast<uint32_t>(rhs));
+    return lhs = lhs | rhs;
 }
 
-inline QueueFamilyFlags operator^(QueueFamilyFlags lhs, QueueFamilyFlags rhs)
+constexpr QueueFamilyFlags operator&(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
 {
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) ^
-                                         static_cast<uint32_t>(rhs));
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
 }
 
-inline QueueFamilyFlags operator~(QueueFamilyFlags flag)
+constexpr QueueFamilyFlags &operator&=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr QueueFamilyFlags operator^(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
+{
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr QueueFamilyFlags &operator^=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr QueueFamilyFlags operator~(const QueueFamilyFlags flag)
 {
     return static_cast<QueueFamilyFlags>(~static_cast<uint32_t>(flag));
 }
 
-inline bool hasFlag(const QueueFamilyFlags flags, const QueueFamilyFlags req_flag)
+constexpr bool hasFlag(const QueueFamilyFlags flags, const QueueFamilyFlags req_flag)
 {
     return (flags & req_flag) == req_flag;
 }
@@ -663,5 +689,87 @@ struct SwapchainData
     PresentMode present_mode{PresentMode::IMMEDIATE};
 };
 
+enum class PipelineStageFlags: uint64_t
+{
+    NONE = 0ull,
+    TOP_OF_PIPE = 1ull << 0ull,
+    DRAW_INDIRECT = 1ull << 1ull,
+    VERTEX_INPUT = 1ull << 2ull,
+    VERTEX_SHADER = 1ull << 3ull,
+    TESSELLATION_CONTROL_SHADER = 1ull << 4ull,
+    TESSELLATION_EVALUATION_SHADER = 1ull << 5ull,
+    GEOMETRY_SHADER = 1ull << 6ull,
+    FRAGMENT_SHADER = 1ull << 7ull,
+    EARLY_FRAGMENT_TESTS = 1ull << 8ull,
+    LATE_FRAGMENT_TESTS = 1ull << 9ull,
+    COLOR_ATTACHMENT_OUTPUT = 1ull << 10ull,
+    COMPUTE_SHADER = 1ull << 11ull,
+    ALL_TRANSFER = 1ull << 12ull,
+    TRANSFER = 1ull << 13ull,
+    BOTTOM_OF_PIPE = 1ull << 14ull,
+    HOST = 1ull << 15ull,
+    ALL_GRAPHICS = 1ull << 16ull,
+    ALL_COMMANDS = 1ull << 17ull,
+    COPY = 1ull << 18ull,
+    RESOLVE = 1ull << 19ull,
+    BLIT = 1ull << 20ull,
+    CLEAR = 1ull << 21ull,
+    INDEX_INPUT = 1ull << 22ull,
+    VERTEX_ATTRIBUTE_INPUT = 1ull << 23ull,
+    PRE_RASTERIZATION_SHADERS = 1ull << 24ull,
+    VIDEO_DECODE = 1ull << 25ull,
+    VIDEO_ENCODE = 1ull << 26ull,
+    TRANSFORM_FEEDBACK = 1ull << 27ull,
+    CONDITIONAL_RENDERING = 1ull << 28ull,
+    COMMAND_PREPROCESS = 1ull << 29ull,
+    FRAGMENT_SHADING_RATE_ATTACHMENT = 1ull << 30ull,
+    ACCELERATION_STRUCTURE_BUILD = 1ull << 31ull,
+    RAY_TRACING_SHADER = 1ull << 32ull,
+    FRAGMENT_DENSITY_PROCESS = 1ull << 33ull,
+    TASK_SHADER = 1ull << 34ull,
+    MESH_SHADER = 1ull << 35ull,
+    ACCELERATION_STRUCTURE_COPY = 1ull << 36ull,
+    MICROMAP_BUILD = 1ull << 37ull,
+};
+
+constexpr PipelineStageFlags operator|(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) | static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator|=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr PipelineStageFlags operator&(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) & static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator&=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr PipelineStageFlags operator^(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) ^ static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator^=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr PipelineStageFlags operator~(const PipelineStageFlags lhs)
+{
+    return static_cast<PipelineStageFlags>(~static_cast<uint64_t>(lhs));
+}
+
+constexpr bool hasFlag(const PipelineStageFlags flags, const PipelineStageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
 }
 #endif // KIRANA_RENDERER_COMMON_HPP

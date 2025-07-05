@@ -6,10 +6,10 @@
 
 #include "command_encoder.hpp"
 #include "swapchain.hpp"
+#include "synchronization.hpp"
 
 namespace kirana::renderer
 {
-
 class Queue
 {
     friend class Device;
@@ -47,20 +47,33 @@ public:
         return m_type;
     }
 
-    void submit(const CommandSubmitInfo &submit_info) const;
-    void present(const SwapchainTexture &swapchain_texture) const;
+    uint32_t addWaitSemaphore(const Semaphore &semaphore)
+    {
+        const uint32_t index = m_wait_semaphores.size();
+        m_wait_semaphores.emplace_back(semaphore.getSubmitInfo());
+        return index;
+    }
+
+    uint32_t addSignalSemaphore(const Semaphore &semaphore)
+    {
+        const uint32_t index = m_signal_semaphores.size();
+        m_signal_semaphores.emplace_back(semaphore.getSubmitInfo());
+        return index;
+    }
+
+    void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence);
+    bool present(const SwapchainPresentInfo &present_info);
 
 private:
-    vk::Device m_device{nullptr};
-
     uint32_t m_index = std::numeric_limits<uint32_t>::max();
     uint32_t m_family_index = std::numeric_limits<uint32_t>::max();
     QueueFamilyFlags m_type = QueueFamilyFlags::NONE;
 
+    vk::Device m_device{nullptr};
     vk::Queue m_handle{nullptr};
-
-    std::vector<vk::Semaphore> m_wait_semaphores{};
-    std::vector<vk::Semaphore> m_signal_semaphores{};
+    std::vector<CommandEncoder> m_cmd_encoders{};
+    std::vector<vk::SemaphoreSubmitInfo> m_wait_semaphores{};
+    std::vector<vk::SemaphoreSubmitInfo> m_signal_semaphores{};
 
     Queue(vk::Device device, uint32_t index, uint32_t family_index, QueueFamilyFlags type);
 };

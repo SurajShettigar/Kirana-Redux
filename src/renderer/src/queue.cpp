@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "queue.hpp"
+#include "helpers_vulkan.hpp"
+
+#include <logger.hpp>
 
 namespace kirana::renderer
 {
@@ -12,14 +15,33 @@ Queue::Queue(const vk::Device device, const uint32_t index, const uint32_t famil
 }
 
 
-void Queue::submit(const CommandSubmitInfo &submit_info) const
+void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence)
 {
-
+    const auto submit_info = vk::SubmitInfo2{vk::SubmitFlags{}, m_wait_semaphores, {cmd_submit_info.info},
+                                             m_signal_semaphores};
+    m_handle.submit2({submit_info}, fence.m_handle);
+    m_wait_semaphores.clear();
+    m_signal_semaphores.clear();
+}
 }
 
-void Queue::present(const SwapchainTexture &swapchain_texture) const
+bool kirana::renderer::Queue::present(const SwapchainPresentInfo &present_info)
 {
-
-}
-
+    std::vector<vk::Semaphore> wait_semaphores;
+    wait_semaphores.reserve(m_wait_semaphores.size());
+    for (const auto &semaphore : m_wait_semaphores)
+    {
+        wait_semaphores.emplace_back(semaphore.semaphore);
+    }
+    bool status = true;
+    if (const auto result = m_handle.presentKHR(
+            vk::PresentInfoKHR{wait_semaphores, {present_info.handle}, {present_info.image_index}});
+        result != vk::Result::eSuccess)
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to present swapchain image: " + vk::to_string(result));
+        status = false;
+    }
+    m_wait_semaphores.clear();
+    m_signal_semaphores.clear();
+    return status;
 }

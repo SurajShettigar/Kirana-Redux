@@ -4,20 +4,22 @@
 #ifndef KIRANA_RENDERER_TEXTURE_HPP
 #define KIRANA_RENDERER_TEXTURE_HPP
 
-#include "device.hpp"
+#include <vulkan/vulkan.hpp>
+#include "common.hpp"
 
 namespace kirana::renderer
 {
+
 class Texture
 {
+    friend class Device;
     friend class CommandEncoder;
     friend class Swapchain;
+
 public:
     Texture() = default;
     ~Texture() = default;
 
-    bool init(const Device &device, const Size2D &size, TextureFormat format,
-              TextureLayout layout = TextureLayout::UNKNOWN);
     void destroy();
 
     [[nodiscard]] bool isValid() const
@@ -51,18 +53,20 @@ public:
     }
 
 private:
-    vk::Device m_device{nullptr};
-
     Size2D m_size{};
     TextureFormat m_format{};
     TextureLayout m_layout{};
 
+    vk::Device m_device{nullptr};
     vk::Image m_handle{nullptr};
     vk::ImageView m_view{nullptr};
 
+    bool init(vk::Device device, const Size2D &size, TextureFormat format,
+              TextureLayout layout = TextureLayout::UNKNOWN);
+
     explicit Texture(const vk::Device device, const vk::Image image, const vk::ImageView view, const Size2D &size,
                      const TextureFormat format, const TextureLayout layout = TextureLayout::UNKNOWN)
-        : m_device{device}, m_size{size}, m_format{format}, m_layout{layout}, m_handle{image}, m_view{view}
+        : m_size{size}, m_format{format}, m_layout{layout}, m_device{device}, m_handle{image}, m_view{view}
     {
     }
 };

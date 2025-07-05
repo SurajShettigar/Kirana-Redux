@@ -21,6 +21,16 @@ inline vk::Extent2D getExtent2D(const Size2D &size)
     return vk::Extent2D{size.width, size.height};
 }
 
+inline vk::Extent3D getExtent3D(const Size2D &size)
+{
+    return vk::Extent3D{size.width, size.height, 1};
+}
+
+inline vk::Extent3D getExtent3D(const Size3D &size)
+{
+    return vk::Extent3D{size.width, size.height, size.depth};
+}
+
 inline vk::Format getFormat(const TextureFormat format)
 {
     switch (format)
@@ -389,8 +399,10 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     atomic64_features.pNext = &bindless_features;
     vk::PhysicalDeviceShaderFloat16Int8Features f16_features = {};
     f16_features.pNext = &atomic64_features;
+    vk::PhysicalDeviceSynchronization2Features sync2_features = {};
+    sync2_features.pNext = &f16_features;
     vk::PhysicalDeviceFeatures2 features = {};
-    features.pNext = &f16_features;
+    features.pNext = &sync2_features;
     device.getFeatures2(&features);
 
     GPUFeatures gpu_features = {};
@@ -476,6 +488,8 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     gpu_features.variable_multisample_rate =
         features.features.variableMultisampleRate;
     gpu_features.inherited_queries = features.features.inheritedQueries;
+    // Synchronization 2 features
+    gpu_features.synchronization2 = sync2_features.synchronization2;
     // 16-bit float 8-bit int support
     gpu_features.shader_float16 = f16_features.shaderFloat16;
     gpu_features.shader_int8 = f16_features.shaderInt8;
@@ -954,6 +968,9 @@ inline uint32_t getGPUFeatureScore(const GPUFeatures &f, const GPUFeatures &p)
     if (p.variable_multisample_rate && f.variable_multisample_rate >= p.variable_multisample_rate)
         score += 1;
     if (p.inherited_queries && f.inherited_queries >= p.inherited_queries)
+        score += 1;
+    // Synchronization 2 features
+    if (p.synchronization2 && f.synchronization2 >= p.synchronization2)
         score += 1;
     // 16-bit float 8-bit int features
     if (p.shader_float16 && f.shader_float16 >= p.shader_float16)
@@ -1594,8 +1611,10 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
     atomic64_features.pNext = &bindless_features;
     vk::PhysicalDeviceShaderFloat16Int8Features f16_features = {};
     f16_features.pNext = &atomic64_features;
+    vk::PhysicalDeviceSynchronization2Features sync2_features = {};
+    sync2_features.pNext = &f16_features;
     vk::PhysicalDeviceFeatures2 features = {};
-    features.pNext = &f16_features;
+    features.pNext = &sync2_features;
 
     // Base Features
     if (f.robust_buffer_access)
@@ -1713,6 +1732,9 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         features.features.variableMultisampleRate = true;
     if (f.inherited_queries)
         features.features.inheritedQueries = true;
+    // Synchronization 2 features
+    if (f.synchronization2)
+        sync2_features.synchronization2 = true;
     // 16-bit float 8-bit int features
     if (f.shader_float16)
         f16_features.shaderFloat16 = true;
@@ -1817,6 +1839,11 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
 inline std::vector<const char *> getEnabledDeviceExtensions(const GPUFeatures &f)
 {
     std::vector<const char *> extensions = {};
+    // Synchronization 2 features
+    if (f.synchronization2)
+    {
+        extensions.push_back(vk::KHRSynchronization2ExtensionName);
+    }
     // 16-bit float 8-bit int features
     if (f.shader_float16 || f.shader_int8)
     {
@@ -1886,6 +1913,88 @@ inline vk::PresentModeKHR getPresentMode(const PresentMode mode)
     default:
         return vk::PresentModeKHR::eImmediate;
     }
+}
+
+inline vk::PipelineStageFlags2 getPipelineStageFlags(const PipelineStageFlags flags)
+{
+    vk::PipelineStageFlags2 out_flags = vk::PipelineStageFlagBits2::eNone;
+    if (hasFlag(flags, PipelineStageFlags::TOP_OF_PIPE))
+        out_flags |= vk::PipelineStageFlagBits2::eTopOfPipe;
+    if (hasFlag(flags, PipelineStageFlags::DRAW_INDIRECT))
+        out_flags |= vk::PipelineStageFlagBits2::eDrawIndirect;
+    if (hasFlag(flags, PipelineStageFlags::VERTEX_INPUT))
+        out_flags |= vk::PipelineStageFlagBits2::eVertexInput;
+    if (hasFlag(flags, PipelineStageFlags::VERTEX_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eVertexShader;
+    if (hasFlag(flags, PipelineStageFlags::TESSELLATION_CONTROL_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eTessellationControlShader;
+    if (hasFlag(flags, PipelineStageFlags::TESSELLATION_EVALUATION_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eTessellationEvaluationShader;
+    if (hasFlag(flags, PipelineStageFlags::GEOMETRY_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eGeometryShader;
+    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eFragmentShader;
+    if (hasFlag(flags, PipelineStageFlags::EARLY_FRAGMENT_TESTS))
+        out_flags |= vk::PipelineStageFlagBits2::eEarlyFragmentTests;
+    if (hasFlag(flags, PipelineStageFlags::LATE_FRAGMENT_TESTS))
+        out_flags |= vk::PipelineStageFlagBits2::eLateFragmentTests;
+    if (hasFlag(flags, PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT))
+        out_flags |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+    if (hasFlag(flags, PipelineStageFlags::COMPUTE_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eComputeShader;
+    if (hasFlag(flags, PipelineStageFlags::ALL_TRANSFER))
+        out_flags |= vk::PipelineStageFlagBits2::eAllTransfer;
+    if (hasFlag(flags, PipelineStageFlags::TRANSFER))
+        out_flags |= vk::PipelineStageFlagBits2::eTransfer;
+    if (hasFlag(flags, PipelineStageFlags::BOTTOM_OF_PIPE))
+        out_flags |= vk::PipelineStageFlagBits2::eBottomOfPipe;
+    if (hasFlag(flags, PipelineStageFlags::HOST))
+        out_flags |= vk::PipelineStageFlagBits2::eHost;
+    if (hasFlag(flags, PipelineStageFlags::ALL_GRAPHICS))
+        out_flags |= vk::PipelineStageFlagBits2::eAllGraphics;
+    if (hasFlag(flags, PipelineStageFlags::ALL_COMMANDS))
+        out_flags |= vk::PipelineStageFlagBits2::eAllCommands;
+    if (hasFlag(flags, PipelineStageFlags::COPY))
+        out_flags |= vk::PipelineStageFlagBits2::eCopy;
+    if (hasFlag(flags, PipelineStageFlags::RESOLVE))
+        out_flags |= vk::PipelineStageFlagBits2::eResolve;
+    if (hasFlag(flags, PipelineStageFlags::BLIT))
+        out_flags |= vk::PipelineStageFlagBits2::eBlit;
+    if (hasFlag(flags, PipelineStageFlags::CLEAR))
+        out_flags |= vk::PipelineStageFlagBits2::eClear;
+    if (hasFlag(flags, PipelineStageFlags::INDEX_INPUT))
+        out_flags |= vk::PipelineStageFlagBits2::eIndexInput;
+    if (hasFlag(flags, PipelineStageFlags::VERTEX_ATTRIBUTE_INPUT))
+        out_flags |= vk::PipelineStageFlagBits2::eVertexAttributeInput;
+    if (hasFlag(flags, PipelineStageFlags::PRE_RASTERIZATION_SHADERS))
+        out_flags |= vk::PipelineStageFlagBits2::ePreRasterizationShaders;
+    if (hasFlag(flags, PipelineStageFlags::VIDEO_DECODE))
+        out_flags |= vk::PipelineStageFlagBits2::eVideoDecodeKHR;
+    if (hasFlag(flags, PipelineStageFlags::VIDEO_ENCODE))
+        out_flags |= vk::PipelineStageFlagBits2::eVideoEncodeKHR;
+    if (hasFlag(flags, PipelineStageFlags::TRANSFORM_FEEDBACK))
+        out_flags |= vk::PipelineStageFlagBits2::eTransformFeedbackEXT;
+    if (hasFlag(flags, PipelineStageFlags::CONDITIONAL_RENDERING))
+        out_flags |= vk::PipelineStageFlagBits2::eConditionalRenderingEXT;
+    if (hasFlag(flags, PipelineStageFlags::COMMAND_PREPROCESS))
+        out_flags |= vk::PipelineStageFlagBits2::eCommandPreprocessEXT;
+    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_SHADING_RATE_ATTACHMENT))
+        out_flags |= vk::PipelineStageFlagBits2::eFragmentShadingRateAttachmentKHR;
+    if (hasFlag(flags, PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD))
+        out_flags |= vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
+    if (hasFlag(flags, PipelineStageFlags::RAY_TRACING_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
+    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_DENSITY_PROCESS))
+        out_flags |= vk::PipelineStageFlagBits2::eFragmentDensityProcessEXT;
+    if (hasFlag(flags, PipelineStageFlags::TASK_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
+    if (hasFlag(flags, PipelineStageFlags::MESH_SHADER))
+        out_flags |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
+    if (hasFlag(flags, PipelineStageFlags::ACCELERATION_STRUCTURE_COPY))
+        out_flags |= vk::PipelineStageFlagBits2::eAccelerationStructureCopyKHR;
+    if (hasFlag(flags, PipelineStageFlags::MICROMAP_BUILD))
+        out_flags |= vk::PipelineStageFlagBits2::eMicromapBuildEXT;
+    return out_flags;
 }
 }
 #endif // KIRANA_RENDERER_HELPERS_VULKAN_HPP

@@ -7,7 +7,9 @@
 #include <vulkan/vulkan.hpp>
 #include "common.hpp"
 
-#include <queue.hpp>
+#include "queue.hpp"
+#include "swapchain.hpp"
+#include "command_encoder.hpp"
 
 namespace kirana::renderer
 {
@@ -19,9 +21,6 @@ class Device
         const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
         void *p_user_data);
 
-    friend class CommandEncoder;
-    friend class Swapchain;
-    friend class Texture;
 public:
     Device() = default;
     ~Device() = default;
@@ -49,7 +48,17 @@ public:
         return m_queues[0];
     }
 
+    [[nodiscard]] Queue &getGraphicsQueue()
+    {
+        return m_queues[0];
+    }
+
     [[nodiscard]] const Queue &getPresentQueue() const
+    {
+        return m_queues[0];
+    }
+
+    [[nodiscard]] Queue &getPresentQueue()
     {
         return m_queues[0];
     }
@@ -59,11 +68,31 @@ public:
         return m_queues[m_queue_index_compute];
     }
 
+    [[nodiscard]] Queue &getComputeQueue()
+    {
+        return m_queues[m_queue_index_compute];
+    }
+
     [[nodiscard]] const Queue &getTransferQueue() const
     {
         return m_queues[m_queue_index_transfer];
     }
 
+    [[nodiscard]] Queue &getTransferQueue()
+    {
+        return m_queues[m_queue_index_transfer];
+    }
+
+    [[nodiscard]] Texture createTexture(const Size2D &size, TextureFormat format,
+                                        TextureLayout layout = TextureLayout::UNKNOWN) const;
+
+    [[nodiscard]] Swapchain createSwapchain(const SwapchainData &data) const;
+
+    [[nodiscard]] CommandEncoder createCommandEncoder(const Queue &compatible_queue) const;
+
+    [[nodiscard]] Semaphore createSemaphore(PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE) const;
+
+    [[nodiscard]] Fence createFence() const;
 private:
     vk::Instance m_instance{nullptr};
     vk::DebugUtilsMessengerEXT m_debug_messenger{nullptr};

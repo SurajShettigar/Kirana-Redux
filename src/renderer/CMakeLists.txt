@@ -1,9 +1,11 @@
 message("Adding Library: renderer")
 add_library(renderer
         src/device.cpp
+        src/synchronization.cpp
         src/texture.cpp
         src/swapchain.cpp
         src/command_encoder.cpp
+        src/queue.cpp
         src/renderer.cpp)
 target_include_directories(renderer
         PUBLIC include)
