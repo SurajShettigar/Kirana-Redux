@@ -6,6 +6,7 @@
 
 #include <string>
 #include <array>
+#include <vector>
 #include <version_code.hpp>
 
 namespace kirana::renderer
@@ -32,6 +33,172 @@ struct Size3D
         return width != 0 && height != 0 && depth != 0;
     }
 };
+
+enum class ShaderStageFlags: uint32_t
+{
+    NONE = 0x0u,
+    VERTEX = 0x00000001u,
+    TESSELLATION_CONTROL = 0x00000002u,
+    TESSELLATION_EVALUATION = 0x00000004u,
+    GEOMETRY = 0x00000008u,
+    FRAGMENT = 0x00000010u,
+    COMPUTE = 0x00000020u,
+    ALL_GRAPHICS = 0x0000001Fu,
+    RAYGEN_BIT = 0x00000100u,
+    ANY_HIT_BIT = 0x00000200u,
+    CLOSEST_HIT_BIT = 0x00000400u,
+    MISS_BIT = 0x00000800u,
+    INTERSECTION_BIT = 0x00001000u,
+    CALLABLE_BIT = 0x00002000u,
+    TASK_BIT = 0x00000040u,
+    MESH_BIT = 0x00000080u,
+    STAGE_ALL = 0x7FFFFFFFu,
+};
+
+constexpr ShaderStageFlags operator|(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator|=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr ShaderStageFlags operator&(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator&=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr ShaderStageFlags operator^(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator^=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr ShaderStageFlags operator~(const ShaderStageFlags flag)
+{
+    return static_cast<ShaderStageFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const ShaderStageFlags flags, const ShaderStageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class SubgroupFeatureFlags: uint32_t
+{
+    NONE = 0u,
+    BASIC = 0x00000001u,
+    VOTE = 0x00000002u,
+    ARITHMETIC = 0x00000004u,
+    BALLOT = 0x00000008u,
+    SHUFFLE = 0x00000010u,
+    SHUFFLE_RELATIVE = 0x00000020u,
+    CLUSTERED = 0x00000040u,
+    QUAD = 0x00000080u,
+    PARTITIONED = 0x00000100u,
+    ROTATE = 0x00000200u,
+    ROTATE_CLUSTERED = 0x00000400u,
+};
+
+constexpr SubgroupFeatureFlags operator|(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator|=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr SubgroupFeatureFlags operator&(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator&=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr SubgroupFeatureFlags operator^(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator^=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr SubgroupFeatureFlags operator~(const SubgroupFeatureFlags flag)
+{
+    return static_cast<SubgroupFeatureFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const SubgroupFeatureFlags flags, const SubgroupFeatureFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class ResolveModeFlags: uint8_t
+{
+    NONE = 0x00u,
+    SAMPLE_ZERO = 0x01u,
+    AVERAGE = 0x02u,
+    MIN = 0x04u,
+    MAX = 0x08u,
+};
+
+constexpr ResolveModeFlags operator|(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator|=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr ResolveModeFlags operator&(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator&=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr ResolveModeFlags operator^(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) ^ static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator^=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr ResolveModeFlags operator~(const ResolveModeFlags flag)
+{
+    return static_cast<ResolveModeFlags>(~static_cast<uint8_t>(flag));
+}
+
+constexpr bool hasFlag(const ResolveModeFlags flags, const ResolveModeFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
 
 enum class TextureFormat
 {
@@ -157,7 +324,7 @@ enum class TextureFormat
     D32_SFLOAT_S8_UINT = 100,
 };
 
-inline bool isDepthTextureFormat(const TextureFormat format)
+constexpr bool isDepthTextureFormat(const TextureFormat format)
 {
     if (format == TextureFormat::D16_UNORM
         || format == TextureFormat::D32_SFLOAT
@@ -170,7 +337,7 @@ inline bool isDepthTextureFormat(const TextureFormat format)
     return false;
 }
 
-inline bool isSRGBTextureFormat(const TextureFormat format)
+constexpr bool isSRGBTextureFormat(const TextureFormat format)
 {
     if (format == TextureFormat::R8_SRGB
         || format == TextureFormat::R8G8_SRGB
@@ -299,7 +466,7 @@ struct GPUFeatures
 {
     // Base Features
     bool robust_buffer_access = false;
-    bool full_draw_index_uint32 = false;
+    bool full_draw_index_uint_32 = false;
     bool image_cube_array = false;
     bool independent_blend = false;
     bool geometry_shader = false;
@@ -337,31 +504,46 @@ struct GPUFeatures
     bool shader_storage_image_array_dynamic_indexing = false;
     bool shader_clip_distance = false;
     bool shader_cull_distance = false;
-    bool shader_float64 = false;
-    bool shader_int64 = false;
-    bool shader_int16 = false;
+    bool shader_float_64 = false;
+    bool shader_int_64 = false;
+    bool shader_int_16 = false;
     bool shader_resource_residency = false;
     bool shader_resource_min_lod = false;
     bool sparse_binding = false;
     bool sparse_residency_buffer = false;
-    bool sparse_residency_image2D = false;
-    bool sparse_residency_image3D = false;
-    bool sparse_residency2_samples = false;
-    bool sparse_residency4_samples = false;
-    bool sparse_residency8_samples = false;
-    bool sparse_residency16_samples = false;
+    bool sparse_residency_image_2D = false;
+    bool sparse_residency_image_3D = false;
+    bool sparse_residency_2_samples = false;
+    bool sparse_residency_4_samples = false;
+    bool sparse_residency_8_samples = false;
+    bool sparse_residency_16_samples = false;
     bool sparse_residency_aliased = false;
     bool variable_multisample_rate = false;
     bool inherited_queries = false;
-    // Synchronization 2
-    bool synchronization2 = false;
-    // 16-bit float 8-bit int features
-    bool shader_float16 = false;
-    bool shader_int8 = false;
-    // int 64-bit atomic features
-    bool shader_buffer_int64_atomics = false;
-    bool shader_shared_int64_atomics = false;
-    // Bindless support features
+    // Vulkan 1.1 Features
+    bool storage_buffer_16_bit_access = false;
+    bool uniform_and_storage_buffer_16_bit_access = false;
+    bool storage_push_constant_16 = false;
+    bool storage_input_output_16 = false;
+    bool multiview = false;
+    bool multiview_geometry_shader = false;
+    bool multiview_tessellation_shader = false;
+    bool variable_pointers_storage_buffer = false;
+    bool variable_pointers = false;
+    bool protected_memory = false;
+    bool sampler_YCBCR_conversion = false;
+    bool shader_draw_parameters = false;
+    // Vulkan 1.2 Features
+    bool sampler_mirror_clamp_to_edge = false;
+    bool draw_indirect_count = false;
+    bool storage_buffer_8_bit_access = false;
+    bool uniform_and_storage_buffer_8_bit_access = false;
+    bool storage_push_constant_8 = false;
+    bool shader_buffer_int_64_atomics = false;
+    bool shader_shared_int_64_atomics = false;
+    bool shader_float_16 = false;
+    bool shader_int_8 = false;
+    bool descriptor_indexing = false;
     bool shader_input_attachment_array_dynamic_indexing = false;
     bool shader_uniform_texel_buffer_array_dynamic_indexing = false;
     bool shader_storage_texel_buffer_array_dynamic_indexing = false;
@@ -382,6 +564,61 @@ struct GPUFeatures
     bool descriptor_binding_partially_bound = false;
     bool descriptor_binding_variable_descriptor_count = false;
     bool runtime_descriptor_array = false;
+    bool sampler_filter_minmax = false;
+    bool scalar_block_layout = false;
+    bool imageless_framebuffer = false;
+    bool uniform_buffer_standard_layout = false;
+    bool shader_subgroup_extended_types = false;
+    bool separate_depth_stencil_layouts = false;
+    bool host_query_reset = false;
+    bool timeline_semaphore = false;
+    bool buffer_device_address = false;
+    bool buffer_device_address_capture_replay = false;
+    bool buffer_device_address_multi_device = false;
+    bool vulkan_memory_model = false;
+    bool vulkan_memory_model_device_scope = false;
+    bool vulkan_memory_model_availability_visibility_chains = false;
+    bool shader_output_viewport_index = false;
+    bool shader_output_layer = false;
+    bool subgroup_broadcast_dynamic_id = false;
+    // Vulkan 1.3 Features
+    bool robust_image_access = false;
+    bool inline_uniform_block = false;
+    bool descriptor_binding_inline_uniform_block_update_after_bind = false;
+    bool pipeline_creation_cache_control = false;
+    bool private_data = false;
+    bool shader_demote_to_helper_invocation = false;
+    bool shader_terminate_invocation = false;
+    bool subgroup_size_control = false;
+    bool compute_full_subgroups = false;
+    bool synchronization_2 = false;
+    bool texture_compression_ASTC_HDR = false;
+    bool shader_zero_initialize_workgroup_memory = false;
+    bool dynamic_Rendering = false;
+    bool shader_integer_dot_product = false;
+    bool maintenance_4 = false;
+    // Vulkan 1.4 Features
+    bool global_priority_query = false;
+    bool shader_subgroup_rotate = false;
+    bool shader_subgroup_rotate_clustered = false;
+    bool shader_float_controls_2 = false;
+    bool shader_expect_assume = false;
+    bool rectangular_lines = false;
+    bool bresenham_lines = false;
+    bool smooth_lines = false;
+    bool stippled_rectangular_lines = false;
+    bool stippled_bresenham_lines = false;
+    bool stippled_smooth_lines = false;
+    bool vertex_attribute_instance_rate_divisor = false;
+    bool vertex_attribute_instance_rate_zero_divisor = false;
+    bool index_type_uint_8 = false;
+    bool dynamic_rendering_local_read = false;
+    bool maintenance_5 = false;
+    bool maintenance_6 = false;
+    bool pipeline_protected_access = false;
+    bool pipeline_robustness = false;
+    bool host_image_copy = false;
+    bool push_descriptor = false;
     // Acceleration Structure features
     bool acceleration_structure = false;
     bool acceleration_structure_capture_replay = false;
@@ -481,8 +718,7 @@ struct GPULimits
     SampleCountFlags framebuffer_color_sample_counts = SampleCountFlags::NONE;
     SampleCountFlags framebuffer_depth_sample_counts = SampleCountFlags::NONE;
     SampleCountFlags framebuffer_stencil_sample_counts = SampleCountFlags::NONE;
-    SampleCountFlags framebuffer_no_attachments_sample_counts =
-        SampleCountFlags::NONE;
+    SampleCountFlags framebuffer_no_attachments_sample_counts = SampleCountFlags::NONE;
     uint32_t max_color_attachments = 0;
     SampleCountFlags sampled_image_color_sample_counts = SampleCountFlags::NONE;
     SampleCountFlags sampled_image_integer_sample_counts = SampleCountFlags::NONE;
@@ -505,7 +741,35 @@ struct GPULimits
     uint64_t optimal_buffer_copy_offset_alignment = 0;
     uint64_t optimal_buffer_copy_row_pitch_alignment = 0;
     uint64_t non_coherent_atom_size = 0;
-    // bindless limits
+    // Vulkan 1.1 Limits
+    uint32_t subgroup_size = 0;
+    ShaderStageFlags subgroup_supported_stages = ShaderStageFlags::NONE;
+    SubgroupFeatureFlags subgroup_supported_operations = SubgroupFeatureFlags::NONE;
+    bool subgroup_quad_operations_in_all_stages = false;
+    uint32_t point_clipping_behavior = 0;
+    uint32_t max_multiview_view_count = 0;
+    uint32_t max_multiview_instance_index = 0;
+    bool protected_no_fault = false;
+    uint32_t max_per_set_descriptors = 0;
+    uint64_t max_memory_allocation_size = 0;
+    // Vulkan 1.2 Limits
+    uint32_t denorm_behavior_independence = 0;
+    uint32_t rounding_mode_independence = 0;
+    bool shader_signed_zero_inf_nan_preserve_float_16 = false;
+    bool shader_signed_zero_inf_nan_preserve_float_32 = false;
+    bool shader_signed_zero_inf_nan_preserve_float_64 = false;
+    bool shader_denorm_preserve_float_16 = false;
+    bool shader_denorm_preserve_float_32 = false;
+    bool shader_denorm_preserve_float_64 = false;
+    bool shader_denorm_flush_to_zero_float_16 = false;
+    bool shader_denorm_flush_to_zero_float_32 = false;
+    bool shader_denorm_flush_to_zero_float_64 = false;
+    bool shader_rounding_mode_RTE_float_16 = false;
+    bool shader_rounding_mode_RTE_float_32 = false;
+    bool shader_rounding_mode_RTE_float_64 = false;
+    bool shader_rounding_mode_RTZ_float_16 = false;
+    bool shader_rounding_mode_RTZ_float_32 = false;
+    bool shader_rounding_mode_RTZ_float_64 = false;
     uint32_t max_update_after_bind_descriptors_in_all_pools = 0;
     bool shader_uniform_buffer_array_non_uniform_indexing_native = false;
     bool shader_sampled_image_array_non_uniform_indexing_native = false;
@@ -529,13 +793,90 @@ struct GPULimits
     uint32_t max_descriptor_set_update_after_bind_sampled_images = 0;
     uint32_t max_descriptor_set_update_after_bind_storage_images = 0;
     uint32_t max_descriptor_set_update_after_bind_input_attachments = 0;
+    ResolveModeFlags supported_depth_resolve_modes = ResolveModeFlags::NONE;
+    ResolveModeFlags supported_stencil_resolve_modes = ResolveModeFlags::NONE;
+    bool independent_resolve_none = false;
+    bool independent_resolve = false;
+    bool filter_minmax_single_component_formats = false;
+    bool filter_minmax_image_component_mapping = false;
+    uint64_t max_timeline_semaphore_value_difference = 0;
+    SampleCountFlags framebuffer_integer_color_sample_counts = SampleCountFlags::NONE;
+    // Vulkan 1.3 Limits
+    uint32_t min_subgroup_size = 0;
+    uint32_t max_subgroup_size = 0;
+    uint32_t max_compute_workgroup_subgroups = 0;
+    ShaderStageFlags required_subgroup_size_stages = ShaderStageFlags::NONE;
+    uint32_t max_inlineUniformBlockSize = 0;
+    uint32_t max_per_stage_descriptor_inline_uniform_blocks = 0;
+    uint32_t max_per_stage_descriptor_update_after_bind_inline_uniform_blocks = 0;
+    uint32_t max_descriptor_set_inline_uniform_blocks = 0;
+    uint32_t max_descriptor_set_update_after_bind_inline_uniform_blocks = 0;
+    uint32_t max_inline_uniform_total_size = 0;
+    bool integer_dot_product_8_bit_unsigned_accelerated = false;
+    bool integer_dot_product_8_bit_signed_accelerated = false;
+    bool integer_dot_product_8_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_4x8_bit_packed_unsigned_accelerated = false;
+    bool integer_dot_product_4x8_bit_packed_signed_accelerated = false;
+    bool integer_dot_product_4x8_bit_packed_mixed_signedness_accelerated = false;
+    bool integer_dot_product_16_bit_unsigned_accelerated = false;
+    bool integer_dot_product_16_bit_signed_accelerated = false;
+    bool integer_dot_product_16_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_32_bit_unsigned_accelerated = false;
+    bool integer_dot_product_32_bit_signed_accelerated = false;
+    bool integer_dot_product_32_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_64_bit_unsigned_accelerated = false;
+    bool integer_dot_product_64_bit_signed_accelerated = false;
+    bool integer_dot_product_64_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_8_bit_unsigned_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_8_bit_signed_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_8_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_4x8_bit_packed_unsigned_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_4x8_bit_packed_signed_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_4x8_bit_packed_mixed_signedness_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_16_bit_unsigned_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_16_bit_signed_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_16_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_32_bit_unsigned_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_32_bit_signed_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_32_bit_mixed_signedness_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_64_bit_unsigned_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_64_bit_signed_accelerated = false;
+    bool integer_dot_product_accumulating_saturating_64_bit_mixed_signedness_accelerated = false;
+    uint64_t storage_texel_buffer_offset_alignment_bytes = 0;
+    bool storage_texel_buffer_offset_single_texel_alignment = false;
+    uint64_t uniform_texel_buffer_offset_alignment_bytes = 0;
+    bool uniform_texel_buffer_offset_single_texel_alignment = false;
+    uint64_t max_buffer_size = 0;
+    // Vulkan 1.4 Limits
+    uint32_t line_sub_pixel_precision_bits = 0;
+    uint32_t max_vertex_attrib_divisor = 0;
+    bool supports_non_zero_first_instance = false;
+    uint32_t max_push_descriptors = 0;
+    bool dynamic_rendering_local_read_depth_stencil_attachments = false;
+    bool dynamic_rendering_local_read_multisampled_attachments = false;
+    bool early_fragment_multisample_coverage_after_sample_counting = false;
+    bool early_fragment_sample_mask_test_before_sample_counting = false;
+    bool depth_stencil_swizzle_one_support = false;
+    bool polygon_mode_point_size = false;
+    bool non_strict_single_pixel_wide_lines_use_parallelogram = false;
+    bool non_strict_wide_lines_use_parallelogram = false;
+    bool block_texel_view_compatible_multiple_layers = false;
+    uint32_t max_combined_image_sampler_descriptor_count = 0;
+    bool fragment_shading_rate_clamp_combiner_inputs = false;
+    uint32_t default_robustness_storage_buffers = 0;
+    uint32_t default_robustness_uniform_buffers = 0;
+    uint32_t default_robustness_vertex_inputs = 0;
+    uint32_t default_robustness_images = 0;
+    std::vector<TextureLayout> copy_src_layouts = {};
+    std::vector<TextureLayout> copy_dst_layouts = {};
+    std::array<uint8_t, 16u> optimal_tiling_layout_UUID = {};
+    bool identical_memory_type_requirements = false;
     // Acceleration Structure limits
     uint64_t max_geometry_count = 0;
     uint64_t max_instance_count = 0;
     uint64_t max_primitive_count = 0;
     uint32_t max_per_stage_descriptor_acceleration_structures = 0;
-    uint32_t max_per_stage_descriptor_update_after_bind_acceleration_structures =
-        0;
+    uint32_t max_per_stage_descriptor_update_after_bind_acceleration_structures = 0;
     uint32_t max_descriptor_set_acceleration_structures = 0;
     uint32_t max_descriptor_set_update_after_bind_acceleration_structures = 0;
     uint32_t min_acceleration_structure_scratch_offset_alignment = 0;

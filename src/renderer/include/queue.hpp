@@ -62,7 +62,7 @@ public:
     }
 
     void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence);
-    bool present(const SwapchainPresentInfo &present_info);
+    bool present(const SwapchainPresentInfo &swapchain_info);
 
 private:
     uint32_t m_index = std::numeric_limits<uint32_t>::max();

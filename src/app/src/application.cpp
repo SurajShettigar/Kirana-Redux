@@ -32,11 +32,12 @@ int Application::init()
     const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
     const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}};
 
-    const renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
-
+    renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
+    gpu.features.synchronization_2 = true;
     const bool is_initialized = m_renderer.
         init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain);
 
+    m_is_cleaned = false;
     return is_initialized ? 0 : 1;
 }
 
@@ -59,8 +60,12 @@ void Application::lateUpdate()
 
 void Application::clean()
 {
-    m_renderer.clean();
-    m_window_manager.closeWindow(m_main_window);
+    if (!m_is_cleaned)
+    {
+        m_renderer.clean();
+        m_window_manager.closeWindow(m_main_window);
+        m_is_cleaned = true;
+    }
 }
 
 int Application::run()

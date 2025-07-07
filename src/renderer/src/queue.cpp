@@ -25,7 +25,7 @@ void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence)
 }
 }
 
-bool kirana::renderer::Queue::present(const SwapchainPresentInfo &present_info)
+bool kirana::renderer::Queue::present(const SwapchainPresentInfo &swapchain_info)
 {
     std::vector<vk::Semaphore> wait_semaphores;
     wait_semaphores.reserve(m_wait_semaphores.size());
@@ -34,11 +34,16 @@ bool kirana::renderer::Queue::present(const SwapchainPresentInfo &present_info)
         wait_semaphores.emplace_back(semaphore.semaphore);
     }
     bool status = true;
-    if (const auto result = m_handle.presentKHR(
-            vk::PresentInfoKHR{wait_semaphores, {present_info.handle}, {present_info.image_index}});
-        result != vk::Result::eSuccess)
+
+    // We use C-style present api function because the hpp one would throw an exception and crash when the swapchain
+    // present fails.
+    const auto present_info = vk::PresentInfoKHR
+        {wait_semaphores, {swapchain_info.handle}, {swapchain_info.image_index}};
+    if (const VkResult result = vkQueuePresentKHR(m_handle, reinterpret_cast<const VkPresentInfoKHR *>(&present_info));
+        static_cast<vk::Result>(result) != vk::Result::eSuccess)
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to present swapchain image: " + vk::to_string(result));
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to present swapchain image: " + vk::to_string(static_cast<vk::Result>(result)));
         status = false;
     }
     m_wait_semaphores.clear();

@@ -80,6 +80,11 @@ void Renderer::lateUpdate()
 
 void Renderer::clean()
 {
+    if (!m_device.isValid())
+    {
+        return;
+    }
+    m_device.waitIdle();
     if (!m_ctxs.empty())
     {
         for (auto &[encoder, swapchain_semaphore, render_semaphore] : m_ctxs)

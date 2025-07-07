@@ -283,7 +283,9 @@ bool Device::init(const DeviceInitializationData &init_data)
         auto create_info = vk::DeviceCreateInfo{
             vk::DeviceCreateFlags{0}, queue_create_infos, device_layers, device_extensions,
         };
-        create_info.pNext = getEnabledFeatures(init_data.gpu_preference.features);
+        auto enabled_features = EnabledFeatures {};
+        getEnabledFeatures(init_data.gpu_preference.features, &enabled_features);
+        create_info.pNext = &enabled_features.base;
 
         m_device = m_gpu.createDevice(create_info);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
@@ -396,4 +398,10 @@ Fence Device::createFence() const
     }
     return fence;
 }
+
+void Device::waitIdle() const
+{
+    m_device.waitIdle();
+}
+
 }

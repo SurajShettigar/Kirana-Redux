@@ -16,22 +16,22 @@ const auto LOG_CHANNEL_VULKAN = "RENDERER_VULKAN";
 constexpr uint32_t FENCE_WAIT_TIMEOUT = 1000000000; // 1 second
 constexpr uint32_t SWAPCHAIN_FETCH_TIMEOUT = 1000000000; // 1 second
 
-inline vk::Extent2D getExtent2D(const Size2D &size)
+constexpr vk::Extent2D getExtent2D(const Size2D &size)
 {
     return vk::Extent2D{size.width, size.height};
 }
 
-inline vk::Extent3D getExtent3D(const Size2D &size)
+constexpr vk::Extent3D getExtent3D(const Size2D &size)
 {
     return vk::Extent3D{size.width, size.height, 1};
 }
 
-inline vk::Extent3D getExtent3D(const Size3D &size)
+constexpr vk::Extent3D getExtent3D(const Size3D &size)
 {
     return vk::Extent3D{size.width, size.height, size.depth};
 }
 
-inline vk::Format getFormat(const TextureFormat format)
+constexpr vk::Format getFormat(const TextureFormat format)
 {
     switch (format)
     {
@@ -259,7 +259,7 @@ inline vk::Format getFormat(const TextureFormat format)
     }
 }
 
-inline vk::ImageLayout getImageLayout(const TextureLayout &layout)
+constexpr vk::ImageLayout getImageLayout(const TextureLayout layout)
 {
     switch (layout)
     {
@@ -329,7 +329,73 @@ inline vk::ImageLayout getImageLayout(const TextureLayout &layout)
     }
 }
 
-inline GPUType getGPUType(const vk::PhysicalDeviceType type)
+constexpr TextureLayout getNativeTextureLayout(const vk::ImageLayout layout)
+{
+    switch (layout)
+    {
+    case vk::ImageLayout::eGeneral:
+        return TextureLayout::GENERAL;
+    case vk::ImageLayout::eColorAttachmentOptimal:
+        return TextureLayout::COLOR_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+        return TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+        return TextureLayout::DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eShaderReadOnlyOptimal:
+        return TextureLayout::SHADER_READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eTransferSrcOptimal:
+        return TextureLayout::TRANSFER_SRC_OPTIMAL;
+    case vk::ImageLayout::eTransferDstOptimal:
+        return TextureLayout::TRANSFER_DST_OPTIMAL;
+    case vk::ImageLayout::ePreinitialized:
+        return TextureLayout::PREINITIALIZED;
+    case vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal:
+        return TextureLayout::DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal:
+        return TextureLayout::DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eDepthAttachmentOptimal:
+        return TextureLayout::DEPTH_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eDepthReadOnlyOptimal:
+        return TextureLayout::DEPTH_READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eStencilAttachmentOptimal:
+        return TextureLayout::STENCIL_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eStencilReadOnlyOptimal:
+        return TextureLayout::STENCIL_READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eReadOnlyOptimal:
+        return TextureLayout::READ_ONLY_OPTIMAL;
+    case vk::ImageLayout::eAttachmentOptimal:
+        return TextureLayout::ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eRenderingLocalRead:
+        return TextureLayout::RENDERING_LOCAL_READ;
+    case vk::ImageLayout::ePresentSrcKHR:
+        return TextureLayout::PRESENT_SRC;
+    case vk::ImageLayout::eVideoDecodeDstKHR:
+        return TextureLayout::VIDEO_DECODE_DST;
+    case vk::ImageLayout::eVideoDecodeSrcKHR:
+        return TextureLayout::VIDEO_DECODE_SRC;
+    case vk::ImageLayout::eVideoDecodeDpbKHR:
+        return TextureLayout::VIDEO_DECODE_DPB;
+    case vk::ImageLayout::eSharedPresentKHR:
+        return TextureLayout::SHARED_PRESENT;
+    case vk::ImageLayout::eFragmentDensityMapOptimalEXT:
+        return TextureLayout::FRAGMENT_DENSITY_MAP_OPTIMAL;
+    case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR:
+        return TextureLayout::FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL;
+    case vk::ImageLayout::eVideoEncodeDstKHR:
+        return TextureLayout::VIDEO_ENCODE_DST;
+    case vk::ImageLayout::eVideoEncodeSrcKHR:
+        return TextureLayout::VIDEO_ENCODE_SRC;
+    case vk::ImageLayout::eVideoEncodeDpbKHR:
+        return TextureLayout::VIDEO_ENCODE_DPB;
+    case vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT:
+        return TextureLayout::ATTACHMENT_FEEDBACK_LOOP_OPTIMAL;
+    case vk::ImageLayout::eUndefined:
+    default:
+        return TextureLayout::UNKNOWN;
+    }
+}
+
+constexpr GPUType getGPUType(const vk::PhysicalDeviceType type)
 {
     switch (type)
     {
@@ -342,13 +408,13 @@ inline GPUType getGPUType(const vk::PhysicalDeviceType type)
     }
 }
 
-inline SampleCountFlags getSampleCountFlags(const vk::SampleCountFlags flags)
+constexpr SampleCountFlags getSampleCountFlags(const vk::SampleCountFlags flags)
 {
     return static_cast<SampleCountFlags>(static_cast<uint32_t>(flags));
 }
 
-inline QueueFamilyFlags getQueueFamilyFlags(const vk::QueueFlags flags,
-                                            const bool presentation_support)
+constexpr QueueFamilyFlags getQueueFamilyFlags(const vk::QueueFlags flags,
+                                               const bool presentation_support)
 {
     auto res = QueueFamilyFlags::NONE;
     if ((flags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics)
@@ -393,21 +459,22 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_features = {};
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = {};
     accel_struct_features.pNext = &raytracing_features;
-    vk::PhysicalDeviceDescriptorIndexingFeatures bindless_features = {};
-    bindless_features.pNext = &accel_struct_features;
-    vk::PhysicalDeviceShaderAtomicInt64Features atomic64_features = {};
-    atomic64_features.pNext = &bindless_features;
-    vk::PhysicalDeviceShaderFloat16Int8Features f16_features = {};
-    f16_features.pNext = &atomic64_features;
-    vk::PhysicalDeviceSynchronization2Features sync2_features = {};
-    sync2_features.pNext = &f16_features;
+    vk::PhysicalDeviceVulkan14Features features_1_4 = {};
+    features_1_4.pNext = &accel_struct_features;
+    vk::PhysicalDeviceVulkan13Features features_1_3 = {};
+    features_1_3.pNext = &features_1_4;
+    vk::PhysicalDeviceVulkan12Features features_1_2 = {};
+    features_1_2.pNext = &features_1_3;
+    vk::PhysicalDeviceVulkan11Features features_1_1 = {};
+    features_1_1.pNext = &features_1_2;
     vk::PhysicalDeviceFeatures2 features = {};
-    features.pNext = &sync2_features;
+    features.pNext = &features_1_1;
+
     device.getFeatures2(&features);
 
     GPUFeatures gpu_features = {};
     gpu_features.robust_buffer_access = features.features.robustBufferAccess;
-    gpu_features.full_draw_index_uint32 = features.features.fullDrawIndexUint32;
+    gpu_features.full_draw_index_uint_32 = features.features.fullDrawIndexUint32;
     gpu_features.image_cube_array = features.features.imageCubeArray;
     gpu_features.independent_blend = features.features.independentBlend;
     gpu_features.geometry_shader = features.features.geometryShader;
@@ -416,8 +483,7 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     gpu_features.dual_src_blend = features.features.dualSrcBlend;
     gpu_features.logic_op = features.features.logicOp;
     gpu_features.multi_draw_indirect = features.features.multiDrawIndirect;
-    gpu_features.draw_indirect_first_instance =
-        features.features.drawIndirectFirstInstance;
+    gpu_features.draw_indirect_first_instance = features.features.drawIndirectFirstInstance;
     gpu_features.depth_clamp = features.features.depthClamp;
     gpu_features.depth_bias_clamp = features.features.depthBiasClamp;
     gpu_features.fill_mode_non_solid = features.features.fillModeNonSolid;
@@ -427,141 +493,176 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     gpu_features.alpha_to_one = features.features.alphaToOne;
     gpu_features.multi_viewport = features.features.multiViewport;
     gpu_features.sampler_anisotropy = features.features.samplerAnisotropy;
-    gpu_features.texture_compression_ETC2 =
-        features.features.textureCompressionETC2;
-    gpu_features.texture_compression_ASTCLDR =
-        features.features.textureCompressionASTC_LDR;
+    gpu_features.texture_compression_ETC2 = features.features.textureCompressionETC2;
+    gpu_features.texture_compression_ASTCLDR = features.features.textureCompressionASTC_LDR;
     gpu_features.texture_compression_BC = features.features.textureCompressionBC;
-    gpu_features.occlusion_query_precise =
-        features.features.occlusionQueryPrecise;
-    gpu_features.pipeline_statistics_query =
-        features.features.pipelineStatisticsQuery;
-    gpu_features.vertex_pipeline_stores_and_atomics =
-        features.features.vertexPipelineStoresAndAtomics;
-    gpu_features.fragment_stores_and_atomics =
-        features.features.fragmentStoresAndAtomics;
-    gpu_features.shader_tessellation_and_geometry_point_size =
-        features.features.shaderTessellationAndGeometryPointSize;
-    gpu_features.shader_image_gather_extended =
-        features.features.shaderImageGatherExtended;
-    gpu_features.shader_storage_image_extended_formats =
-        features.features.shaderStorageImageExtendedFormats;
-    gpu_features.shader_storage_image_multisample =
-        features.features.shaderStorageImageMultisample;
-    gpu_features.shader_storage_image_read_without_format =
-        features.features.shaderStorageImageReadWithoutFormat;
-    gpu_features.shader_storage_image_write_without_format =
-        features.features.shaderStorageImageWriteWithoutFormat;
-    gpu_features.shader_uniform_buffer_array_dynamic_indexing =
-        features.features.shaderUniformBufferArrayDynamicIndexing;
-    gpu_features.shader_sampled_image_array_dynamic_indexing =
-        features.features.shaderSampledImageArrayDynamicIndexing;
-    gpu_features.shader_storage_buffer_array_dynamic_indexing =
-        features.features.shaderStorageBufferArrayDynamicIndexing;
-    gpu_features.shader_storage_image_array_dynamic_indexing =
-        features.features.shaderStorageImageArrayDynamicIndexing;
+    gpu_features.occlusion_query_precise = features.features.occlusionQueryPrecise;
+    gpu_features.pipeline_statistics_query = features.features.pipelineStatisticsQuery;
+    gpu_features.vertex_pipeline_stores_and_atomics = features.features.vertexPipelineStoresAndAtomics;
+    gpu_features.fragment_stores_and_atomics = features.features.fragmentStoresAndAtomics;
+    gpu_features.shader_tessellation_and_geometry_point_size = features.features.shaderTessellationAndGeometryPointSize;
+    gpu_features.shader_image_gather_extended = features.features.shaderImageGatherExtended;
+    gpu_features.shader_storage_image_extended_formats = features.features.shaderStorageImageExtendedFormats;
+    gpu_features.shader_storage_image_multisample = features.features.shaderStorageImageMultisample;
+    gpu_features.shader_storage_image_read_without_format = features.features.shaderStorageImageReadWithoutFormat;
+    gpu_features.shader_storage_image_write_without_format = features.features.shaderStorageImageWriteWithoutFormat;
+    gpu_features.shader_uniform_buffer_array_dynamic_indexing = features.features.
+                                                                         shaderUniformBufferArrayDynamicIndexing;
+    gpu_features.shader_sampled_image_array_dynamic_indexing = features.features.shaderSampledImageArrayDynamicIndexing;
+    gpu_features.shader_storage_buffer_array_dynamic_indexing = features.features.
+                                                                         shaderStorageBufferArrayDynamicIndexing;
+    gpu_features.shader_storage_image_array_dynamic_indexing = features.features.shaderStorageImageArrayDynamicIndexing;
     gpu_features.shader_clip_distance = features.features.shaderClipDistance;
     gpu_features.shader_cull_distance = features.features.shaderCullDistance;
-    gpu_features.shader_float64 = features.features.shaderFloat64;
-    gpu_features.shader_int64 = features.features.shaderInt64;
-    gpu_features.shader_int16 = features.features.shaderInt16;
-    gpu_features.shader_resource_residency =
-        features.features.shaderResourceResidency;
+    gpu_features.shader_float_64 = features.features.shaderFloat64;
+    gpu_features.shader_int_64 = features.features.shaderInt64;
+    gpu_features.shader_int_16 = features.features.shaderInt16;
+    gpu_features.shader_resource_residency = features.features.shaderResourceResidency;
     gpu_features.shader_resource_min_lod = features.features.shaderResourceMinLod;
     gpu_features.sparse_binding = features.features.sparseBinding;
-    gpu_features.sparse_residency_buffer =
-        features.features.sparseResidencyBuffer;
-    gpu_features.sparse_residency_image2D =
-        features.features.sparseResidencyImage2D;
-    gpu_features.sparse_residency_image3D =
-        features.features.sparseResidencyImage3D;
-    gpu_features.sparse_residency2_samples =
-        features.features.sparseResidency2Samples;
-    gpu_features.sparse_residency4_samples =
-        features.features.sparseResidency4Samples;
-    gpu_features.sparse_residency8_samples =
-        features.features.sparseResidency8Samples;
-    gpu_features.sparse_residency16_samples =
-        features.features.sparseResidency16Samples;
-    gpu_features.sparse_residency_aliased =
-        features.features.sparseResidencyAliased;
-    gpu_features.variable_multisample_rate =
-        features.features.variableMultisampleRate;
+    gpu_features.sparse_residency_buffer = features.features.sparseResidencyBuffer;
+    gpu_features.sparse_residency_image_2D = features.features.sparseResidencyImage2D;
+    gpu_features.sparse_residency_image_3D = features.features.sparseResidencyImage3D;
+    gpu_features.sparse_residency_2_samples = features.features.sparseResidency2Samples;
+    gpu_features.sparse_residency_4_samples = features.features.sparseResidency4Samples;
+    gpu_features.sparse_residency_8_samples = features.features.sparseResidency8Samples;
+    gpu_features.sparse_residency_16_samples = features.features.sparseResidency16Samples;
+    gpu_features.sparse_residency_aliased = features.features.sparseResidencyAliased;
+    gpu_features.variable_multisample_rate = features.features.variableMultisampleRate;
     gpu_features.inherited_queries = features.features.inheritedQueries;
-    // Synchronization 2 features
-    gpu_features.synchronization2 = sync2_features.synchronization2;
-    // 16-bit float 8-bit int support
-    gpu_features.shader_float16 = f16_features.shaderFloat16;
-    gpu_features.shader_int8 = f16_features.shaderInt8;
-    // int 64-bit atomic features
-    gpu_features.shader_buffer_int64_atomics =
-        atomic64_features.shaderBufferInt64Atomics;
-    gpu_features.shader_shared_int64_atomics =
-        atomic64_features.shaderSharedInt64Atomics;
-    // Bindless support features
-    gpu_features.shader_input_attachment_array_dynamic_indexing =
-        bindless_features.shaderInputAttachmentArrayDynamicIndexing;
-    gpu_features.shader_uniform_texel_buffer_array_dynamic_indexing =
-        bindless_features.shaderUniformTexelBufferArrayDynamicIndexing;
-    gpu_features.shader_storage_texel_buffer_array_dynamic_indexing =
-        bindless_features.shaderStorageTexelBufferArrayDynamicIndexing;
-    gpu_features.shader_uniform_buffer_array_non_uniform_indexing =
-        bindless_features.shaderUniformBufferArrayNonUniformIndexing;
-    gpu_features.shader_sampled_image_array_non_uniform_indexing =
-        bindless_features.shaderSampledImageArrayNonUniformIndexing;
-    gpu_features.shader_storage_buffer_array_non_uniform_indexing =
-        bindless_features.shaderStorageBufferArrayNonUniformIndexing;
-    gpu_features.shader_storage_image_array_non_uniform_indexing =
-        bindless_features.shaderStorageImageArrayNonUniformIndexing;
-    gpu_features.shader_input_attachment_array_non_uniform_indexing =
-        bindless_features.shaderInputAttachmentArrayNonUniformIndexing;
-    gpu_features.shader_uniform_texel_buffer_array_non_uniform_indexing =
-        bindless_features.shaderUniformTexelBufferArrayNonUniformIndexing;
-    gpu_features.shader_storage_texel_buffer_array_non_uniform_indexing =
-        bindless_features.shaderStorageTexelBufferArrayNonUniformIndexing;
-    gpu_features.descriptor_binding_uniform_buffer_update_after_bind =
-        bindless_features.descriptorBindingUniformBufferUpdateAfterBind;
-    gpu_features.descriptor_binding_sampled_image_update_after_bind =
-        bindless_features.descriptorBindingSampledImageUpdateAfterBind;
-    gpu_features.descriptor_binding_storage_image_update_after_bind =
-        bindless_features.descriptorBindingStorageImageUpdateAfterBind;
-    gpu_features.descriptor_binding_storage_buffer_update_after_bind =
-        bindless_features.descriptorBindingStorageBufferUpdateAfterBind;
-    gpu_features.descriptor_binding_uniform_texel_buffer_update_after_bind =
-        bindless_features.descriptorBindingUniformTexelBufferUpdateAfterBind;
-    gpu_features.descriptor_binding_storage_texel_buffer_update_after_bind =
-        bindless_features.descriptorBindingStorageTexelBufferUpdateAfterBind;
-    gpu_features.descriptor_binding_update_unused_while_pending =
-        bindless_features.descriptorBindingUpdateUnusedWhilePending;
-    gpu_features.descriptor_binding_partially_bound =
-        bindless_features.descriptorBindingPartiallyBound;
-    gpu_features.descriptor_binding_variable_descriptor_count =
-        bindless_features.descriptorBindingVariableDescriptorCount;
-    gpu_features.runtime_descriptor_array =
-        bindless_features.runtimeDescriptorArray;
+    // Vulkan 1.1 features
+    gpu_features.storage_buffer_16_bit_access = features_1_1.storageBuffer16BitAccess;
+    gpu_features.uniform_and_storage_buffer_16_bit_access = features_1_1.uniformAndStorageBuffer16BitAccess;
+    gpu_features.storage_push_constant_16 = features_1_1.storagePushConstant16;
+    gpu_features.storage_input_output_16 = features_1_1.storageInputOutput16;
+    gpu_features.multiview = features_1_1.multiview;
+    gpu_features.multiview_geometry_shader = features_1_1.multiviewGeometryShader;
+    gpu_features.multiview_tessellation_shader = features_1_1.multiviewTessellationShader;
+    gpu_features.variable_pointers_storage_buffer = features_1_1.variablePointersStorageBuffer;
+    gpu_features.variable_pointers = features_1_1.variablePointers;
+    gpu_features.protected_memory = features_1_1.protectedMemory;
+    gpu_features.sampler_YCBCR_conversion = features_1_1.samplerYcbcrConversion;
+    gpu_features.shader_draw_parameters = features_1_1.shaderDrawParameters;
+    // Vulkan 1.2 features
+    gpu_features.sampler_mirror_clamp_to_edge = features_1_2.samplerMirrorClampToEdge;
+    gpu_features.draw_indirect_count = features_1_2.drawIndirectCount;
+    gpu_features.storage_buffer_8_bit_access = features_1_2.storageBuffer8BitAccess;
+    gpu_features.uniform_and_storage_buffer_8_bit_access = features_1_2.uniformAndStorageBuffer8BitAccess;
+    gpu_features.storage_push_constant_8 = features_1_2.storagePushConstant8;
+    gpu_features.shader_buffer_int_64_atomics = features_1_2.shaderBufferInt64Atomics;
+    gpu_features.shader_shared_int_64_atomics = features_1_2.shaderSharedInt64Atomics;
+    gpu_features.shader_float_16 = features_1_2.shaderFloat16;
+    gpu_features.shader_int_8 = features_1_2.shaderInt8;
+    gpu_features.descriptor_indexing = features_1_2.descriptorIndexing;
+    gpu_features.shader_input_attachment_array_dynamic_indexing = features_1_2.
+        shaderInputAttachmentArrayDynamicIndexing;
+    gpu_features.shader_uniform_texel_buffer_array_dynamic_indexing = features_1_2.
+        shaderUniformTexelBufferArrayDynamicIndexing;
+    gpu_features.shader_storage_texel_buffer_array_dynamic_indexing = features_1_2.
+        shaderStorageTexelBufferArrayDynamicIndexing;
+    gpu_features.shader_uniform_buffer_array_non_uniform_indexing = features_1_2.
+        shaderUniformBufferArrayNonUniformIndexing;
+    gpu_features.shader_sampled_image_array_non_uniform_indexing = features_1_2.
+        shaderSampledImageArrayNonUniformIndexing;
+    gpu_features.shader_storage_buffer_array_non_uniform_indexing = features_1_2.
+        shaderStorageBufferArrayNonUniformIndexing;
+    gpu_features.shader_storage_image_array_non_uniform_indexing = features_1_2.
+        shaderStorageImageArrayNonUniformIndexing;
+    gpu_features.shader_input_attachment_array_non_uniform_indexing = features_1_2.
+        shaderInputAttachmentArrayNonUniformIndexing;
+    gpu_features.shader_uniform_texel_buffer_array_non_uniform_indexing = features_1_2.
+        shaderUniformTexelBufferArrayNonUniformIndexing;
+    gpu_features.shader_storage_texel_buffer_array_non_uniform_indexing = features_1_2.
+        shaderStorageTexelBufferArrayNonUniformIndexing;
+    gpu_features.descriptor_binding_uniform_buffer_update_after_bind = features_1_2.
+        descriptorBindingUniformBufferUpdateAfterBind;
+    gpu_features.descriptor_binding_sampled_image_update_after_bind = features_1_2.
+        descriptorBindingSampledImageUpdateAfterBind;
+    gpu_features.descriptor_binding_storage_image_update_after_bind = features_1_2.
+        descriptorBindingStorageImageUpdateAfterBind;
+    gpu_features.descriptor_binding_storage_buffer_update_after_bind = features_1_2.
+        descriptorBindingStorageBufferUpdateAfterBind;
+    gpu_features.descriptor_binding_uniform_texel_buffer_update_after_bind = features_1_2.
+        descriptorBindingUniformTexelBufferUpdateAfterBind;
+    gpu_features.descriptor_binding_storage_texel_buffer_update_after_bind = features_1_2.
+        descriptorBindingStorageTexelBufferUpdateAfterBind;
+    gpu_features.descriptor_binding_update_unused_while_pending = features_1_2.
+        descriptorBindingUpdateUnusedWhilePending;
+    gpu_features.descriptor_binding_partially_bound = features_1_2.descriptorBindingPartiallyBound;
+    gpu_features.descriptor_binding_variable_descriptor_count = features_1_2.descriptorBindingVariableDescriptorCount;
+    gpu_features.runtime_descriptor_array = features_1_2.runtimeDescriptorArray;
+    gpu_features.sampler_filter_minmax = features_1_2.samplerFilterMinmax;
+    gpu_features.scalar_block_layout = features_1_2.scalarBlockLayout;
+    gpu_features.imageless_framebuffer = features_1_2.imagelessFramebuffer;
+    gpu_features.uniform_buffer_standard_layout = features_1_2.uniformBufferStandardLayout;
+    gpu_features.shader_subgroup_extended_types = features_1_2.shaderSubgroupExtendedTypes;
+    gpu_features.separate_depth_stencil_layouts = features_1_2.separateDepthStencilLayouts;
+    gpu_features.host_query_reset = features_1_2.hostQueryReset;
+    gpu_features.timeline_semaphore = features_1_2.timelineSemaphore;
+    gpu_features.buffer_device_address = features_1_2.bufferDeviceAddress;
+    gpu_features.buffer_device_address_capture_replay = features_1_2.bufferDeviceAddressCaptureReplay;
+    gpu_features.buffer_device_address_multi_device = features_1_2.bufferDeviceAddressMultiDevice;
+    gpu_features.vulkan_memory_model = features_1_2.vulkanMemoryModel;
+    gpu_features.vulkan_memory_model_device_scope = features_1_2.vulkanMemoryModelDeviceScope;
+    gpu_features.vulkan_memory_model_availability_visibility_chains = features_1_2.
+        vulkanMemoryModelAvailabilityVisibilityChains;
+    gpu_features.shader_output_viewport_index = features_1_2.shaderOutputViewportIndex;
+    gpu_features.shader_output_layer = features_1_2.shaderOutputLayer;
+    gpu_features.subgroup_broadcast_dynamic_id = features_1_2.subgroupBroadcastDynamicId;
+    // Vulkan 1.3 features
+    gpu_features.robust_image_access = features_1_3.robustImageAccess;
+    gpu_features.inline_uniform_block = features_1_3.inlineUniformBlock;
+    gpu_features.descriptor_binding_inline_uniform_block_update_after_bind = features_1_3.
+        descriptorBindingInlineUniformBlockUpdateAfterBind;
+    gpu_features.pipeline_creation_cache_control = features_1_3.pipelineCreationCacheControl;
+    gpu_features.private_data = features_1_3.privateData;
+    gpu_features.shader_demote_to_helper_invocation = features_1_3.shaderDemoteToHelperInvocation;
+    gpu_features.shader_terminate_invocation = features_1_3.shaderTerminateInvocation;
+    gpu_features.subgroup_size_control = features_1_3.subgroupSizeControl;
+    gpu_features.compute_full_subgroups = features_1_3.computeFullSubgroups;
+    gpu_features.synchronization_2 = features_1_3.synchronization2;
+    gpu_features.texture_compression_ASTC_HDR = features_1_3.textureCompressionASTC_HDR;
+    gpu_features.shader_zero_initialize_workgroup_memory = features_1_3.shaderZeroInitializeWorkgroupMemory;
+    gpu_features.dynamic_Rendering = features_1_3.dynamicRendering;
+    gpu_features.shader_integer_dot_product = features_1_3.shaderIntegerDotProduct;
+    gpu_features.maintenance_4 = features_1_3.maintenance4;
+    // Vulkan 1.4 features
+    gpu_features.global_priority_query = features_1_4.globalPriorityQuery;
+    gpu_features.shader_subgroup_rotate = features_1_4.shaderSubgroupRotate;
+    gpu_features.shader_subgroup_rotate_clustered = features_1_4.shaderSubgroupRotateClustered;
+    gpu_features.shader_float_controls_2 = features_1_4.shaderFloatControls2;
+    gpu_features.shader_expect_assume = features_1_4.shaderExpectAssume;
+    gpu_features.rectangular_lines = features_1_4.rectangularLines;
+    gpu_features.bresenham_lines = features_1_4.bresenhamLines;
+    gpu_features.smooth_lines = features_1_4.smoothLines;
+    gpu_features.stippled_rectangular_lines = features_1_4.stippledRectangularLines;
+    gpu_features.stippled_bresenham_lines = features_1_4.stippledBresenhamLines;
+    gpu_features.stippled_smooth_lines = features_1_4.stippledSmoothLines;
+    gpu_features.vertex_attribute_instance_rate_divisor = features_1_4.vertexAttributeInstanceRateDivisor;
+    gpu_features.vertex_attribute_instance_rate_zero_divisor = features_1_4.vertexAttributeInstanceRateZeroDivisor;
+    gpu_features.index_type_uint_8 = features_1_4.indexTypeUint8;
+    gpu_features.dynamic_rendering_local_read = features_1_4.dynamicRenderingLocalRead;
+    gpu_features.maintenance_5 = features_1_4.maintenance5;
+    gpu_features.maintenance_6 = features_1_4.maintenance6;
+    gpu_features.pipeline_protected_access = features_1_4.pipelineProtectedAccess;
+    gpu_features.pipeline_robustness = features_1_4.pipelineRobustness;
+    gpu_features.host_image_copy = features_1_4.hostImageCopy;
+    gpu_features.push_descriptor = features_1_4.pushDescriptor;
     // Acceleration Structure features
-    gpu_features.acceleration_structure =
-        accel_struct_features.accelerationStructure;
-    gpu_features.acceleration_structure_capture_replay =
-        accel_struct_features.accelerationStructureCaptureReplay;
-    gpu_features.acceleration_structure_indirect_build =
-        accel_struct_features.accelerationStructureIndirectBuild;
-    gpu_features.acceleration_structure_host_commands =
-        accel_struct_features.accelerationStructureHostCommands;
-    gpu_features.descriptor_binding_acceleration_structure_update_after_bind =
-        accel_struct_features
-        .descriptorBindingAccelerationStructureUpdateAfterBind;
+    gpu_features.acceleration_structure = accel_struct_features.accelerationStructure;
+    gpu_features.acceleration_structure_capture_replay = accel_struct_features.accelerationStructureCaptureReplay;
+    gpu_features.acceleration_structure_indirect_build = accel_struct_features.accelerationStructureIndirectBuild;
+    gpu_features.acceleration_structure_host_commands = accel_struct_features.accelerationStructureHostCommands;
+    gpu_features.descriptor_binding_acceleration_structure_update_after_bind = accel_struct_features.
+        descriptorBindingAccelerationStructureUpdateAfterBind;
     // Raytracing features
     gpu_features.ray_tracing_pipeline = raytracing_features.rayTracingPipeline;
-    gpu_features.ray_tracing_pipeline_shader_group_handle_capture_replay =
-        raytracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay;
-    gpu_features.ray_tracing_pipeline_shader_group_handle_capture_replay_mixed =
-        raytracing_features.rayTracingPipelineShaderGroupHandleCaptureReplayMixed;
-    gpu_features.ray_tracing_pipeline_trace_rays_indirect =
-        raytracing_features.rayTracingPipelineTraceRaysIndirect;
-    gpu_features.ray_traversal_primitive_culling =
-        raytracing_features.rayTraversalPrimitiveCulling;
-
+    gpu_features.ray_tracing_pipeline_shader_group_handle_capture_replay = raytracing_features.
+        rayTracingPipelineShaderGroupHandleCaptureReplay;
+    gpu_features.ray_tracing_pipeline_shader_group_handle_capture_replay_mixed = raytracing_features.
+        rayTracingPipelineShaderGroupHandleCaptureReplayMixed;
+    gpu_features.ray_tracing_pipeline_trace_rays_indirect = raytracing_features.rayTracingPipelineTraceRaysIndirect;
+    gpu_features.ray_traversal_primitive_culling = raytracing_features.rayTraversalPrimitiveCulling;
     return gpu_features;
 }
 
@@ -570,10 +671,17 @@ inline GPULimits getGPULimits(const vk::PhysicalDevice device)
     vk::PhysicalDeviceRayTracingPipelinePropertiesKHR raytracing_props = {};
     vk::PhysicalDeviceAccelerationStructurePropertiesKHR accel_struct_props = {};
     accel_struct_props.pNext = &raytracing_props;
-    vk::PhysicalDeviceDescriptorIndexingProperties bindless_props = {};
-    bindless_props.pNext = &accel_struct_props;
+    vk::PhysicalDeviceVulkan14Properties props_1_4 = {};
+    props_1_4.pNext = &accel_struct_props;
+    vk::PhysicalDeviceVulkan13Properties props_1_3 = {};
+    props_1_3.pNext = &props_1_4;
+    vk::PhysicalDeviceVulkan12Properties props_1_2 = {};
+    props_1_2.pNext = &props_1_3;
+    vk::PhysicalDeviceVulkan11Properties props_1_1 = {};
+    props_1_1.pNext = &props_1_2;
     vk::PhysicalDeviceProperties2 props = {};
-    props.pNext = &bindless_props;
+    props.pNext = &props_1_1;
+
     device.getProperties2(&props);
 
     GPULimits limits = {};
@@ -758,52 +866,216 @@ inline GPULimits getGPULimits(const vk::PhysicalDevice device)
     limits.optimal_buffer_copy_row_pitch_alignment =
         props.properties.limits.optimalBufferCopyRowPitchAlignment;
     limits.non_coherent_atom_size = props.properties.limits.nonCoherentAtomSize;
-    // bindless limits
-    limits.max_update_after_bind_descriptors_in_all_pools =
-        bindless_props.maxUpdateAfterBindDescriptorsInAllPools;
-    limits.shader_uniform_buffer_array_non_uniform_indexing_native =
-        bindless_props.shaderUniformBufferArrayNonUniformIndexingNative;
-    limits.shader_sampled_image_array_non_uniform_indexing_native =
-        bindless_props.shaderSampledImageArrayNonUniformIndexingNative;
-    limits.shader_storage_buffer_array_non_uniform_indexing_native =
-        bindless_props.shaderStorageBufferArrayNonUniformIndexingNative;
-    limits.shader_storage_image_array_non_uniform_indexing_native =
-        bindless_props.shaderStorageImageArrayNonUniformIndexingNative;
-    limits.shader_input_attachment_array_non_uniform_indexing_native =
-        bindless_props.shaderInputAttachmentArrayNonUniformIndexingNative;
-    limits.robust_buffer_access_update_after_bind =
-        bindless_props.robustBufferAccessUpdateAfterBind;
-    limits.quad_divergent_implicit_lod = bindless_props.quadDivergentImplicitLod;
-    limits.max_per_stage_descriptor_update_after_bind_samplers =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindSamplers;
-    limits.max_per_stage_descriptor_update_after_bind_uniform_buffers =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
-    limits.max_per_stage_descriptor_update_after_bind_storage_buffers =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
-    limits.max_per_stage_descriptor_update_after_bind_sampled_images =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindSampledImages;
-    limits.max_per_stage_descriptor_update_after_bind_storage_images =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindStorageImages;
-    limits.max_per_stage_descriptor_update_after_bind_input_attachments =
-        bindless_props.maxPerStageDescriptorUpdateAfterBindInputAttachments;
-    limits.max_per_stage_update_after_bind_resources =
-        bindless_props.maxPerStageUpdateAfterBindResources;
-    limits.max_descriptor_set_update_after_bind_samplers =
-        bindless_props.maxDescriptorSetUpdateAfterBindSamplers;
-    limits.max_descriptor_set_update_after_bind_uniform_buffers =
-        bindless_props.maxDescriptorSetUpdateAfterBindUniformBuffers;
-    limits.max_descriptor_set_update_after_bind_uniform_buffers_dynamic =
-        bindless_props.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic;
-    limits.max_descriptor_set_update_after_bind_storage_buffers =
-        bindless_props.maxDescriptorSetUpdateAfterBindStorageBuffers;
-    limits.max_descriptor_set_update_after_bind_storage_buffers_dynamic =
-        bindless_props.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic;
-    limits.max_descriptor_set_update_after_bind_sampled_images =
-        bindless_props.maxDescriptorSetUpdateAfterBindSampledImages;
-    limits.max_descriptor_set_update_after_bind_storage_images =
-        bindless_props.maxDescriptorSetUpdateAfterBindStorageImages;
-    limits.max_descriptor_set_update_after_bind_input_attachments =
-        bindless_props.maxDescriptorSetUpdateAfterBindInputAttachments;
+    // Vulkan 1.1 limits
+    limits.subgroup_size = props_1_1.subgroupSize;
+    limits.subgroup_supported_stages = static_cast<ShaderStageFlags>(static_cast<uint32_t>(props_1_1.
+        subgroupSupportedStages));
+    limits.subgroup_supported_operations = static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(props_1_1.
+        subgroupSupportedOperations));
+    limits.subgroup_quad_operations_in_all_stages = props_1_1.subgroupQuadOperationsInAllStages;
+    limits.point_clipping_behavior = static_cast<uint32_t>(props_1_1.pointClippingBehavior);
+    limits.max_multiview_view_count = props_1_1.maxMultiviewViewCount;
+    limits.max_multiview_instance_index = props_1_1.maxMultiviewInstanceIndex;
+    limits.protected_no_fault = props_1_1.protectedNoFault;
+    limits.max_per_set_descriptors = props_1_1.maxPerSetDescriptors;
+    limits.max_memory_allocation_size = props_1_1.maxMemoryAllocationSize;
+    // Vulkan 1.2 Limits
+    limits.denorm_behavior_independence = static_cast<uint32_t>(props_1_2.denormBehaviorIndependence);
+    limits.rounding_mode_independence = static_cast<uint32_t>(props_1_2.roundingModeIndependence);
+    limits.shader_signed_zero_inf_nan_preserve_float_16 = props_1_2.shaderSignedZeroInfNanPreserveFloat16;
+    limits.shader_signed_zero_inf_nan_preserve_float_32 = props_1_2.shaderSignedZeroInfNanPreserveFloat32;
+    limits.shader_signed_zero_inf_nan_preserve_float_64 = props_1_2.shaderSignedZeroInfNanPreserveFloat64;
+    limits.shader_denorm_preserve_float_16 = props_1_2.shaderDenormPreserveFloat16;
+    limits.shader_denorm_preserve_float_32 = props_1_2.shaderDenormPreserveFloat32;
+    limits.shader_denorm_preserve_float_64 = props_1_2.shaderDenormPreserveFloat64;
+    limits.shader_denorm_flush_to_zero_float_16 = props_1_2.shaderDenormFlushToZeroFloat16;
+    limits.shader_denorm_flush_to_zero_float_32 = props_1_2.shaderDenormFlushToZeroFloat32;
+    limits.shader_denorm_flush_to_zero_float_64 = props_1_2.shaderDenormFlushToZeroFloat64;
+    limits.shader_rounding_mode_RTE_float_16 = props_1_2.shaderRoundingModeRTEFloat16;
+    limits.shader_rounding_mode_RTE_float_32 = props_1_2.shaderRoundingModeRTEFloat32;
+    limits.shader_rounding_mode_RTE_float_64 = props_1_2.shaderRoundingModeRTEFloat64;
+    limits.shader_rounding_mode_RTZ_float_16 = props_1_2.shaderRoundingModeRTZFloat16;
+    limits.shader_rounding_mode_RTZ_float_32 = props_1_2.shaderRoundingModeRTZFloat32;
+    limits.shader_rounding_mode_RTZ_float_64 = props_1_2.shaderRoundingModeRTZFloat64;
+    limits.max_update_after_bind_descriptors_in_all_pools = props_1_2.maxUpdateAfterBindDescriptorsInAllPools;
+    limits.shader_uniform_buffer_array_non_uniform_indexing_native = props_1_2.
+        shaderUniformBufferArrayNonUniformIndexingNative;
+    limits.shader_sampled_image_array_non_uniform_indexing_native = props_1_2.
+        shaderSampledImageArrayNonUniformIndexingNative;
+    limits.shader_storage_buffer_array_non_uniform_indexing_native = props_1_2.
+        shaderStorageBufferArrayNonUniformIndexingNative;
+    limits.shader_storage_image_array_non_uniform_indexing_native = props_1_2.
+        shaderStorageImageArrayNonUniformIndexingNative;
+    limits.shader_input_attachment_array_non_uniform_indexing_native = props_1_2.
+        shaderInputAttachmentArrayNonUniformIndexingNative;
+    limits.robust_buffer_access_update_after_bind = props_1_2.robustBufferAccessUpdateAfterBind;
+    limits.quad_divergent_implicit_lod = props_1_2.quadDivergentImplicitLod;
+    limits.max_update_after_bind_descriptors_in_all_pools = props_1_2.maxUpdateAfterBindDescriptorsInAllPools;
+    limits.shader_uniform_buffer_array_non_uniform_indexing_native = props_1_2.
+        shaderUniformBufferArrayNonUniformIndexingNative;
+    limits.shader_sampled_image_array_non_uniform_indexing_native = props_1_2.
+        shaderSampledImageArrayNonUniformIndexingNative;
+    limits.shader_storage_buffer_array_non_uniform_indexing_native = props_1_2.
+        shaderStorageBufferArrayNonUniformIndexingNative;
+    limits.shader_storage_image_array_non_uniform_indexing_native = props_1_2.
+        shaderStorageImageArrayNonUniformIndexingNative;
+    limits.shader_input_attachment_array_non_uniform_indexing_native = props_1_2.
+        shaderInputAttachmentArrayNonUniformIndexingNative;
+    limits.robust_buffer_access_update_after_bind = props_1_2.robustBufferAccessUpdateAfterBind;
+    limits.quad_divergent_implicit_lod = props_1_2.quadDivergentImplicitLod;
+    limits.max_per_stage_descriptor_update_after_bind_samplers = props_1_2.maxPerStageDescriptorUpdateAfterBindSamplers;
+    limits.max_per_stage_descriptor_update_after_bind_uniform_buffers = props_1_2.
+        maxPerStageDescriptorUpdateAfterBindUniformBuffers;
+    limits.max_per_stage_descriptor_update_after_bind_storage_buffers = props_1_2.
+        maxPerStageDescriptorUpdateAfterBindStorageBuffers;
+    limits.max_per_stage_descriptor_update_after_bind_sampled_images = props_1_2.
+        maxPerStageDescriptorUpdateAfterBindSampledImages;
+    limits.max_per_stage_descriptor_update_after_bind_storage_images = props_1_2.
+        maxPerStageDescriptorUpdateAfterBindStorageImages;
+    limits.max_per_stage_descriptor_update_after_bind_input_attachments = props_1_2.
+        maxPerStageDescriptorUpdateAfterBindInputAttachments;
+    limits.max_per_stage_update_after_bind_resources = props_1_2.maxPerStageUpdateAfterBindResources;
+    limits.max_descriptor_set_update_after_bind_samplers = props_1_2.maxDescriptorSetUpdateAfterBindSamplers;
+    limits.max_descriptor_set_update_after_bind_uniform_buffers = props_1_2.
+        maxDescriptorSetUpdateAfterBindUniformBuffers;
+    limits.max_descriptor_set_update_after_bind_uniform_buffers_dynamic = props_1_2.
+        maxDescriptorSetUpdateAfterBindUniformBuffersDynamic;
+    limits.max_descriptor_set_update_after_bind_storage_buffers = props_1_2.
+        maxDescriptorSetUpdateAfterBindStorageBuffers;
+    limits.max_descriptor_set_update_after_bind_storage_buffers_dynamic = props_1_2.
+        maxDescriptorSetUpdateAfterBindStorageBuffersDynamic;
+    limits.max_descriptor_set_update_after_bind_sampled_images = props_1_2.maxDescriptorSetUpdateAfterBindSampledImages;
+    limits.max_descriptor_set_update_after_bind_storage_images = props_1_2.maxDescriptorSetUpdateAfterBindStorageImages;
+    limits.max_descriptor_set_update_after_bind_input_attachments = props_1_2.
+        maxDescriptorSetUpdateAfterBindInputAttachments;
+    limits.supported_depth_resolve_modes = static_cast<ResolveModeFlags>(static_cast<uint32_t>(props_1_2.
+        supportedDepthResolveModes));
+    limits.supported_stencil_resolve_modes = static_cast<ResolveModeFlags>(static_cast<uint32_t>(props_1_2.
+        supportedStencilResolveModes));
+    limits.independent_resolve_none = props_1_2.independentResolveNone;
+    limits.independent_resolve = props_1_2.independentResolve;
+    limits.filter_minmax_single_component_formats = props_1_2.filterMinmaxSingleComponentFormats;
+    limits.filter_minmax_image_component_mapping = props_1_2.filterMinmaxImageComponentMapping;
+    limits.max_timeline_semaphore_value_difference = props_1_2.maxTimelineSemaphoreValueDifference;
+    limits.framebuffer_integer_color_sample_counts = static_cast<SampleCountFlags>(static_cast<uint32_t>(props_1_2.
+        framebufferIntegerColorSampleCounts));
+    // Vulkan 1.3 Limits
+    limits.min_subgroup_size = props_1_3.minSubgroupSize;
+    limits.max_subgroup_size = props_1_3.maxSubgroupSize;
+    limits.max_compute_workgroup_subgroups = props_1_3.maxComputeWorkgroupSubgroups;
+    limits.required_subgroup_size_stages = static_cast<ShaderStageFlags>(static_cast<uint32_t>(props_1_3.
+        requiredSubgroupSizeStages));
+    limits.max_inlineUniformBlockSize = props_1_3.maxInlineUniformBlockSize;
+    limits.max_per_stage_descriptor_inline_uniform_blocks = props_1_3.maxPerStageDescriptorInlineUniformBlocks;
+    limits.max_per_stage_descriptor_update_after_bind_inline_uniform_blocks = props_1_3.
+        maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks;
+    limits.max_descriptor_set_inline_uniform_blocks = props_1_3.maxDescriptorSetInlineUniformBlocks;
+    limits.max_descriptor_set_update_after_bind_inline_uniform_blocks = props_1_3.
+        maxDescriptorSetUpdateAfterBindInlineUniformBlocks;
+    limits.max_inline_uniform_total_size = props_1_3.maxInlineUniformTotalSize;
+    limits.integer_dot_product_8_bit_unsigned_accelerated = props_1_3.integerDotProduct8BitUnsignedAccelerated;
+    limits.integer_dot_product_8_bit_signed_accelerated = props_1_3.integerDotProduct8BitSignedAccelerated;
+    limits.integer_dot_product_8_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProduct8BitMixedSignednessAccelerated;
+    limits.integer_dot_product_4x8_bit_packed_unsigned_accelerated = props_1_3.
+        integerDotProduct4x8BitPackedUnsignedAccelerated;
+    limits.integer_dot_product_4x8_bit_packed_signed_accelerated = props_1_3.
+        integerDotProduct4x8BitPackedSignedAccelerated;
+    limits.integer_dot_product_4x8_bit_packed_mixed_signedness_accelerated = props_1_3.
+        integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    limits.integer_dot_product_16_bit_unsigned_accelerated = props_1_3.integerDotProduct16BitUnsignedAccelerated;
+    limits.integer_dot_product_16_bit_signed_accelerated = props_1_3.integerDotProduct16BitSignedAccelerated;
+    limits.integer_dot_product_16_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProduct16BitMixedSignednessAccelerated;
+    limits.integer_dot_product_32_bit_unsigned_accelerated = props_1_3.integerDotProduct32BitUnsignedAccelerated;
+    limits.integer_dot_product_32_bit_signed_accelerated = props_1_3.integerDotProduct32BitSignedAccelerated;
+    limits.integer_dot_product_32_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProduct32BitMixedSignednessAccelerated;
+    limits.integer_dot_product_64_bit_unsigned_accelerated = props_1_3.integerDotProduct64BitUnsignedAccelerated;
+    limits.integer_dot_product_64_bit_signed_accelerated = props_1_3.integerDotProduct64BitSignedAccelerated;
+    limits.integer_dot_product_64_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProduct64BitMixedSignednessAccelerated;
+    limits.integer_dot_product_accumulating_saturating_8_bit_unsigned_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_8_bit_signed_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_8_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    limits.integer_dot_product_accumulating_saturating_4x8_bit_packed_unsigned_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_4x8_bit_packed_signed_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_4x8_bit_packed_mixed_signedness_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    limits.integer_dot_product_accumulating_saturating_16_bit_unsigned_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_16_bit_signed_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_16_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    limits.integer_dot_product_accumulating_saturating_32_bit_unsigned_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_32_bit_signed_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_32_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    limits.integer_dot_product_accumulating_saturating_64_bit_unsigned_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_64_bit_signed_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    limits.integer_dot_product_accumulating_saturating_64_bit_mixed_signedness_accelerated = props_1_3.
+        integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    limits.storage_texel_buffer_offset_alignment_bytes = props_1_3.storageTexelBufferOffsetAlignmentBytes;
+    limits.storage_texel_buffer_offset_single_texel_alignment = props_1_3.storageTexelBufferOffsetSingleTexelAlignment;
+    limits.uniform_texel_buffer_offset_alignment_bytes = props_1_3.uniformTexelBufferOffsetAlignmentBytes;
+    limits.uniform_texel_buffer_offset_single_texel_alignment = props_1_3.uniformTexelBufferOffsetSingleTexelAlignment;
+    limits.max_buffer_size = props_1_3.maxBufferSize;
+    // Vulkan 1.4 Limits
+    limits.line_sub_pixel_precision_bits = props_1_4.lineSubPixelPrecisionBits;
+    limits.max_vertex_attrib_divisor = props_1_4.maxVertexAttribDivisor;
+    limits.supports_non_zero_first_instance = props_1_4.supportsNonZeroFirstInstance;
+    limits.max_push_descriptors = props_1_4.maxPushDescriptors;
+    limits.dynamic_rendering_local_read_depth_stencil_attachments = props_1_4.
+        dynamicRenderingLocalReadDepthStencilAttachments;
+    limits.dynamic_rendering_local_read_multisampled_attachments = props_1_4.
+        dynamicRenderingLocalReadMultisampledAttachments;
+    limits.early_fragment_multisample_coverage_after_sample_counting = props_1_4.
+        earlyFragmentMultisampleCoverageAfterSampleCounting;
+    limits.early_fragment_sample_mask_test_before_sample_counting = props_1_4.
+        earlyFragmentSampleMaskTestBeforeSampleCounting;
+    limits.depth_stencil_swizzle_one_support = props_1_4.depthStencilSwizzleOneSupport;
+    limits.polygon_mode_point_size = props_1_4.polygonModePointSize;
+    limits.non_strict_single_pixel_wide_lines_use_parallelogram = props_1_4.
+        nonStrictSinglePixelWideLinesUseParallelogram;
+    limits.non_strict_wide_lines_use_parallelogram = props_1_4.nonStrictWideLinesUseParallelogram;
+    limits.block_texel_view_compatible_multiple_layers = props_1_4.blockTexelViewCompatibleMultipleLayers;
+    limits.max_combined_image_sampler_descriptor_count = props_1_4.maxCombinedImageSamplerDescriptorCount;
+    limits.fragment_shading_rate_clamp_combiner_inputs = props_1_4.fragmentShadingRateClampCombinerInputs;
+    limits.default_robustness_storage_buffers = static_cast<uint32_t>(props_1_4.defaultRobustnessStorageBuffers);
+    limits.default_robustness_uniform_buffers = static_cast<uint32_t>(props_1_4.defaultRobustnessUniformBuffers);
+    limits.default_robustness_vertex_inputs = static_cast<uint32_t>(props_1_4.defaultRobustnessVertexInputs);
+    limits.default_robustness_images = static_cast<uint32_t>(props_1_4.defaultRobustnessImages);
+
+    std::vector<vk::ImageLayout> src_layouts(props_1_4.copySrcLayoutCount);
+    std::vector<vk::ImageLayout> dst_layouts(props_1_4.copyDstLayoutCount);
+    props_1_4.pCopySrcLayouts = src_layouts.data();
+    props_1_4.pCopyDstLayouts = dst_layouts.data();
+    device.getProperties2(&props);
+
+    const auto convert_layout = [](const std::vector<vk::ImageLayout> &src, std::vector<TextureLayout> &dst) {
+        for (size_t i = 0; i < src.size(); ++i)
+        {
+            dst[i] = getNativeTextureLayout(src[i]);
+        }
+    };
+    limits.copy_src_layouts.resize(props_1_4.copySrcLayoutCount);
+    convert_layout(src_layouts, limits.copy_src_layouts);
+    limits.copy_dst_layouts.resize(props_1_4.copyDstLayoutCount);
+    convert_layout(dst_layouts, limits.copy_dst_layouts);
+
+    limits.optimal_tiling_layout_UUID = props_1_4.optimalTilingLayoutUUID;
+    limits.identical_memory_type_requirements = props_1_4.identicalMemoryTypeRequirements;
+
     // Acceleration Structure limits
     limits.max_geometry_count = accel_struct_props.maxGeometryCount;
     limits.max_instance_count = accel_struct_props.maxInstanceCount;
@@ -847,238 +1119,347 @@ inline uint32_t getGPUFeatureScore(const GPUFeatures &f, const GPUFeatures &p)
 {
     uint32_t score = 0;
     // Base Features
-    if (p.robust_buffer_access && f.robust_buffer_access >= p.robust_buffer_access)
+    if (p.robust_buffer_access && f.robust_buffer_access == p.robust_buffer_access)
         score += 1;
-    if (p.full_draw_index_uint32 && f.full_draw_index_uint32 >= p.full_draw_index_uint32)
+    if (p.full_draw_index_uint_32 && f.full_draw_index_uint_32 == p.full_draw_index_uint_32)
         score += 1;
-    if (p.image_cube_array && f.image_cube_array >= p.image_cube_array)
+    if (p.image_cube_array && f.image_cube_array == p.image_cube_array)
         score += 1;
-    if (p.independent_blend && f.independent_blend >= p.independent_blend)
+    if (p.independent_blend && f.independent_blend == p.independent_blend)
         score += 1;
-    if (p.geometry_shader && f.geometry_shader >= p.geometry_shader)
+    if (p.geometry_shader && f.geometry_shader == p.geometry_shader)
         score += 1;
-    if (p.tessellation_shader && f.tessellation_shader >= p.tessellation_shader)
+    if (p.tessellation_shader && f.tessellation_shader == p.tessellation_shader)
         score += 1;
-    if (p.sample_rate_shading && f.sample_rate_shading >= p.sample_rate_shading)
+    if (p.sample_rate_shading && f.sample_rate_shading == p.sample_rate_shading)
         score += 1;
-    if (p.dual_src_blend && f.dual_src_blend >= p.dual_src_blend)
+    if (p.dual_src_blend && f.dual_src_blend == p.dual_src_blend)
         score += 1;
-    if (p.logic_op && f.logic_op >= p.logic_op)
+    if (p.logic_op && f.logic_op == p.logic_op)
         score += 1;
-    if (p.multi_draw_indirect && f.multi_draw_indirect >= p.multi_draw_indirect)
+    if (p.multi_draw_indirect && f.multi_draw_indirect == p.multi_draw_indirect)
         score += 1;
-    if (p.draw_indirect_first_instance && f.draw_indirect_first_instance >= p.draw_indirect_first_instance)
-        score +=
-            1;
-    if (p.depth_clamp && f.depth_clamp >= p.depth_clamp)
+    if (p.draw_indirect_first_instance && f.draw_indirect_first_instance == p.draw_indirect_first_instance)
         score += 1;
-    if (p.depth_bias_clamp && f.depth_bias_clamp >= p.depth_bias_clamp)
+    if (p.depth_clamp && f.depth_clamp == p.depth_clamp)
         score += 1;
-    if (p.fill_mode_non_solid && f.fill_mode_non_solid >= p.fill_mode_non_solid)
+    if (p.depth_bias_clamp && f.depth_bias_clamp == p.depth_bias_clamp)
         score += 1;
-    if (p.depth_bounds && f.depth_bounds >= p.depth_bounds)
+    if (p.fill_mode_non_solid && f.fill_mode_non_solid == p.fill_mode_non_solid)
         score += 1;
-    if (p.wide_lines && f.wide_lines >= p.wide_lines)
+    if (p.depth_bounds && f.depth_bounds == p.depth_bounds)
         score += 1;
-    if (p.large_points && f.large_points >= p.large_points)
+    if (p.wide_lines && f.wide_lines == p.wide_lines)
         score += 1;
-    if (p.alpha_to_one && f.alpha_to_one >= p.alpha_to_one)
+    if (p.large_points && f.large_points == p.large_points)
         score += 1;
-    if (p.multi_viewport && f.multi_viewport >= p.multi_viewport)
+    if (p.alpha_to_one && f.alpha_to_one == p.alpha_to_one)
         score += 1;
-    if (p.sampler_anisotropy && f.sampler_anisotropy >= p.sampler_anisotropy)
+    if (p.multi_viewport && f.multi_viewport == p.multi_viewport)
         score += 1;
-    if (p.texture_compression_ETC2 && f.texture_compression_ETC2 >= p.texture_compression_ETC2)
+    if (p.sampler_anisotropy && f.sampler_anisotropy == p.sampler_anisotropy)
         score += 1;
-    if (p.texture_compression_ASTCLDR && f.texture_compression_ASTCLDR >= p.texture_compression_ASTCLDR)
+    if (p.texture_compression_ETC2 && f.texture_compression_ETC2 == p.texture_compression_ETC2)
         score += 1;
-    if (p.texture_compression_BC && f.texture_compression_BC >= p.texture_compression_BC)
+    if (p.texture_compression_ASTCLDR && f.texture_compression_ASTCLDR == p.texture_compression_ASTCLDR)
         score += 1;
-    if (p.occlusion_query_precise && f.occlusion_query_precise >= p.occlusion_query_precise)
+    if (p.texture_compression_BC && f.texture_compression_BC == p.texture_compression_BC)
         score += 1;
-    if (p.pipeline_statistics_query && f.pipeline_statistics_query >= p.pipeline_statistics_query)
+    if (p.occlusion_query_precise && f.occlusion_query_precise == p.occlusion_query_precise)
         score += 1;
-    if (p.vertex_pipeline_stores_and_atomics && f.vertex_pipeline_stores_and_atomics >= p.
+    if (p.pipeline_statistics_query && f.pipeline_statistics_query == p.pipeline_statistics_query)
+        score += 1;
+    if (p.vertex_pipeline_stores_and_atomics && f.vertex_pipeline_stores_and_atomics == p.
         vertex_pipeline_stores_and_atomics)
         score += 1;
-    if (p.fragment_stores_and_atomics && f.fragment_stores_and_atomics >= p.fragment_stores_and_atomics)
+    if (p.fragment_stores_and_atomics && f.fragment_stores_and_atomics == p.fragment_stores_and_atomics)
         score += 1;
-    if (p.shader_tessellation_and_geometry_point_size && f.shader_tessellation_and_geometry_point_size >= p.
+    if (p.shader_tessellation_and_geometry_point_size && f.shader_tessellation_and_geometry_point_size == p.
         shader_tessellation_and_geometry_point_size)
         score += 1;
-    if (p.shader_image_gather_extended && f.shader_image_gather_extended >= p.shader_image_gather_extended)
-        score +=
-            1;
-    if (p.shader_storage_image_extended_formats && f.shader_storage_image_extended_formats >= p.
+    if (p.shader_image_gather_extended && f.shader_image_gather_extended == p.shader_image_gather_extended)
+        score += 1;
+    if (p.shader_storage_image_extended_formats && f.shader_storage_image_extended_formats == p.
         shader_storage_image_extended_formats)
         score += 1;
-    if (p.shader_storage_image_multisample && f.shader_storage_image_multisample >= p.
-        shader_storage_image_multisample)
+    if (p.shader_storage_image_multisample && f.shader_storage_image_multisample == p.shader_storage_image_multisample)
         score += 1;
-    if (p.shader_storage_image_read_without_format && f.shader_storage_image_read_without_format >= p.
+    if (p.shader_storage_image_read_without_format && f.shader_storage_image_read_without_format == p.
         shader_storage_image_read_without_format)
         score += 1;
-    if (p.shader_storage_image_write_without_format && f.shader_storage_image_write_without_format >= p.
+    if (p.shader_storage_image_write_without_format && f.shader_storage_image_write_without_format == p.
         shader_storage_image_write_without_format)
         score += 1;
-    if (p.shader_uniform_buffer_array_dynamic_indexing && f.shader_uniform_buffer_array_dynamic_indexing >= p.
+    if (p.shader_uniform_buffer_array_dynamic_indexing && f.shader_uniform_buffer_array_dynamic_indexing == p.
         shader_uniform_buffer_array_dynamic_indexing)
         score += 1;
-    if (p.shader_sampled_image_array_dynamic_indexing && f.shader_sampled_image_array_dynamic_indexing >= p.
+    if (p.shader_sampled_image_array_dynamic_indexing && f.shader_sampled_image_array_dynamic_indexing == p.
         shader_sampled_image_array_dynamic_indexing)
         score += 1;
-    if (p.shader_storage_buffer_array_dynamic_indexing && f.shader_storage_buffer_array_dynamic_indexing >= p.
+    if (p.shader_storage_buffer_array_dynamic_indexing && f.shader_storage_buffer_array_dynamic_indexing == p.
         shader_storage_buffer_array_dynamic_indexing)
         score += 1;
-    if (p.shader_storage_image_array_dynamic_indexing && f.shader_storage_image_array_dynamic_indexing >= p.
+    if (p.shader_storage_image_array_dynamic_indexing && f.shader_storage_image_array_dynamic_indexing == p.
         shader_storage_image_array_dynamic_indexing)
         score += 1;
-    if (p.shader_clip_distance && f.shader_clip_distance >= p.shader_clip_distance)
+    if (p.shader_clip_distance && f.shader_clip_distance == p.shader_clip_distance)
         score += 1;
-    if (p.shader_cull_distance && f.shader_cull_distance >= p.shader_cull_distance)
+    if (p.shader_cull_distance && f.shader_cull_distance == p.shader_cull_distance)
         score += 1;
-    if (p.shader_float64 && f.shader_float64 >= p.shader_float64)
+    if (p.shader_float_64 && f.shader_float_64 == p.shader_float_64)
         score += 1;
-    if (p.shader_int64 && f.shader_int64 >= p.shader_int64)
+    if (p.shader_int_64 && f.shader_int_64 == p.shader_int_64)
         score += 1;
-    if (p.shader_int16 && f.shader_int16 >= p.shader_int16)
+    if (p.shader_int_16 && f.shader_int_16 == p.shader_int_16)
         score += 1;
-    if (p.shader_resource_residency && f.shader_resource_residency >= p.shader_resource_residency)
+    if (p.shader_resource_residency && f.shader_resource_residency == p.shader_resource_residency)
         score += 1;
-    if (p.shader_resource_min_lod && f.shader_resource_min_lod >= p.shader_resource_min_lod)
+    if (p.shader_resource_min_lod && f.shader_resource_min_lod == p.shader_resource_min_lod)
         score += 1;
-    if (p.sparse_binding && f.sparse_binding >= p.sparse_binding)
+    if (p.sparse_binding && f.sparse_binding == p.sparse_binding)
         score += 1;
-    if (p.sparse_residency_buffer && f.sparse_residency_buffer >= p.sparse_residency_buffer)
+    if (p.sparse_residency_buffer && f.sparse_residency_buffer == p.sparse_residency_buffer)
         score += 1;
-    if (p.sparse_residency_image2D && f.sparse_residency_image2D >= p.sparse_residency_image2D)
+    if (p.sparse_residency_image_2D && f.sparse_residency_image_2D == p.sparse_residency_image_2D)
         score += 1;
-    if (p.sparse_residency_image3D && f.sparse_residency_image3D >= p.sparse_residency_image3D)
+    if (p.sparse_residency_image_3D && f.sparse_residency_image_3D == p.sparse_residency_image_3D)
         score += 1;
-    if (p.sparse_residency2_samples && f.sparse_residency2_samples >= p.sparse_residency2_samples)
+    if (p.sparse_residency_2_samples && f.sparse_residency_2_samples == p.sparse_residency_2_samples)
         score += 1;
-    if (p.sparse_residency4_samples && f.sparse_residency4_samples >= p.sparse_residency4_samples)
+    if (p.sparse_residency_4_samples && f.sparse_residency_4_samples == p.sparse_residency_4_samples)
         score += 1;
-    if (p.sparse_residency8_samples && f.sparse_residency8_samples >= p.sparse_residency8_samples)
+    if (p.sparse_residency_8_samples && f.sparse_residency_8_samples == p.sparse_residency_8_samples)
         score += 1;
-    if (p.sparse_residency16_samples && f.sparse_residency16_samples >= p.sparse_residency16_samples)
+    if (p.sparse_residency_16_samples && f.sparse_residency_16_samples == p.sparse_residency_16_samples)
         score += 1;
-    if (p.sparse_residency_aliased && f.sparse_residency_aliased >= p.sparse_residency_aliased)
+    if (p.sparse_residency_aliased && f.sparse_residency_aliased == p.sparse_residency_aliased)
         score += 1;
-    if (p.variable_multisample_rate && f.variable_multisample_rate >= p.variable_multisample_rate)
+    if (p.variable_multisample_rate && f.variable_multisample_rate == p.variable_multisample_rate)
         score += 1;
-    if (p.inherited_queries && f.inherited_queries >= p.inherited_queries)
+    if (p.inherited_queries && f.inherited_queries == p.inherited_queries)
         score += 1;
-    // Synchronization 2 features
-    if (p.synchronization2 && f.synchronization2 >= p.synchronization2)
+    // Vulkan 1.1 Features
+    if (p.storage_buffer_16_bit_access && f.storage_buffer_16_bit_access == p.storage_buffer_16_bit_access)
         score += 1;
-    // 16-bit float 8-bit int features
-    if (p.shader_float16 && f.shader_float16 >= p.shader_float16)
+    if (p.uniform_and_storage_buffer_16_bit_access && f.uniform_and_storage_buffer_16_bit_access == p.
+        uniform_and_storage_buffer_16_bit_access)
         score += 1;
-    if (p.shader_int8 && f.shader_int8 >= p.shader_int8)
+    if (p.storage_push_constant_16 && f.storage_push_constant_16 == p.storage_push_constant_16)
         score += 1;
-    // int 64-bit atomic features
-    if (p.shader_buffer_int64_atomics && f.shader_buffer_int64_atomics >= p.shader_buffer_int64_atomics)
+    if (p.storage_input_output_16 && f.storage_input_output_16 == p.storage_input_output_16)
         score += 1;
-    if (p.shader_shared_int64_atomics && f.shader_shared_int64_atomics >= p.shader_shared_int64_atomics)
+    if (p.multiview && f.multiview == p.multiview)
         score += 1;
-    // Bindless support features
-    if (p.shader_input_attachment_array_dynamic_indexing && f.shader_input_attachment_array_dynamic_indexing >= p.
+    if (p.multiview_geometry_shader && f.multiview_geometry_shader == p.multiview_geometry_shader)
+        score += 1;
+    if (p.multiview_tessellation_shader && f.multiview_tessellation_shader == p.multiview_tessellation_shader)
+        score += 1;
+    if (p.variable_pointers_storage_buffer && f.variable_pointers_storage_buffer == p.variable_pointers_storage_buffer)
+        score += 1;
+    if (p.variable_pointers && f.variable_pointers == p.variable_pointers)
+        score += 1;
+    if (p.protected_memory && f.protected_memory == p.protected_memory)
+        score += 1;
+    if (p.sampler_YCBCR_conversion && f.sampler_YCBCR_conversion == p.sampler_YCBCR_conversion)
+        score += 1;
+    if (p.shader_draw_parameters && f.shader_draw_parameters == p.shader_draw_parameters)
+        score += 1;
+    // Vulkan 1.2 Features
+    if (p.sampler_mirror_clamp_to_edge && f.sampler_mirror_clamp_to_edge == p.sampler_mirror_clamp_to_edge)
+        score += 1;
+    if (p.draw_indirect_count && f.draw_indirect_count == p.draw_indirect_count)
+        score += 1;
+    if (p.storage_buffer_8_bit_access && f.storage_buffer_8_bit_access == p.storage_buffer_8_bit_access)
+        score += 1;
+    if (p.uniform_and_storage_buffer_8_bit_access && f.uniform_and_storage_buffer_8_bit_access == p.
+        uniform_and_storage_buffer_8_bit_access)
+        score += 1;
+    if (p.storage_push_constant_8 && f.storage_push_constant_8 == p.storage_push_constant_8)
+        score += 1;
+    if (p.shader_buffer_int_64_atomics && f.shader_buffer_int_64_atomics == p.shader_buffer_int_64_atomics)
+        score += 1;
+    if (p.shader_shared_int_64_atomics && f.shader_shared_int_64_atomics == p.shader_shared_int_64_atomics)
+        score += 1;
+    if (p.shader_float_16 && f.shader_float_16 == p.shader_float_16)
+        score += 1;
+    if (p.shader_int_8 && f.shader_int_8 == p.shader_int_8)
+        score += 1;
+    if (p.descriptor_indexing && f.descriptor_indexing == p.descriptor_indexing)
+        score += 1;
+    if (p.shader_input_attachment_array_dynamic_indexing && f.shader_input_attachment_array_dynamic_indexing == p.
         shader_input_attachment_array_dynamic_indexing)
         score += 1;
-    if (p.shader_uniform_texel_buffer_array_dynamic_indexing && f.shader_uniform_texel_buffer_array_dynamic_indexing
-        >= p.shader_uniform_texel_buffer_array_dynamic_indexing)
+    if (p.shader_uniform_texel_buffer_array_dynamic_indexing && f.shader_uniform_texel_buffer_array_dynamic_indexing ==
+        p.shader_uniform_texel_buffer_array_dynamic_indexing)
         score += 1;
-    if (p.shader_storage_texel_buffer_array_dynamic_indexing && f.shader_storage_texel_buffer_array_dynamic_indexing
-        >= p.shader_storage_texel_buffer_array_dynamic_indexing)
+    if (p.shader_storage_texel_buffer_array_dynamic_indexing && f.shader_storage_texel_buffer_array_dynamic_indexing ==
+        p.shader_storage_texel_buffer_array_dynamic_indexing)
         score += 1;
-    if (p.shader_uniform_buffer_array_non_uniform_indexing && f.shader_uniform_buffer_array_non_uniform_indexing >=
-        p.shader_uniform_buffer_array_non_uniform_indexing)
+    if (p.shader_uniform_buffer_array_non_uniform_indexing && f.shader_uniform_buffer_array_non_uniform_indexing == p.
+        shader_uniform_buffer_array_non_uniform_indexing)
         score += 1;
-    if (p.shader_sampled_image_array_non_uniform_indexing && f.shader_sampled_image_array_non_uniform_indexing >= p.
+    if (p.shader_sampled_image_array_non_uniform_indexing && f.shader_sampled_image_array_non_uniform_indexing == p.
         shader_sampled_image_array_non_uniform_indexing)
         score += 1;
-    if (p.shader_storage_buffer_array_non_uniform_indexing && f.shader_storage_buffer_array_non_uniform_indexing >=
-        p.shader_storage_buffer_array_non_uniform_indexing)
+    if (p.shader_storage_buffer_array_non_uniform_indexing && f.shader_storage_buffer_array_non_uniform_indexing == p.
+        shader_storage_buffer_array_non_uniform_indexing)
         score += 1;
-    if (p.shader_storage_image_array_non_uniform_indexing && f.shader_storage_image_array_non_uniform_indexing >= p.
+    if (p.shader_storage_image_array_non_uniform_indexing && f.shader_storage_image_array_non_uniform_indexing == p.
         shader_storage_image_array_non_uniform_indexing)
         score += 1;
-    if (p.shader_input_attachment_array_non_uniform_indexing && f.shader_input_attachment_array_non_uniform_indexing
-        >= p.shader_input_attachment_array_non_uniform_indexing)
+    if (p.shader_input_attachment_array_non_uniform_indexing && f.shader_input_attachment_array_non_uniform_indexing ==
+        p.shader_input_attachment_array_non_uniform_indexing)
         score += 1;
     if (p.shader_uniform_texel_buffer_array_non_uniform_indexing && f.
-        shader_uniform_texel_buffer_array_non_uniform_indexing >= p.
+        shader_uniform_texel_buffer_array_non_uniform_indexing == p.
         shader_uniform_texel_buffer_array_non_uniform_indexing)
         score += 1;
     if (p.shader_storage_texel_buffer_array_non_uniform_indexing && f.
-        shader_storage_texel_buffer_array_non_uniform_indexing >= p.
+        shader_storage_texel_buffer_array_non_uniform_indexing == p.
         shader_storage_texel_buffer_array_non_uniform_indexing)
         score += 1;
-    if (p.descriptor_binding_uniform_buffer_update_after_bind && f.
-        descriptor_binding_uniform_buffer_update_after_bind >= p.
-        descriptor_binding_uniform_buffer_update_after_bind)
+    if (p.descriptor_binding_uniform_buffer_update_after_bind && f.descriptor_binding_uniform_buffer_update_after_bind
+        == p.descriptor_binding_uniform_buffer_update_after_bind)
         score += 1;
-    if (p.descriptor_binding_sampled_image_update_after_bind && f.descriptor_binding_sampled_image_update_after_bind
-        >= p.descriptor_binding_sampled_image_update_after_bind)
+    if (p.descriptor_binding_sampled_image_update_after_bind && f.descriptor_binding_sampled_image_update_after_bind ==
+        p.descriptor_binding_sampled_image_update_after_bind)
         score += 1;
-    if (p.descriptor_binding_storage_image_update_after_bind && f.descriptor_binding_storage_image_update_after_bind
-        >= p.descriptor_binding_storage_image_update_after_bind)
+    if (p.descriptor_binding_storage_image_update_after_bind && f.descriptor_binding_storage_image_update_after_bind ==
+        p.descriptor_binding_storage_image_update_after_bind)
         score += 1;
-    if (p.descriptor_binding_storage_buffer_update_after_bind && f.
-        descriptor_binding_storage_buffer_update_after_bind >= p.
-        descriptor_binding_storage_buffer_update_after_bind)
+    if (p.descriptor_binding_storage_buffer_update_after_bind && f.descriptor_binding_storage_buffer_update_after_bind
+        == p.descriptor_binding_storage_buffer_update_after_bind)
         score += 1;
     if (p.descriptor_binding_uniform_texel_buffer_update_after_bind && f.
-        descriptor_binding_uniform_texel_buffer_update_after_bind >= p.
+        descriptor_binding_uniform_texel_buffer_update_after_bind == p.
         descriptor_binding_uniform_texel_buffer_update_after_bind)
         score += 1;
     if (p.descriptor_binding_storage_texel_buffer_update_after_bind && f.
-        descriptor_binding_storage_texel_buffer_update_after_bind >= p.
+        descriptor_binding_storage_texel_buffer_update_after_bind == p.
         descriptor_binding_storage_texel_buffer_update_after_bind)
         score += 1;
-    if (p.descriptor_binding_update_unused_while_pending && f.descriptor_binding_update_unused_while_pending >= p.
+    if (p.descriptor_binding_update_unused_while_pending && f.descriptor_binding_update_unused_while_pending == p.
         descriptor_binding_update_unused_while_pending)
         score += 1;
-    if (p.descriptor_binding_partially_bound && f.descriptor_binding_partially_bound >= p.
+    if (p.descriptor_binding_partially_bound && f.descriptor_binding_partially_bound == p.
         descriptor_binding_partially_bound)
         score += 1;
-    if (p.descriptor_binding_variable_descriptor_count && f.descriptor_binding_variable_descriptor_count >= p.
+    if (p.descriptor_binding_variable_descriptor_count && f.descriptor_binding_variable_descriptor_count == p.
         descriptor_binding_variable_descriptor_count)
         score += 1;
-    if (p.runtime_descriptor_array && f.runtime_descriptor_array >= p.runtime_descriptor_array)
+    if (p.runtime_descriptor_array && f.runtime_descriptor_array == p.runtime_descriptor_array)
+        score += 1;
+    // Vulkan 1.3 Features
+    if (p.robust_image_access && f.robust_image_access == p.robust_image_access)
+        score += 1;
+    if (p.inline_uniform_block && f.inline_uniform_block == p.inline_uniform_block)
+        score += 1;
+    if (p.descriptor_binding_inline_uniform_block_update_after_bind && f.
+        descriptor_binding_inline_uniform_block_update_after_bind == p.
+        descriptor_binding_inline_uniform_block_update_after_bind)
+        score += 1;
+    if (p.pipeline_creation_cache_control && f.pipeline_creation_cache_control == p.pipeline_creation_cache_control)
+        score += 1;
+    if (p.private_data && f.private_data == p.private_data)
+        score += 1;
+    if (p.shader_demote_to_helper_invocation && f.shader_demote_to_helper_invocation == p.
+        shader_demote_to_helper_invocation)
+        score += 1;
+    if (p.shader_terminate_invocation && f.shader_terminate_invocation == p.shader_terminate_invocation)
+        score += 1;
+    if (p.subgroup_size_control && f.subgroup_size_control == p.subgroup_size_control)
+        score += 1;
+    if (p.compute_full_subgroups && f.compute_full_subgroups == p.compute_full_subgroups)
+        score += 1;
+    if (p.synchronization_2 && f.synchronization_2 == p.synchronization_2)
+        score += 1;
+    if (p.texture_compression_ASTC_HDR && f.texture_compression_ASTC_HDR == p.texture_compression_ASTC_HDR)
+        score += 1;
+    if (p.shader_zero_initialize_workgroup_memory && f.shader_zero_initialize_workgroup_memory == p.
+        shader_zero_initialize_workgroup_memory)
+        score += 1;
+    if (p.dynamic_Rendering && f.dynamic_Rendering == p.dynamic_Rendering)
+        score += 1;
+    if (p.shader_integer_dot_product && f.shader_integer_dot_product == p.shader_integer_dot_product)
+        score += 1;
+    if (p.maintenance_4 && f.maintenance_4 == p.maintenance_4)
+        score += 1;
+    // Vulkan 1.4 Features
+    if (p.global_priority_query && f.global_priority_query == p.global_priority_query)
+        score += 1;
+    if (p.shader_subgroup_rotate && f.shader_subgroup_rotate == p.shader_subgroup_rotate)
+        score += 1;
+    if (p.shader_subgroup_rotate_clustered && f.shader_subgroup_rotate_clustered == p.shader_subgroup_rotate_clustered)
+        score += 1;
+    if (p.shader_float_controls_2 && f.shader_float_controls_2 == p.shader_float_controls_2)
+        score += 1;
+    if (p.shader_expect_assume && f.shader_expect_assume == p.shader_expect_assume)
+        score += 1;
+    if (p.rectangular_lines && f.rectangular_lines == p.rectangular_lines)
+        score += 1;
+    if (p.bresenham_lines && f.bresenham_lines == p.bresenham_lines)
+        score += 1;
+    if (p.smooth_lines && f.smooth_lines == p.smooth_lines)
+        score += 1;
+    if (p.stippled_rectangular_lines && f.stippled_rectangular_lines == p.stippled_rectangular_lines)
+        score += 1;
+    if (p.stippled_bresenham_lines && f.stippled_bresenham_lines == p.stippled_bresenham_lines)
+        score += 1;
+    if (p.stippled_smooth_lines && f.stippled_smooth_lines == p.stippled_smooth_lines)
+        score += 1;
+    if (p.vertex_attribute_instance_rate_divisor && f.vertex_attribute_instance_rate_divisor == p.
+        vertex_attribute_instance_rate_divisor)
+        score += 1;
+    if (p.vertex_attribute_instance_rate_zero_divisor && f.vertex_attribute_instance_rate_zero_divisor == p.
+        vertex_attribute_instance_rate_zero_divisor)
+        score += 1;
+    if (p.index_type_uint_8 && f.index_type_uint_8 == p.index_type_uint_8)
+        score += 1;
+    if (p.dynamic_rendering_local_read && f.dynamic_rendering_local_read == p.dynamic_rendering_local_read)
+        score += 1;
+    if (p.maintenance_5 && f.maintenance_5 == p.maintenance_5)
+        score += 1;
+    if (p.maintenance_6 && f.maintenance_6 == p.maintenance_6)
+        score += 1;
+    if (p.pipeline_protected_access && f.pipeline_protected_access == p.pipeline_protected_access)
+        score += 1;
+    if (p.pipeline_robustness && f.pipeline_robustness == p.pipeline_robustness)
+        score += 1;
+    if (p.host_image_copy && f.host_image_copy == p.host_image_copy)
+        score += 1;
+    if (p.push_descriptor && f.push_descriptor == p.push_descriptor)
         score += 1;
     // Acceleration Structure features
-    if (p.acceleration_structure && f.acceleration_structure >= p.acceleration_structure)
+    if (p.acceleration_structure && f.acceleration_structure == p.acceleration_structure)
         score += 1;
-    if (p.acceleration_structure_capture_replay && f.acceleration_structure_capture_replay >= p.
+    if (p.acceleration_structure_capture_replay && f.acceleration_structure_capture_replay == p.
         acceleration_structure_capture_replay)
         score += 1;
-    if (p.acceleration_structure_indirect_build && f.acceleration_structure_indirect_build >= p.
+    if (p.acceleration_structure_indirect_build && f.acceleration_structure_indirect_build == p.
         acceleration_structure_indirect_build)
         score += 1;
-    if (p.acceleration_structure_host_commands && f.acceleration_structure_host_commands >= p.
+    if (p.acceleration_structure_host_commands && f.acceleration_structure_host_commands == p.
         acceleration_structure_host_commands)
         score += 1;
     if (p.descriptor_binding_acceleration_structure_update_after_bind && f.
-        descriptor_binding_acceleration_structure_update_after_bind >= p.
+        descriptor_binding_acceleration_structure_update_after_bind == p.
         descriptor_binding_acceleration_structure_update_after_bind)
         score += 1;
     // Raytracing features
-    if (p.ray_tracing_pipeline && f.ray_tracing_pipeline >= p.ray_tracing_pipeline)
+    if (p.ray_tracing_pipeline && f.ray_tracing_pipeline == p.ray_tracing_pipeline)
         score += 1;
     if (p.ray_tracing_pipeline_shader_group_handle_capture_replay && f.
-        ray_tracing_pipeline_shader_group_handle_capture_replay >= p.
+        ray_tracing_pipeline_shader_group_handle_capture_replay == p.
         ray_tracing_pipeline_shader_group_handle_capture_replay)
         score += 1;
     if (p.ray_tracing_pipeline_shader_group_handle_capture_replay_mixed && f.
-        ray_tracing_pipeline_shader_group_handle_capture_replay_mixed >= p.
+        ray_tracing_pipeline_shader_group_handle_capture_replay_mixed == p.
         ray_tracing_pipeline_shader_group_handle_capture_replay_mixed)
         score += 1;
-    if (p.ray_tracing_pipeline_trace_rays_indirect && f.ray_tracing_pipeline_trace_rays_indirect >= p.
+    if (p.ray_tracing_pipeline_trace_rays_indirect && f.ray_tracing_pipeline_trace_rays_indirect == p.
         ray_tracing_pipeline_trace_rays_indirect)
         score += 1;
-    if (p.ray_traversal_primitive_culling && f.ray_traversal_primitive_culling >= p.ray_traversal_primitive_culling)
+    if (p.ray_traversal_primitive_culling && f.ray_traversal_primitive_culling == p.ray_traversal_primitive_culling)
         score += 1;
     return score;
 }
@@ -1398,7 +1779,105 @@ inline uint32_t getGPULimitScore(const GPULimits &l, const GPULimits &p)
         score += 1;
     if (p.non_coherent_atom_size > 0 && l.non_coherent_atom_size >= p.non_coherent_atom_size)
         score += 1;
-    // bindless limits
+    // Vulkan 1.1 Limits
+    if (p.subgroup_size > 0 && l.subgroup_size >= p.subgroup_size)
+        score += 1;
+    if (p.subgroup_supported_stages != ShaderStageFlags::NONE && l.subgroup_supported_stages >= p.
+        subgroup_supported_stages)
+        score += 1;
+    if (p.subgroup_supported_operations != SubgroupFeatureFlags::NONE && l.subgroup_supported_operations >= p.
+        subgroup_supported_operations)
+        score += 1;
+    if (p.subgroup_quad_operations_in_all_stages && l.subgroup_quad_operations_in_all_stages == p.
+        subgroup_quad_operations_in_all_stages)
+        score += 1;
+    if (p.point_clipping_behavior > 0 && l.point_clipping_behavior >= p.point_clipping_behavior)
+        score += 1;
+    if (p.max_multiview_view_count > 0 && l.max_multiview_view_count >= p.max_multiview_view_count)
+        score += 1;
+    if (p.max_multiview_instance_index > 0 && l.max_multiview_instance_index >= p.max_multiview_instance_index)
+        score += 1;
+    if (p.protected_no_fault && l.protected_no_fault == p.protected_no_fault)
+        score += 1;
+    if (p.max_per_set_descriptors > 0 && l.max_per_set_descriptors >= p.max_per_set_descriptors)
+        score += 1;
+    if (p.max_memory_allocation_size > 0 && l.max_memory_allocation_size >= p.max_memory_allocation_size)
+        score += 1;
+    // Vulkan 1.2 Limits
+    if (p.denorm_behavior_independence > 0 && l.denorm_behavior_independence >= p.denorm_behavior_independence)
+        score += 1;
+    if (p.rounding_mode_independence > 0 && l.rounding_mode_independence >= p.rounding_mode_independence)
+        score += 1;
+    if (p.shader_signed_zero_inf_nan_preserve_float_16 && l.shader_signed_zero_inf_nan_preserve_float_16 == p.
+        shader_signed_zero_inf_nan_preserve_float_16)
+        score += 1;
+    if (p.shader_signed_zero_inf_nan_preserve_float_32 && l.shader_signed_zero_inf_nan_preserve_float_32 == p.
+        shader_signed_zero_inf_nan_preserve_float_32)
+        score += 1;
+    if (p.shader_signed_zero_inf_nan_preserve_float_64 && l.shader_signed_zero_inf_nan_preserve_float_64 == p.
+        shader_signed_zero_inf_nan_preserve_float_64)
+        score += 1;
+    if (p.shader_denorm_preserve_float_16 && l.shader_denorm_preserve_float_16 == p.shader_denorm_preserve_float_16)
+        score += 1;
+    if (p.shader_denorm_preserve_float_32 && l.shader_denorm_preserve_float_32 == p.shader_denorm_preserve_float_32)
+        score += 1;
+    if (p.shader_denorm_preserve_float_64 && l.shader_denorm_preserve_float_64 == p.shader_denorm_preserve_float_64)
+        score += 1;
+    if (p.shader_denorm_flush_to_zero_float_16 && l.shader_denorm_flush_to_zero_float_16 == p.
+        shader_denorm_flush_to_zero_float_16)
+        score += 1;
+    if (p.shader_denorm_flush_to_zero_float_32 && l.shader_denorm_flush_to_zero_float_32 == p.
+        shader_denorm_flush_to_zero_float_32)
+        score += 1;
+    if (p.shader_denorm_flush_to_zero_float_64 && l.shader_denorm_flush_to_zero_float_64 == p.
+        shader_denorm_flush_to_zero_float_64)
+        score += 1;
+    if (p.shader_rounding_mode_RTE_float_16 && l.shader_rounding_mode_RTE_float_16 == p.
+        shader_rounding_mode_RTE_float_16)
+        score += 1;
+    if (p.shader_rounding_mode_RTE_float_32 && l.shader_rounding_mode_RTE_float_32 == p.
+        shader_rounding_mode_RTE_float_32)
+        score += 1;
+    if (p.shader_rounding_mode_RTE_float_64 && l.shader_rounding_mode_RTE_float_64 == p.
+        shader_rounding_mode_RTE_float_64)
+        score += 1;
+    if (p.shader_rounding_mode_RTZ_float_16 && l.shader_rounding_mode_RTZ_float_16 == p.
+        shader_rounding_mode_RTZ_float_16)
+        score += 1;
+    if (p.shader_rounding_mode_RTZ_float_32 && l.shader_rounding_mode_RTZ_float_32 == p.
+        shader_rounding_mode_RTZ_float_32)
+        score += 1;
+    if (p.shader_rounding_mode_RTZ_float_64 && l.shader_rounding_mode_RTZ_float_64 == p.
+        shader_rounding_mode_RTZ_float_64)
+        score += 1;
+    if (p.max_update_after_bind_descriptors_in_all_pools > 0 && l.max_update_after_bind_descriptors_in_all_pools >= p.
+        max_update_after_bind_descriptors_in_all_pools)
+        score += 1;
+    if (p.shader_uniform_buffer_array_non_uniform_indexing_native && l.
+        shader_uniform_buffer_array_non_uniform_indexing_native == p.
+        shader_uniform_buffer_array_non_uniform_indexing_native)
+        score += 1;
+    if (p.shader_sampled_image_array_non_uniform_indexing_native && l.
+        shader_sampled_image_array_non_uniform_indexing_native == p.
+        shader_sampled_image_array_non_uniform_indexing_native)
+        score += 1;
+    if (p.shader_storage_buffer_array_non_uniform_indexing_native && l.
+        shader_storage_buffer_array_non_uniform_indexing_native == p.
+        shader_storage_buffer_array_non_uniform_indexing_native)
+        score += 1;
+    if (p.shader_storage_image_array_non_uniform_indexing_native && l.
+        shader_storage_image_array_non_uniform_indexing_native == p.
+        shader_storage_image_array_non_uniform_indexing_native)
+        score += 1;
+    if (p.shader_input_attachment_array_non_uniform_indexing_native && l.
+        shader_input_attachment_array_non_uniform_indexing_native == p.
+        shader_input_attachment_array_non_uniform_indexing_native)
+        score += 1;
+    if (p.robust_buffer_access_update_after_bind && l.robust_buffer_access_update_after_bind == p.
+        robust_buffer_access_update_after_bind)
+        score += 1;
+    if (p.quad_divergent_implicit_lod && l.quad_divergent_implicit_lod == p.quad_divergent_implicit_lod)
+        score += 1;
     if (p.max_update_after_bind_descriptors_in_all_pools > 0 && l.max_update_after_bind_descriptors_in_all_pools >=
         p.max_update_after_bind_descriptors_in_all_pools)
         score += 1;
@@ -1485,6 +1964,264 @@ inline uint32_t getGPULimitScore(const GPULimits &l, const GPULimits &p)
         max_descriptor_set_update_after_bind_input_attachments >= p.
         max_descriptor_set_update_after_bind_input_attachments)
         score += 1;
+    if (p.supported_depth_resolve_modes != ResolveModeFlags::NONE && l.supported_depth_resolve_modes >= p.
+        supported_depth_resolve_modes)
+        score += 1;
+    if (p.supported_stencil_resolve_modes != ResolveModeFlags::NONE && l.supported_stencil_resolve_modes >= p.
+        supported_stencil_resolve_modes)
+        score += 1;
+    if (p.independent_resolve_none && l.independent_resolve_none == p.independent_resolve_none)
+        score += 1;
+    if (p.independent_resolve && l.independent_resolve == p.independent_resolve)
+        score += 1;
+    if (p.filter_minmax_single_component_formats && l.filter_minmax_single_component_formats == p.
+        filter_minmax_single_component_formats)
+        score += 1;
+    if (p.filter_minmax_image_component_mapping && l.filter_minmax_image_component_mapping == p.
+        filter_minmax_image_component_mapping)
+        score += 1;
+    if (p.max_timeline_semaphore_value_difference > 0 && l.max_timeline_semaphore_value_difference >= p.
+        max_timeline_semaphore_value_difference)
+        score += 1;
+    if (p.framebuffer_integer_color_sample_counts != SampleCountFlags::NONE && l.framebuffer_integer_color_sample_counts
+        >= p.framebuffer_integer_color_sample_counts)
+        score += 1;
+    // Vulkan 1.3 Limits
+    if (p.min_subgroup_size > 0 && l.min_subgroup_size >= p.min_subgroup_size)
+        score += 1;
+    if (p.max_subgroup_size > 0 && l.max_subgroup_size >= p.max_subgroup_size)
+        score += 1;
+    if (p.max_compute_workgroup_subgroups > 0 && l.max_compute_workgroup_subgroups >= p.max_compute_workgroup_subgroups)
+        score += 1;
+    if (p.required_subgroup_size_stages != ShaderStageFlags::NONE && l.required_subgroup_size_stages >= p.
+        required_subgroup_size_stages)
+        score += 1;
+    if (p.max_inlineUniformBlockSize > 0 && l.max_inlineUniformBlockSize >= p.max_inlineUniformBlockSize)
+        score += 1;
+    if (p.max_per_stage_descriptor_inline_uniform_blocks > 0 && l.max_per_stage_descriptor_inline_uniform_blocks >= p.
+        max_per_stage_descriptor_inline_uniform_blocks)
+        score += 1;
+    if (p.max_per_stage_descriptor_update_after_bind_inline_uniform_blocks > 0 && l.
+        max_per_stage_descriptor_update_after_bind_inline_uniform_blocks >= p.
+        max_per_stage_descriptor_update_after_bind_inline_uniform_blocks)
+        score += 1;
+    if (p.max_descriptor_set_inline_uniform_blocks > 0 && l.max_descriptor_set_inline_uniform_blocks >= p.
+        max_descriptor_set_inline_uniform_blocks)
+        score += 1;
+    if (p.max_descriptor_set_update_after_bind_inline_uniform_blocks > 0 && l.
+        max_descriptor_set_update_after_bind_inline_uniform_blocks >= p.
+        max_descriptor_set_update_after_bind_inline_uniform_blocks)
+        score += 1;
+    if (p.max_inline_uniform_total_size > 0 && l.max_inline_uniform_total_size >= p.max_inline_uniform_total_size)
+        score += 1;
+    if (p.integer_dot_product_8_bit_unsigned_accelerated && l.integer_dot_product_8_bit_unsigned_accelerated == p.
+        integer_dot_product_8_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_8_bit_signed_accelerated && l.integer_dot_product_8_bit_signed_accelerated == p.
+        integer_dot_product_8_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_8_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_8_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_8_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_4x8_bit_packed_unsigned_accelerated && l.
+        integer_dot_product_4x8_bit_packed_unsigned_accelerated == p.
+        integer_dot_product_4x8_bit_packed_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_4x8_bit_packed_signed_accelerated && l.
+        integer_dot_product_4x8_bit_packed_signed_accelerated == p.
+        integer_dot_product_4x8_bit_packed_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_4x8_bit_packed_mixed_signedness_accelerated && l.
+        integer_dot_product_4x8_bit_packed_mixed_signedness_accelerated == p.
+        integer_dot_product_4x8_bit_packed_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_16_bit_unsigned_accelerated && l.integer_dot_product_16_bit_unsigned_accelerated == p.
+        integer_dot_product_16_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_16_bit_signed_accelerated && l.integer_dot_product_16_bit_signed_accelerated == p.
+        integer_dot_product_16_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_16_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_16_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_16_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_32_bit_unsigned_accelerated && l.integer_dot_product_32_bit_unsigned_accelerated == p.
+        integer_dot_product_32_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_32_bit_signed_accelerated && l.integer_dot_product_32_bit_signed_accelerated == p.
+        integer_dot_product_32_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_32_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_32_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_32_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_64_bit_unsigned_accelerated && l.integer_dot_product_64_bit_unsigned_accelerated == p.
+        integer_dot_product_64_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_64_bit_signed_accelerated && l.integer_dot_product_64_bit_signed_accelerated == p.
+        integer_dot_product_64_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_64_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_64_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_64_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_8_bit_unsigned_accelerated && l.
+        integer_dot_product_accumulating_saturating_8_bit_unsigned_accelerated == p.
+        integer_dot_product_accumulating_saturating_8_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_8_bit_signed_accelerated && l.
+        integer_dot_product_accumulating_saturating_8_bit_signed_accelerated == p.
+        integer_dot_product_accumulating_saturating_8_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_8_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_accumulating_saturating_8_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_accumulating_saturating_8_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_4x8_bit_packed_unsigned_accelerated && l.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_unsigned_accelerated == p.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_4x8_bit_packed_signed_accelerated && l.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_signed_accelerated == p.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_4x8_bit_packed_mixed_signedness_accelerated && l.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_mixed_signedness_accelerated == p.
+        integer_dot_product_accumulating_saturating_4x8_bit_packed_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_16_bit_unsigned_accelerated && l.
+        integer_dot_product_accumulating_saturating_16_bit_unsigned_accelerated == p.
+        integer_dot_product_accumulating_saturating_16_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_16_bit_signed_accelerated && l.
+        integer_dot_product_accumulating_saturating_16_bit_signed_accelerated == p.
+        integer_dot_product_accumulating_saturating_16_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_16_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_accumulating_saturating_16_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_accumulating_saturating_16_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_32_bit_unsigned_accelerated && l.
+        integer_dot_product_accumulating_saturating_32_bit_unsigned_accelerated == p.
+        integer_dot_product_accumulating_saturating_32_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_32_bit_signed_accelerated && l.
+        integer_dot_product_accumulating_saturating_32_bit_signed_accelerated == p.
+        integer_dot_product_accumulating_saturating_32_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_32_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_accumulating_saturating_32_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_accumulating_saturating_32_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_64_bit_unsigned_accelerated && l.
+        integer_dot_product_accumulating_saturating_64_bit_unsigned_accelerated == p.
+        integer_dot_product_accumulating_saturating_64_bit_unsigned_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_64_bit_signed_accelerated && l.
+        integer_dot_product_accumulating_saturating_64_bit_signed_accelerated == p.
+        integer_dot_product_accumulating_saturating_64_bit_signed_accelerated)
+        score += 1;
+    if (p.integer_dot_product_accumulating_saturating_64_bit_mixed_signedness_accelerated && l.
+        integer_dot_product_accumulating_saturating_64_bit_mixed_signedness_accelerated == p.
+        integer_dot_product_accumulating_saturating_64_bit_mixed_signedness_accelerated)
+        score += 1;
+    if (p.storage_texel_buffer_offset_alignment_bytes > 0 && l.storage_texel_buffer_offset_alignment_bytes >= p.
+        storage_texel_buffer_offset_alignment_bytes)
+        score += 1;
+    if (p.storage_texel_buffer_offset_single_texel_alignment && l.storage_texel_buffer_offset_single_texel_alignment ==
+        p.storage_texel_buffer_offset_single_texel_alignment)
+        score += 1;
+    if (p.uniform_texel_buffer_offset_alignment_bytes > 0 && l.uniform_texel_buffer_offset_alignment_bytes >= p.
+        uniform_texel_buffer_offset_alignment_bytes)
+        score += 1;
+    if (p.uniform_texel_buffer_offset_single_texel_alignment && l.uniform_texel_buffer_offset_single_texel_alignment ==
+        p.uniform_texel_buffer_offset_single_texel_alignment)
+        score += 1;
+    if (p.max_buffer_size > 0 && l.max_buffer_size >= p.max_buffer_size)
+        score += 1;
+    // Vulkan 1.4 Limits
+    if (p.line_sub_pixel_precision_bits > 0 && l.line_sub_pixel_precision_bits >= p.line_sub_pixel_precision_bits)
+        score += 1;
+    if (p.max_vertex_attrib_divisor > 0 && l.max_vertex_attrib_divisor >= p.max_vertex_attrib_divisor)
+        score += 1;
+    if (p.supports_non_zero_first_instance && l.supports_non_zero_first_instance == p.supports_non_zero_first_instance)
+        score += 1;
+    if (p.max_push_descriptors > 0 && l.max_push_descriptors >= p.max_push_descriptors)
+        score += 1;
+    if (p.dynamic_rendering_local_read_depth_stencil_attachments && l.
+        dynamic_rendering_local_read_depth_stencil_attachments == p.
+        dynamic_rendering_local_read_depth_stencil_attachments)
+        score += 1;
+    if (p.dynamic_rendering_local_read_multisampled_attachments && l.
+        dynamic_rendering_local_read_multisampled_attachments == p.
+        dynamic_rendering_local_read_multisampled_attachments)
+        score += 1;
+    if (p.early_fragment_multisample_coverage_after_sample_counting && l.
+        early_fragment_multisample_coverage_after_sample_counting == p.
+        early_fragment_multisample_coverage_after_sample_counting)
+        score += 1;
+    if (p.early_fragment_sample_mask_test_before_sample_counting && l.
+        early_fragment_sample_mask_test_before_sample_counting == p.
+        early_fragment_sample_mask_test_before_sample_counting)
+        score += 1;
+    if (p.depth_stencil_swizzle_one_support && l.depth_stencil_swizzle_one_support == p.
+        depth_stencil_swizzle_one_support)
+        score += 1;
+    if (p.polygon_mode_point_size && l.polygon_mode_point_size == p.polygon_mode_point_size)
+        score += 1;
+    if (p.non_strict_single_pixel_wide_lines_use_parallelogram && l.non_strict_single_pixel_wide_lines_use_parallelogram
+        == p.non_strict_single_pixel_wide_lines_use_parallelogram)
+        score += 1;
+    if (p.non_strict_wide_lines_use_parallelogram && l.non_strict_wide_lines_use_parallelogram == p.
+        non_strict_wide_lines_use_parallelogram)
+        score += 1;
+    if (p.block_texel_view_compatible_multiple_layers && l.block_texel_view_compatible_multiple_layers == p.
+        block_texel_view_compatible_multiple_layers)
+        score += 1;
+    if (p.max_combined_image_sampler_descriptor_count > 0 && l.max_combined_image_sampler_descriptor_count >= p.
+        max_combined_image_sampler_descriptor_count)
+        score += 1;
+    if (p.fragment_shading_rate_clamp_combiner_inputs && l.fragment_shading_rate_clamp_combiner_inputs == p.
+        fragment_shading_rate_clamp_combiner_inputs)
+        score += 1;
+    if (p.default_robustness_storage_buffers > 0 && l.default_robustness_storage_buffers >= p.
+        default_robustness_storage_buffers)
+        score += 1;
+    if (p.default_robustness_uniform_buffers > 0 && l.default_robustness_uniform_buffers >= p.
+        default_robustness_uniform_buffers)
+        score += 1;
+    if (p.default_robustness_vertex_inputs > 0 && l.default_robustness_vertex_inputs >= p.
+        default_robustness_vertex_inputs)
+        score += 1;
+    if (p.default_robustness_images > 0 && l.default_robustness_images >= p.default_robustness_images)
+        score += 1;
+    for (auto p_layout : p.copy_src_layouts)
+    {
+        for (const auto &l_layout : l.copy_src_layouts)
+        {
+            if (p_layout == l_layout)
+            {
+                score += 1;
+                break;
+            }
+        }
+    }
+    for (auto p_layout : p.copy_dst_layouts)
+    {
+        for (const auto &l_layout : l.copy_dst_layouts)
+        {
+            if (p_layout == l_layout)
+            {
+                score += 1;
+                break;
+            }
+        }
+    }
+    if (p.identical_memory_type_requirements && l.identical_memory_type_requirements == p.
+        identical_memory_type_requirements)
+        score += 1;
+
     // Acceleration Structure limits
     if (p.max_geometry_count > 0 && l.max_geometry_count >= p.max_geometry_count)
         score += 1;
@@ -1518,8 +2255,7 @@ inline uint32_t getGPULimitScore(const GPULimits &l, const GPULimits &p)
     if (p.max_shader_group_stride > 0 && l.max_shader_group_stride >= p.max_shader_group_stride)
         score += 1;
     if (p.shader_group_base_alignment > 0 && l.shader_group_base_alignment >= p.shader_group_base_alignment)
-        score
-            += 1;
+        score += 1;
     if (p.shader_group_handle_capture_replay_size > 0 && l.shader_group_handle_capture_replay_size >= p.
         shader_group_handle_capture_replay_size)
         score += 1;
@@ -1529,8 +2265,7 @@ inline uint32_t getGPULimitScore(const GPULimits &l, const GPULimits &p)
     if (p.shader_group_handle_alignment > 0 && l.shader_group_handle_alignment >= p.shader_group_handle_alignment)
         score += 1;
     if (p.max_ray_hit_attribute_size > 0 && l.max_ray_hit_attribute_size >= p.max_ray_hit_attribute_size)
-        score +=
-            1;
+        score += 1;
     return score;
 }
 
@@ -1593,6 +2328,16 @@ inline uint32_t getGPUScore(const vk::PhysicalDevice device, const vk::SurfaceKH
     return score;
 }
 
+struct EnabledFeatures
+{
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_features = {};
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = {};
+    vk::PhysicalDeviceVulkan14Features base_1_4 = {};
+    vk::PhysicalDeviceVulkan13Features base_1_3 = {};
+    vk::PhysicalDeviceVulkan12Features base_1_2 = {};
+    vk::PhysicalDeviceVulkan11Features base_1_1 = {};
+    vk::PhysicalDeviceFeatures2 base = {};
+};
 
 /**
  * Returns physical device features which are used when enabling features when creating a
@@ -1600,26 +2345,13 @@ inline uint32_t getGPUScore(const vk::PhysicalDevice device, const vk::SurfaceKH
  * @param f The features to be enabled on logical device creation.
  * @return A Vulkan physical device features.
  */
-inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
+inline void getEnabledFeatures(const GPUFeatures &f, EnabledFeatures *const out_enabled_features)
 {
-    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_features = {};
-    vk::PhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = {};
-    accel_struct_features.pNext = &raytracing_features;
-    vk::PhysicalDeviceDescriptorIndexingFeatures bindless_features = {};
-    bindless_features.pNext = &accel_struct_features;
-    vk::PhysicalDeviceShaderAtomicInt64Features atomic64_features = {};
-    atomic64_features.pNext = &bindless_features;
-    vk::PhysicalDeviceShaderFloat16Int8Features f16_features = {};
-    f16_features.pNext = &atomic64_features;
-    vk::PhysicalDeviceSynchronization2Features sync2_features = {};
-    sync2_features.pNext = &f16_features;
-    vk::PhysicalDeviceFeatures2 features = {};
-    features.pNext = &sync2_features;
-
+    auto &features = out_enabled_features->base;
     // Base Features
     if (f.robust_buffer_access)
         features.features.robustBufferAccess = true;
-    if (f.full_draw_index_uint32)
+    if (f.full_draw_index_uint_32)
         features.features.fullDrawIndexUint32 = true;
     if (f.image_cube_array)
         features.features.imageCubeArray = true;
@@ -1700,11 +2432,11 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         features.features.shaderClipDistance = true;
     if (f.shader_cull_distance)
         features.features.shaderCullDistance = true;
-    if (f.shader_float64)
+    if (f.shader_float_64)
         features.features.shaderFloat64 = true;
-    if (f.shader_int64)
+    if (f.shader_int_64)
         features.features.shaderInt64 = true;
-    if (f.shader_int16)
+    if (f.shader_int_16)
         features.features.shaderInt16 = true;
     if (f.shader_resource_residency)
         features.features.shaderResourceResidency = true;
@@ -1714,17 +2446,17 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         features.features.sparseBinding = true;
     if (f.sparse_residency_buffer)
         features.features.sparseResidencyBuffer = true;
-    if (f.sparse_residency_image2D)
+    if (f.sparse_residency_image_2D)
         features.features.sparseResidencyImage2D = true;
-    if (f.sparse_residency_image3D)
+    if (f.sparse_residency_image_3D)
         features.features.sparseResidencyImage3D = true;
-    if (f.sparse_residency2_samples)
+    if (f.sparse_residency_2_samples)
         features.features.sparseResidency2Samples = true;
-    if (f.sparse_residency4_samples)
+    if (f.sparse_residency_4_samples)
         features.features.sparseResidency4Samples = true;
-    if (f.sparse_residency8_samples)
+    if (f.sparse_residency_8_samples)
         features.features.sparseResidency8Samples = true;
-    if (f.sparse_residency16_samples)
+    if (f.sparse_residency_16_samples)
         features.features.sparseResidency16Samples = true;
     if (f.sparse_residency_aliased)
         features.features.sparseResidencyAliased = true;
@@ -1732,78 +2464,223 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         features.features.variableMultisampleRate = true;
     if (f.inherited_queries)
         features.features.inheritedQueries = true;
-    // Synchronization 2 features
-    if (f.synchronization2)
-        sync2_features.synchronization2 = true;
-    // 16-bit float 8-bit int features
-    if (f.shader_float16)
-        f16_features.shaderFloat16 = true;
-    if (f.shader_int8)
-        f16_features.shaderInt8 = true;
-    // int 64-bit atomic features
-    if (f.shader_buffer_int64_atomics)
-        atomic64_features.shaderBufferInt64Atomics = true;
-    if (f.shader_shared_int64_atomics)
-        atomic64_features.shaderSharedInt64Atomics = true;
-    // Bindless support features
+    // Vulkan 1.1 Features
+    auto &features_1_1 = out_enabled_features->base_1_1;
+    if (f.storage_buffer_16_bit_access)
+        features_1_1.storageBuffer16BitAccess = true;
+    if (f.uniform_and_storage_buffer_16_bit_access)
+        features_1_1.uniformAndStorageBuffer16BitAccess = true;
+    if (f.storage_push_constant_16)
+        features_1_1.storagePushConstant16 = true;
+    if (f.storage_input_output_16)
+        features_1_1.storageInputOutput16 = true;
+    if (f.multiview)
+        features_1_1.multiview = true;
+    if (f.multiview_geometry_shader)
+        features_1_1.multiviewGeometryShader = true;
+    if (f.multiview_tessellation_shader)
+        features_1_1.multiviewTessellationShader = true;
+    if (f.variable_pointers_storage_buffer)
+        features_1_1.variablePointersStorageBuffer = true;
+    if (f.variable_pointers)
+        features_1_1.variablePointers = true;
+    if (f.protected_memory)
+        features_1_1.protectedMemory = true;
+    if (f.sampler_YCBCR_conversion)
+        features_1_1.samplerYcbcrConversion = true;
+    if (f.shader_draw_parameters)
+        features_1_1.shaderDrawParameters = true;
+    // Vulkan 1.2 Features
+    auto &features_1_2 = out_enabled_features->base_1_2;
+    if (f.sampler_mirror_clamp_to_edge)
+        features_1_2.samplerMirrorClampToEdge = true;
+    if (f.draw_indirect_count)
+        features_1_2.drawIndirectCount = true;
+    if (f.storage_buffer_8_bit_access)
+        features_1_2.storageBuffer8BitAccess = true;
+    if (f.uniform_and_storage_buffer_8_bit_access)
+        features_1_2.uniformAndStorageBuffer8BitAccess = true;
+    if (f.storage_push_constant_8)
+        features_1_2.storagePushConstant8 = true;
+    if (f.shader_buffer_int_64_atomics)
+        features_1_2.shaderBufferInt64Atomics = true;
+    if (f.shader_shared_int_64_atomics)
+        features_1_2.shaderSharedInt64Atomics = true;
+    if (f.shader_float_16)
+        features_1_2.shaderFloat16 = true;
+    if (f.shader_int_8)
+        features_1_2.shaderInt8 = true;
+    if (f.descriptor_indexing)
+        features_1_2.descriptorIndexing = true;
     if (f.shader_input_attachment_array_dynamic_indexing)
-        bindless_features.
+        features_1_2.
             shaderInputAttachmentArrayDynamicIndexing = true;
     if (f.shader_uniform_texel_buffer_array_dynamic_indexing)
-        bindless_features.shaderUniformTexelBufferArrayDynamicIndexing = true;
+        features_1_2.shaderUniformTexelBufferArrayDynamicIndexing = true;
     if (f.shader_storage_texel_buffer_array_dynamic_indexing)
-        bindless_features.
+        features_1_2.
             shaderStorageTexelBufferArrayNonUniformIndexing = true;
     if (f.shader_uniform_buffer_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderUniformBufferArrayNonUniformIndexing = true;
     if (f.shader_sampled_image_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderSampledImageArrayNonUniformIndexing = true;
     if (f.shader_storage_buffer_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderStorageBufferArrayNonUniformIndexing = true;
     if (f.shader_storage_image_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderStorageImageArrayNonUniformIndexing = true;
     if (f.shader_input_attachment_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderInputAttachmentArrayNonUniformIndexing = true;
     if (f.shader_uniform_texel_buffer_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderUniformTexelBufferArrayNonUniformIndexing = true;
     if (f.shader_storage_texel_buffer_array_non_uniform_indexing)
-        bindless_features.
+        features_1_2.
             shaderStorageTexelBufferArrayNonUniformIndexing = true;
     if (f.descriptor_binding_uniform_buffer_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingUniformBufferUpdateAfterBind = true;
     if (f.descriptor_binding_sampled_image_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingSampledImageUpdateAfterBind = true;
     if (f.descriptor_binding_storage_image_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingStorageImageUpdateAfterBind = true;
     if (f.descriptor_binding_storage_buffer_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingStorageBufferUpdateAfterBind = true;
     if (f.descriptor_binding_uniform_texel_buffer_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingUniformTexelBufferUpdateAfterBind = true;
     if (f.descriptor_binding_storage_texel_buffer_update_after_bind)
-        bindless_features.
+        features_1_2.
             descriptorBindingStorageTexelBufferUpdateAfterBind = true;
     if (f.descriptor_binding_update_unused_while_pending)
-        bindless_features.
+        features_1_2.
             descriptorBindingUpdateUnusedWhilePending = true;
     if (f.descriptor_binding_partially_bound)
-        bindless_features.descriptorBindingPartiallyBound = true;
+        features_1_2.descriptorBindingPartiallyBound = true;
     if (f.descriptor_binding_variable_descriptor_count)
-        bindless_features
+        features_1_2
             .descriptorBindingVariableDescriptorCount = true;
     if (f.runtime_descriptor_array)
-        bindless_features.runtimeDescriptorArray = true;
+        features_1_2.runtimeDescriptorArray = true;
+    if (f.sampler_filter_minmax)
+        features_1_2.samplerFilterMinmax = true;
+    if (f.scalar_block_layout)
+        features_1_2.scalarBlockLayout = true;
+    if (f.imageless_framebuffer)
+        features_1_2.imagelessFramebuffer = true;
+    if (f.uniform_buffer_standard_layout)
+        features_1_2.uniformBufferStandardLayout = true;
+    if (f.shader_subgroup_extended_types)
+        features_1_2.shaderSubgroupExtendedTypes = true;
+    if (f.separate_depth_stencil_layouts)
+        features_1_2.separateDepthStencilLayouts = true;
+    if (f.host_query_reset)
+        features_1_2.hostQueryReset = true;
+    if (f.timeline_semaphore)
+        features_1_2.timelineSemaphore = true;
+    if (f.buffer_device_address)
+        features_1_2.bufferDeviceAddress = true;
+    if (f.buffer_device_address_capture_replay)
+        features_1_2.bufferDeviceAddressCaptureReplay = true;
+    if (f.buffer_device_address_multi_device)
+        features_1_2.bufferDeviceAddressMultiDevice = true;
+    if (f.vulkan_memory_model)
+        features_1_2.vulkanMemoryModel = true;
+    if (f.vulkan_memory_model_device_scope)
+        features_1_2.vulkanMemoryModelDeviceScope = true;
+    if (f.vulkan_memory_model_availability_visibility_chains)
+        features_1_2.vulkanMemoryModelAvailabilityVisibilityChains = true;
+    if (f.shader_output_viewport_index)
+        features_1_2.shaderOutputViewportIndex = true;
+    if (f.shader_output_layer)
+        features_1_2.shaderOutputLayer = true;
+    if (f.subgroup_broadcast_dynamic_id)
+        features_1_2.subgroupBroadcastDynamicId = true;
+    // Vulkan 1.3 Features
+    auto &features_1_3 = out_enabled_features->base_1_3;
+    if (f.robust_image_access)
+        features_1_3.robustImageAccess = true;
+    if (f.inline_uniform_block)
+        features_1_3.inlineUniformBlock = true;
+    if (f.descriptor_binding_inline_uniform_block_update_after_bind)
+        features_1_3.descriptorBindingInlineUniformBlockUpdateAfterBind = true;
+    if (f.pipeline_creation_cache_control)
+        features_1_3.pipelineCreationCacheControl = true;
+    if (f.private_data)
+        features_1_3.privateData = true;
+    if (f.shader_demote_to_helper_invocation)
+        features_1_3.shaderDemoteToHelperInvocation = true;
+    if (f.shader_terminate_invocation)
+        features_1_3.shaderTerminateInvocation = true;
+    if (f.subgroup_size_control)
+        features_1_3.subgroupSizeControl = true;
+    if (f.compute_full_subgroups)
+        features_1_3.computeFullSubgroups = true;
+    if (f.synchronization_2)
+        features_1_3.synchronization2 = true;
+    if (f.texture_compression_ASTC_HDR)
+        features_1_3.textureCompressionASTC_HDR = true;
+    if (f.shader_zero_initialize_workgroup_memory)
+        features_1_3.shaderZeroInitializeWorkgroupMemory = true;
+    if (f.dynamic_Rendering)
+        features_1_3.dynamicRendering = true;
+    if (f.shader_integer_dot_product)
+        features_1_3.shaderIntegerDotProduct = true;
+    if (f.maintenance_4)
+        features_1_3.maintenance4 = true;
+    // Vulkan 1.4 Features
+    auto &features_1_4 = out_enabled_features->base_1_4;
+    if (f.global_priority_query)
+        features_1_4.globalPriorityQuery = true;
+    if (f.shader_subgroup_rotate)
+        features_1_4.shaderSubgroupRotate = true;
+    if (f.shader_subgroup_rotate_clustered)
+        features_1_4.shaderSubgroupRotateClustered = true;
+    if (f.shader_float_controls_2)
+        features_1_4.shaderFloatControls2 = true;
+    if (f.shader_expect_assume)
+        features_1_4.shaderExpectAssume = true;
+    if (f.rectangular_lines)
+        features_1_4.rectangularLines = true;
+    if (f.bresenham_lines)
+        features_1_4.bresenhamLines = true;
+    if (f.smooth_lines)
+        features_1_4.smoothLines = true;
+    if (f.stippled_rectangular_lines)
+        features_1_4.stippledRectangularLines = true;
+    if (f.stippled_bresenham_lines)
+        features_1_4.stippledBresenhamLines = true;
+    if (f.stippled_smooth_lines)
+        features_1_4.stippledSmoothLines = true;
+    if (f.vertex_attribute_instance_rate_divisor)
+        features_1_4.vertexAttributeInstanceRateDivisor = true;
+    if (f.vertex_attribute_instance_rate_zero_divisor)
+        features_1_4.vertexAttributeInstanceRateZeroDivisor = true;
+    if (f.index_type_uint_8)
+        features_1_4.indexTypeUint8 = true;
+    if (f.dynamic_rendering_local_read)
+        features_1_4.dynamicRenderingLocalRead = true;
+    if (f.maintenance_5)
+        features_1_4.maintenance5 = true;
+    if (f.maintenance_6)
+        features_1_4.maintenance6 = true;
+    if (f.pipeline_protected_access)
+        features_1_4.pipelineProtectedAccess = true;
+    if (f.pipeline_robustness)
+        features_1_4.pipelineRobustness = true;
+    if (f.host_image_copy)
+        features_1_4.hostImageCopy = true;
+    if (f.push_descriptor)
+        features_1_4.pushDescriptor = true;
     // Acceleration Structure features
+    auto &accel_struct_features = out_enabled_features->accel_struct_features;
     if (f.acceleration_structure)
         accel_struct_features.accelerationStructure = true;
     if (f.acceleration_structure_capture_replay)
@@ -1816,6 +2693,7 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         accel_struct_features.
             descriptorBindingAccelerationStructureUpdateAfterBind = true;
     // Raytracing features
+    auto &raytracing_features = out_enabled_features->raytracing_features;
     if (f.ray_tracing_pipeline)
         raytracing_features.rayTracingPipeline = true;
     if (f.ray_tracing_pipeline_shader_group_handle_capture_replay)
@@ -1828,7 +2706,13 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
         raytracing_features.rayTracingPipelineTraceRaysIndirect = true;
     if (f.ray_traversal_primitive_culling)
         raytracing_features.rayTraversalPrimitiveCulling = true;
-    return features;
+
+    accel_struct_features.pNext = &raytracing_features;
+    features_1_4.pNext = &accel_struct_features;
+    features_1_3.pNext = &features_1_4;
+    features_1_2.pNext = &features_1_3;
+    features_1_1.pNext = &features_1_2;
+    features.pNext = &features_1_1;
 }
 
 /**
@@ -1839,45 +2723,6 @@ inline vk::PhysicalDeviceFeatures2 getEnabledFeatures(const GPUFeatures &f)
 inline std::vector<const char *> getEnabledDeviceExtensions(const GPUFeatures &f)
 {
     std::vector<const char *> extensions = {};
-    // Synchronization 2 features
-    if (f.synchronization2)
-    {
-        extensions.push_back(vk::KHRSynchronization2ExtensionName);
-    }
-    // 16-bit float 8-bit int features
-    if (f.shader_float16 || f.shader_int8)
-    {
-        extensions.push_back(vk::KHRShaderFloat16Int8ExtensionName);
-    }
-    // int 64-bit atomic features
-    if (f.shader_buffer_int64_atomics || f.shader_shared_int64_atomics)
-    {
-        extensions.push_back(vk::KHRShaderAtomicInt64ExtensionName);
-    }
-    // Bindless support features
-    if (f.shader_input_attachment_array_dynamic_indexing
-        || f.shader_uniform_texel_buffer_array_dynamic_indexing
-        || f.shader_storage_texel_buffer_array_dynamic_indexing
-        || f.shader_uniform_buffer_array_non_uniform_indexing
-        || f.shader_sampled_image_array_non_uniform_indexing
-        || f.shader_storage_buffer_array_non_uniform_indexing
-        || f.shader_storage_image_array_non_uniform_indexing
-        || f.shader_input_attachment_array_non_uniform_indexing
-        || f.shader_uniform_texel_buffer_array_non_uniform_indexing
-        || f.shader_storage_texel_buffer_array_non_uniform_indexing
-        || f.descriptor_binding_uniform_buffer_update_after_bind
-        || f.descriptor_binding_sampled_image_update_after_bind
-        || f.descriptor_binding_storage_image_update_after_bind
-        || f.descriptor_binding_storage_buffer_update_after_bind
-        || f.descriptor_binding_uniform_texel_buffer_update_after_bind
-        || f.descriptor_binding_storage_texel_buffer_update_after_bind
-        || f.descriptor_binding_update_unused_while_pending
-        || f.descriptor_binding_partially_bound
-        || f.descriptor_binding_variable_descriptor_count
-        || f.runtime_descriptor_array)
-    {
-        extensions.push_back(vk::EXTDescriptorIndexingExtensionName);
-    }
     // Acceleration Structure features
     if (f.acceleration_structure
         || f.acceleration_structure_capture_replay
@@ -1899,7 +2744,7 @@ inline std::vector<const char *> getEnabledDeviceExtensions(const GPUFeatures &f
     return extensions;
 }
 
-inline vk::PresentModeKHR getPresentMode(const PresentMode mode)
+constexpr vk::PresentModeKHR getPresentMode(const PresentMode mode)
 {
     switch (mode)
     {
@@ -1915,7 +2760,7 @@ inline vk::PresentModeKHR getPresentMode(const PresentMode mode)
     }
 }
 
-inline vk::PipelineStageFlags2 getPipelineStageFlags(const PipelineStageFlags flags)
+constexpr vk::PipelineStageFlags2 getPipelineStageFlags(const PipelineStageFlags flags)
 {
     vk::PipelineStageFlags2 out_flags = vk::PipelineStageFlagBits2::eNone;
     if (hasFlag(flags, PipelineStageFlags::TOP_OF_PIPE))

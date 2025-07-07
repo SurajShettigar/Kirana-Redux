@@ -37,6 +37,8 @@ private:
 
     core::Handle<core::Window> m_main_window = {};
 
+    bool m_is_cleaned {false};
+
     int init();
     void update();
     void render();

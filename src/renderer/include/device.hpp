@@ -93,6 +93,8 @@ public:
     [[nodiscard]] Semaphore createSemaphore(PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE) const;
 
     [[nodiscard]] Fence createFence() const;
+
+    void waitIdle() const;
 private:
     vk::Instance m_instance{nullptr};
     vk::DebugUtilsMessengerEXT m_debug_messenger{nullptr};
