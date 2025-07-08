@@ -7,6 +7,8 @@
 #include <vulkan/vulkan.hpp>
 #include "common.hpp"
 
+#include <memory_allocator.hpp>
+
 namespace kirana::renderer
 {
 
@@ -55,18 +57,25 @@ public:
 private:
     Size2D m_size{};
     TextureFormat m_format{};
+    TextureUsageFlags m_usage{};
     TextureLayout m_layout{};
 
     vk::Device m_device{nullptr};
     vk::Image m_handle{nullptr};
     vk::ImageView m_view{nullptr};
+    const MemoryAllocator *m_allocator{nullptr};
+
+    AllocationID m_alloc_id{};
 
     bool init(vk::Device device, const Size2D &size, TextureFormat format,
-              TextureLayout layout = TextureLayout::UNKNOWN);
+              TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
+              TextureLayout layout = TextureLayout::UNKNOWN, const MemoryAllocator *allocator = nullptr);
 
     explicit Texture(const vk::Device device, const vk::Image image, const vk::ImageView view, const Size2D &size,
-                     const TextureFormat format, const TextureLayout layout = TextureLayout::UNKNOWN)
-        : m_size{size}, m_format{format}, m_layout{layout}, m_device{device}, m_handle{image}, m_view{view}
+                     const TextureFormat format, const TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
+                     const TextureLayout layout = TextureLayout::UNKNOWN)
+        : m_size{size}, m_format{format}, m_usage{usage}, m_layout{layout}, m_device{device}, m_handle{image},
+          m_view{view}
     {
     }
 };

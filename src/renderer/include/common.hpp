@@ -34,6 +34,41 @@ struct Size3D
     }
 };
 
+struct Offset2D
+{
+    int32_t x = 0;
+    int32_t y = 0;
+};
+
+struct Offset3D
+{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t z = 0;
+};
+
+struct Rect2D
+{
+    Offset2D offset{};
+    Size2D size{};
+
+    [[nodiscard]] bool isValid() const
+    {
+        return size.isValid();
+    }
+};
+
+struct Rect3D
+{
+    Offset3D offset{};
+    Size3D size{};
+
+    [[nodiscard]] bool isValid() const
+    {
+        return size.isValid();
+    }
+};
+
 enum class ShaderStageFlags: uint32_t
 {
     NONE = 0x0u,
@@ -386,21 +421,86 @@ enum class TextureLayout
     VIDEO_ENCODE_QUANTIZATION_MAP = 30
 };
 
-enum class SampleCountFlags
+enum class TextureUsageFlags: uint32_t
 {
-    NONE = 0,
-    S_1 = 1 << 0,
-    S_2 = 1 << 1,
-    S_4 = 1 << 2,
-    S_8 = 1 << 3,
-    S_16 = 1 << 4,
-    S_32 = 1 << 5,
-    S_64 = 1 << 6,
+    UNKNOWN = 0x00000000u,
+    TRANSFER_SRC = 0x00000001u,
+    TRANSFER_DST = 0x00000002u,
+    SAMPLED = 0x00000004u,
+    STORAGE = 0x00000008u,
+    COLOR_ATTACHMENT = 0x00000010u,
+    DEPTH_STENCIL_ATTACHMENT = 0x00000020u,
+    TRANSIENT_ATTACHMENT = 0x00000040u,
+    INPUT_ATTACHMENT = 0x00000080u,
+    HOST_TRANSFER = 0x00400000u,
+    VIDEO_DECODE_DST = 0x00000400u,
+    VIDEO_DECODE_SRC = 0x00000800u,
+    VIDEO_DECODE_DPB = 0x00001000u,
+    FRAGMENT_DENSITY_MAP = 0x00000200u,
+    FRAGMENT_SHADING_RATE_ATTACHMENT = 0x00000100u,
+    VIDEO_ENCODE_DST = 0x00002000u,
+    VIDEO_ENCODE_SRC = 0x00004000u,
+    VIDEO_ENCODE_DPB = 0x00008000u,
+    ATTACHMENT_FEEDBACK_LOOP = 0x00080000u,
+    VIDEO_ENCODE_QUANTIZATION_DELTA_MAP = 0x02000000u,
+    VIDEO_ENCODE_EMPHASIS_MAP = 0x04000000u,
+};
+
+constexpr TextureUsageFlags operator|(const TextureUsageFlags lhs, const TextureUsageFlags rhs)
+{
+    return static_cast<TextureUsageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsageFlags &operator|=(TextureUsageFlags &lhs, const TextureUsageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr TextureUsageFlags operator&(const TextureUsageFlags lhs, const TextureUsageFlags rhs)
+{
+    return static_cast<TextureUsageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsageFlags &operator&=(TextureUsageFlags &lhs, const TextureUsageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr TextureUsageFlags operator^(const TextureUsageFlags lhs, const TextureUsageFlags rhs)
+{
+    return static_cast<TextureUsageFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsageFlags &operator^=(TextureUsageFlags &lhs, const TextureUsageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr TextureUsageFlags operator~(const TextureUsageFlags flag)
+{
+    return static_cast<TextureUsageFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const TextureUsageFlags flags, const TextureUsageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class SampleCountFlags: uint8_t
+{
+    NONE = 0u,
+    S_1 = 1u << 0u,
+    S_2 = 1u << 1u,
+    S_4 = 1u << 2u,
+    S_8 = 1u << 3u,
+    S_16 = 1u << 4u,
+    S_32 = 1u << 5u,
+    S_64 = 1u << 6u,
 };
 
 constexpr SampleCountFlags operator|(const SampleCountFlags lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+    return static_cast<SampleCountFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
 }
 
 constexpr SampleCountFlags &operator|=(SampleCountFlags &lhs, const SampleCountFlags rhs)
@@ -410,7 +510,7 @@ constexpr SampleCountFlags &operator|=(SampleCountFlags &lhs, const SampleCountF
 
 constexpr SampleCountFlags operator&(const SampleCountFlags lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+    return static_cast<SampleCountFlags>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
 }
 
 constexpr SampleCountFlags &operator&=(SampleCountFlags &lhs, const SampleCountFlags rhs)
@@ -420,7 +520,7 @@ constexpr SampleCountFlags &operator&=(SampleCountFlags &lhs, const SampleCountF
 
 constexpr SampleCountFlags operator^(const SampleCountFlags lhs, const SampleCountFlags rhs)
 {
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+    return static_cast<SampleCountFlags>(static_cast<uint8_t>(lhs) ^ static_cast<uint8_t>(rhs));
 }
 
 constexpr SampleCountFlags &operator^=(SampleCountFlags &lhs, const SampleCountFlags rhs)
@@ -430,7 +530,7 @@ constexpr SampleCountFlags &operator^=(SampleCountFlags &lhs, const SampleCountF
 
 constexpr SampleCountFlags operator~(const SampleCountFlags flag)
 {
-    return static_cast<SampleCountFlags>(~static_cast<uint32_t>(flag));
+    return static_cast<SampleCountFlags>(~static_cast<uint8_t>(flag));
 }
 
 constexpr bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_flag)

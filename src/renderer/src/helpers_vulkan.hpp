@@ -31,6 +31,43 @@ constexpr vk::Extent3D getExtent3D(const Size3D &size)
     return vk::Extent3D{size.width, size.height, size.depth};
 }
 
+constexpr vk::Offset2D getOffset2D(const Offset2D &offset)
+{
+    return vk::Offset2D{offset.x, offset.y};
+}
+
+constexpr vk::Offset3D getOffset3D(const Offset2D &offset)
+{
+    return vk::Offset3D{offset.x, offset.y, 0};
+}
+
+constexpr vk::Offset3D getOffset3D(const Offset3D &offset)
+{
+    return vk::Offset3D{offset.x, offset.y, offset.z};
+}
+
+constexpr std::array<vk::Offset2D, 2> getOffset2DFromRect(const Rect2D &rect)
+{
+    return {getOffset2D(rect.offset),
+            vk::Offset2D{rect.offset.x + static_cast<int32_t>(rect.size.width),
+                         rect.offset.y + static_cast<int32_t>(rect.size.height)}};
+}
+
+constexpr std::array<vk::Offset3D, 2> getOffset3DFromRect(const Rect2D &rect)
+{
+    return {getOffset3D(rect.offset),
+            vk::Offset3D{rect.offset.x + static_cast<int32_t>(rect.size.width),
+                         rect.offset.y + static_cast<int32_t>(rect.size.height), 1}};
+}
+
+constexpr std::array<vk::Offset3D, 2> getOffset3DFromRect(const Rect3D &rect)
+{
+    return {getOffset3D(rect.offset),
+            vk::Offset3D{rect.offset.x + static_cast<int32_t>(rect.size.width),
+                         rect.offset.y + static_cast<int32_t>(rect.size.height),
+                         rect.offset.z + static_cast<int32_t>(rect.size.depth)}};
+}
+
 constexpr vk::Format getFormat(const TextureFormat format)
 {
     switch (format)
@@ -395,6 +432,16 @@ constexpr TextureLayout getNativeTextureLayout(const vk::ImageLayout layout)
     }
 }
 
+constexpr vk::ImageUsageFlags getImageUsageFlags(const TextureUsageFlags flags)
+{
+    return static_cast<vk::ImageUsageFlags>(static_cast<uint32_t>(flags));
+}
+
+constexpr SampleCountFlags getSampleCountFlags(const vk::SampleCountFlags flags)
+{
+    return static_cast<SampleCountFlags>(static_cast<uint32_t>(flags));
+}
+
 constexpr GPUType getGPUType(const vk::PhysicalDeviceType type)
 {
     switch (type)
@@ -406,11 +453,6 @@ constexpr GPUType getGPUType(const vk::PhysicalDeviceType type)
     default:
         return GPUType::UNKNOWN;
     }
-}
-
-constexpr SampleCountFlags getSampleCountFlags(const vk::SampleCountFlags flags)
-{
-    return static_cast<SampleCountFlags>(static_cast<uint32_t>(flags));
 }
 
 constexpr QueueFamilyFlags getQueueFamilyFlags(const vk::QueueFlags flags,

@@ -34,6 +34,10 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
             }
             m_ctxs.emplace_back(RenderContext{encoder, swapchain_semaphore, render_semaphore});
         }
+
+        m_render_target = m_device.createTexture(swapchain_data.size, TextureFormat::R32G32B32A32_SFLOAT,
+                                                 TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
+                                                 TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
     }
     return status;
 }
@@ -52,7 +56,7 @@ void Renderer::render()
 
     const auto &[encoder, swapchain_semaphore, render_semaphore] = m_ctxs[m_current_index];
     Queue &queue = m_device.getGraphicsQueue();
-    auto &render_target = m_swapchain.getTexture(swapchain_semaphore);
+    auto &swapchain_texture = m_swapchain.getTexture(swapchain_semaphore);
 
     if (swapchain_semaphore.isValid())
     {
@@ -61,9 +65,12 @@ void Renderer::render()
     queue.addSignalSemaphore(render_semaphore);
 
     encoder.begin();
-    encoder.transitionTextureLayout(render_target, TextureLayout::GENERAL);
-    encoder.clearTexture(render_target, {1.0f, 0.0f, 0.0f, 1.0f});
-    encoder.transitionTextureLayout(render_target, TextureLayout::PRESENT_SRC);
+    encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
+    encoder.clearTexture(m_render_target, {1.0f, 0.0f, 0.0f, 1.0f});
+    encoder.transitionTextureLayout(m_render_target, TextureLayout::TRANSFER_SRC_OPTIMAL);
+    encoder.transitionTextureLayout(swapchain_texture, TextureLayout::TRANSFER_DST_OPTIMAL);
+    encoder.blitTexture(m_render_target, swapchain_texture);
+    encoder.transitionTextureLayout(swapchain_texture, TextureLayout::PRESENT_SRC);
 
     queue.submit(encoder.finish(), m_fence);
 
@@ -85,6 +92,7 @@ void Renderer::clean()
         return;
     }
     m_device.waitIdle();
+    m_render_target.destroy();
     if (!m_ctxs.empty())
     {
         for (auto &[encoder, swapchain_semaphore, render_semaphore] : m_ctxs)

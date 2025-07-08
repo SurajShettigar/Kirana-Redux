@@ -4,9 +4,7 @@
 #ifndef KIRANA_RENDERER_DEVICE_HPP
 #define KIRANA_RENDERER_DEVICE_HPP
 
-#include <vulkan/vulkan.hpp>
 #include "common.hpp"
-
 #include "queue.hpp"
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
@@ -84,6 +82,7 @@ public:
     }
 
     [[nodiscard]] Texture createTexture(const Size2D &size, TextureFormat format,
+                                        TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
                                         TextureLayout layout = TextureLayout::UNKNOWN) const;
 
     [[nodiscard]] Swapchain createSwapchain(const SwapchainData &data) const;
@@ -95,6 +94,7 @@ public:
     [[nodiscard]] Fence createFence() const;
 
     void waitIdle() const;
+
 private:
     vk::Instance m_instance{nullptr};
     vk::DebugUtilsMessengerEXT m_debug_messenger{nullptr};
@@ -107,6 +107,8 @@ private:
     std::vector<Queue> m_queues{};
     uint32_t m_queue_index_compute{0};
     uint32_t m_queue_index_transfer{0};
+
+    MemoryAllocator m_memory_allocator{};
 };
 }
 #endif // KIRANA_RENDERER_DEVICE_HPP

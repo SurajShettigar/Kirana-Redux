@@ -87,4 +87,34 @@ void CommandEncoder::clearTexture(const Texture &texture, const std::array<float
 }
 
 
+void CommandEncoder::blitTexture(const Texture &src, const Texture &dst, Rect2D src_region, Rect2D dst_region) const
+{
+    const auto src_aspect = isDepthTextureFormat(src.getFormat())
+                                ? vk::ImageAspectFlagBits::eDepth
+                                : vk::ImageAspectFlagBits::eColor;
+    if (!src_region.isValid())
+    {
+        const auto [width, height] = src.getSize();
+        src_region = Rect2D{0, 0, width, height};
+    }
+
+    const auto dst_aspect = isDepthTextureFormat(dst.getFormat())
+                                ? vk::ImageAspectFlagBits::eDepth
+                                : vk::ImageAspectFlagBits::eColor;
+    if (!dst_region.isValid())
+    {
+        const auto [width, height] = dst.getSize();
+        dst_region = Rect2D{0, 0, width, height};
+    }
+
+    const auto blit_image = vk::ImageBlit2{
+        vk::ImageSubresourceLayers{src_aspect, 0, 0, 1}, getOffset3DFromRect(src_region),
+        vk::ImageSubresourceLayers{dst_aspect, 0, 0, 1}, getOffset3DFromRect(dst_region)};
+    const auto blit_info = vk::BlitImageInfo2{src.getNativeHandle(), getImageLayout(src.getLayout()),
+                                              dst.getNativeHandle(), getImageLayout(dst.getLayout()),
+                                              {blit_image}};
+    m_buffer.blitImage2(blit_info);
+}
+
+
 }

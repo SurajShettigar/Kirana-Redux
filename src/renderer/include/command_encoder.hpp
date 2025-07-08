@@ -43,10 +43,20 @@ public:
      */
     void clearTexture(const Texture &texture, const std::array<float, 4> &color, uint32_t stencil = 0) const;
 
+    /**
+     * Copies texture content from one texture to another.
+     * @param src The source texture from which the content will be copied from.
+     * @param dst The destination texture onto which the contents will be copied to.
+     * @param src_region The region of source texture to copy from. If empty, the entire region is copied.
+     * @param dst_region The region of destination texture to copy to. If empty, the entire region is copied.
+     */
+    void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
+
     [[nodiscard]] bool isValid() const
     {
         return m_pool != nullptr && m_buffer != nullptr;
     }
+
 private:
     vk::Device m_device{nullptr};
     vk::CommandPool m_pool{nullptr};

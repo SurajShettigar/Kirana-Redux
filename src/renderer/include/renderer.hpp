@@ -39,6 +39,7 @@ private:
     Fence m_fence{};
     Swapchain m_swapchain{};
     std::vector<RenderContext> m_ctxs{};
+    Texture m_render_target {};
 
     size_t m_current_index{0};
 };

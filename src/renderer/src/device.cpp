@@ -269,21 +269,15 @@ bool Device::init(const DeviceInitializationData &init_data)
         {
             queue_create_infos.emplace_back(vk::DeviceQueueCreateFlags{0}, q.family_index, queue_priorities);
         }
-        std::vector<const char *> device_layers = {};
         std::vector<const char *> device_extensions = getEnabledDeviceExtensions(init_data.gpu_preference.features);
-        if (init_data.debug_mode)
-        {
-            device_layers.push_back("VK_LAYER_KHRONOS_validation");
-            device_layers.push_back(vk::EXTDebugUtilsExtensionName);
-        }
         if (m_surface != nullptr)
         {
             device_extensions.push_back(vk::KHRSwapchainExtensionName);
         }
         auto create_info = vk::DeviceCreateInfo{
-            vk::DeviceCreateFlags{0}, queue_create_infos, device_layers, device_extensions,
+            vk::DeviceCreateFlags{0}, queue_create_infos, {}, device_extensions,
         };
-        auto enabled_features = EnabledFeatures {};
+        auto enabled_features = EnabledFeatures{};
         getEnabledFeatures(init_data.gpu_preference.features, &enabled_features);
         create_info.pNext = &enabled_features.base;
 
@@ -296,40 +290,53 @@ bool Device::init(const DeviceInitializationData &init_data)
             m_queues.emplace_back(Queue{m_device, q.index, q.family_index, q.type});
         }
     }
-    return true;
 #pragma endregion
+
+#pragma region CREATE_MEMORY_ALLOCATOR
+    if (!m_memory_allocator.init(m_instance, m_gpu, m_device))
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to initialize memory allocator.");
+        return false;
+    }
+#pragma endregion
+    return true;
 }
 
 void Device::destroy()
 {
+    if (m_memory_allocator.isValid())
+    {
+        m_memory_allocator.destroy();
+    }
+    if (m_device)
+    {
+        m_device.destroy();
+        m_device = nullptr;
+    }
+    if (m_surface)
+    {
+        m_instance.destroySurfaceKHR(m_surface);
+        m_surface = nullptr;
+    }
+    if (m_debug_messenger)
+    {
+        m_instance.destroyDebugUtilsMessengerEXT(m_debug_messenger);
+        m_debug_messenger = nullptr;
+    }
     if (m_instance)
     {
-        if (m_device)
-        {
-            m_device.destroy();
-            m_device = nullptr;
-        }
-        if (m_surface)
-        {
-            m_instance.destroySurfaceKHR(m_surface);
-            m_surface = nullptr;
-        }
-        if (m_debug_messenger)
-        {
-            m_instance.destroyDebugUtilsMessengerEXT(m_debug_messenger);
-            m_debug_messenger = nullptr;
-        }
         m_instance.destroy();
         m_instance = nullptr;
     }
 }
 
-Texture Device::createTexture(const Size2D &size, const TextureFormat format, const TextureLayout layout) const
+Texture Device::createTexture(const Size2D &size, const TextureFormat format, const TextureUsageFlags usage,
+                              const TextureLayout layout) const
 {
     Texture texture;
     if (m_device)
     {
-        texture.init(m_device, size, format, layout);
+        texture.init(m_device, size, format, usage, layout, &m_memory_allocator);
     }
     else
     {

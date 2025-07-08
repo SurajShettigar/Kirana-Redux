@@ -7,21 +7,37 @@
 
 namespace kirana::renderer
 {
-bool Texture::init(const vk::Device device, const Size2D &size, const TextureFormat format, const TextureLayout layout)
+bool Texture::init(const vk::Device device, const Size2D &size, const TextureFormat format,
+                   const TextureUsageFlags usage, const TextureLayout layout, const MemoryAllocator *allocator)
 {
     m_device = device;
+    m_allocator = allocator;
+
     m_size = size;
     m_format = format;
+    m_usage = usage;
     m_layout = layout;
     const auto img_extent = getExtent3D(m_size);
     const auto img_format = renderer::getFormat(m_format);
+    const auto img_usage = getImageUsageFlags(m_usage);
     const auto img_layout = getImageLayout(m_layout);
 
-    auto create_info = vk::ImageCreateInfo{vk::ImageCreateFlags{}, vk::ImageType::e2D, img_format, img_extent, 1, 1};
+    auto create_info = vk::ImageCreateInfo{vk::ImageCreateFlags{}, vk::ImageType::e2D, img_format, img_extent, 1, 1,
+                                           vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, img_usage};
     create_info.setInitialLayout(img_layout);
 
-    m_handle = m_device.createImage(create_info);
-
+    if (m_allocator)
+    {
+        m_alloc_id = m_allocator->createImage(create_info, &m_handle);
+        if (!m_alloc_id.isValid())
+        {
+            return false;
+        }
+    }
+    else
+    {
+        m_handle = m_device.createImage(create_info);
+    }
     const auto img_aspect = isDepthTextureFormat(m_format)
                                 ? vk::ImageAspectFlagBits::eDepth
                                 : vk::ImageAspectFlagBits::eColor;
@@ -38,11 +54,18 @@ void Texture::destroy()
 {
     if (m_device)
     {
-        if (m_handle)
+        if (m_allocator && m_alloc_id.isValid())
+        {
+            m_allocator->destroyImage(m_alloc_id, m_handle);
+            m_handle = nullptr;
+            m_alloc_id = {};
+        }
+        else if (m_handle)
         {
             m_device.destroyImage(m_handle);
             m_handle = nullptr;
         }
+
         if (m_view)
         {
             m_device.destroyImageView(m_view);

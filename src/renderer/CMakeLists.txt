@@ -1,6 +1,7 @@
 message("Adding Library: renderer")
 add_library(renderer
         src/device.cpp
+        src/memory_allocator.cpp
         src/synchronization.cpp
         src/texture.cpp
         src/swapchain.cpp
