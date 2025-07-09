@@ -8,6 +8,8 @@
 #include "queue.hpp"
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
+#include "descriptor_allocator.hpp"
+#include "shader.hpp"
 
 namespace kirana::renderer
 {
@@ -84,6 +86,14 @@ public:
     [[nodiscard]] Texture createTexture(const Size2D &size, TextureFormat format,
                                         TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
                                         TextureLayout layout = TextureLayout::UNKNOWN) const;
+
+    [[nodiscard]] DescriptorAllocator createDescriptorAllocator(
+        const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
+        uint32_t max_sets = 1024) const;
+
+    [[nodiscard]] DescriptorLayout createDescriptorLayout(ShaderStageFlags shader_stages, const std::vector<ShaderBinding> &bindings = {}) const;
+
+    [[nodiscard]] Shader createShader(const core::Filepath &source_path) const;
 
     [[nodiscard]] Swapchain createSwapchain(const SwapchainData &data) const;
 

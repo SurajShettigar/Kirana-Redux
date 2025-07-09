@@ -5,6 +5,10 @@ add_library(renderer
         src/synchronization.cpp
         src/texture.cpp
         src/swapchain.cpp
+        src/descriptor_layout.cpp
+        src/descriptor_set.cpp
+        src/descriptor_allocator.cpp
+        src/shader.cpp
         src/command_encoder.cpp
         src/queue.cpp
         src/renderer.cpp)

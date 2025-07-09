@@ -69,172 +69,6 @@ struct Rect3D
     }
 };
 
-enum class ShaderStageFlags: uint32_t
-{
-    NONE = 0x0u,
-    VERTEX = 0x00000001u,
-    TESSELLATION_CONTROL = 0x00000002u,
-    TESSELLATION_EVALUATION = 0x00000004u,
-    GEOMETRY = 0x00000008u,
-    FRAGMENT = 0x00000010u,
-    COMPUTE = 0x00000020u,
-    ALL_GRAPHICS = 0x0000001Fu,
-    RAYGEN_BIT = 0x00000100u,
-    ANY_HIT_BIT = 0x00000200u,
-    CLOSEST_HIT_BIT = 0x00000400u,
-    MISS_BIT = 0x00000800u,
-    INTERSECTION_BIT = 0x00001000u,
-    CALLABLE_BIT = 0x00002000u,
-    TASK_BIT = 0x00000040u,
-    MESH_BIT = 0x00000080u,
-    STAGE_ALL = 0x7FFFFFFFu,
-};
-
-constexpr ShaderStageFlags operator|(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
-{
-    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
-}
-
-constexpr ShaderStageFlags &operator|=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr ShaderStageFlags operator&(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
-{
-    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
-}
-
-constexpr ShaderStageFlags &operator&=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr ShaderStageFlags operator^(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
-{
-    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
-}
-
-constexpr ShaderStageFlags &operator^=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
-{
-    return lhs = lhs ^ rhs;
-}
-
-constexpr ShaderStageFlags operator~(const ShaderStageFlags flag)
-{
-    return static_cast<ShaderStageFlags>(~static_cast<uint32_t>(flag));
-}
-
-constexpr bool hasFlag(const ShaderStageFlags flags, const ShaderStageFlags req_flag)
-{
-    return (flags & req_flag) == req_flag;
-}
-
-enum class SubgroupFeatureFlags: uint32_t
-{
-    NONE = 0u,
-    BASIC = 0x00000001u,
-    VOTE = 0x00000002u,
-    ARITHMETIC = 0x00000004u,
-    BALLOT = 0x00000008u,
-    SHUFFLE = 0x00000010u,
-    SHUFFLE_RELATIVE = 0x00000020u,
-    CLUSTERED = 0x00000040u,
-    QUAD = 0x00000080u,
-    PARTITIONED = 0x00000100u,
-    ROTATE = 0x00000200u,
-    ROTATE_CLUSTERED = 0x00000400u,
-};
-
-constexpr SubgroupFeatureFlags operator|(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
-{
-    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
-}
-
-constexpr SubgroupFeatureFlags &operator|=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr SubgroupFeatureFlags operator&(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
-{
-    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
-}
-
-constexpr SubgroupFeatureFlags &operator&=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr SubgroupFeatureFlags operator^(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
-{
-    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
-}
-
-constexpr SubgroupFeatureFlags &operator^=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
-{
-    return lhs = lhs ^ rhs;
-}
-
-constexpr SubgroupFeatureFlags operator~(const SubgroupFeatureFlags flag)
-{
-    return static_cast<SubgroupFeatureFlags>(~static_cast<uint32_t>(flag));
-}
-
-constexpr bool hasFlag(const SubgroupFeatureFlags flags, const SubgroupFeatureFlags req_flag)
-{
-    return (flags & req_flag) == req_flag;
-}
-
-enum class ResolveModeFlags: uint8_t
-{
-    NONE = 0x00u,
-    SAMPLE_ZERO = 0x01u,
-    AVERAGE = 0x02u,
-    MIN = 0x04u,
-    MAX = 0x08u,
-};
-
-constexpr ResolveModeFlags operator|(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
-{
-    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
-}
-
-constexpr ResolveModeFlags &operator|=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr ResolveModeFlags operator&(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
-{
-    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
-}
-
-constexpr ResolveModeFlags &operator&=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr ResolveModeFlags operator^(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
-{
-    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) ^ static_cast<uint8_t>(rhs));
-}
-
-constexpr ResolveModeFlags &operator^=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
-{
-    return lhs = lhs ^ rhs;
-}
-
-constexpr ResolveModeFlags operator~(const ResolveModeFlags flag)
-{
-    return static_cast<ResolveModeFlags>(~static_cast<uint8_t>(flag));
-}
-
-constexpr bool hasFlag(const ResolveModeFlags flags, const ResolveModeFlags req_flag)
-{
-    return (flags & req_flag) == req_flag;
-}
-
 enum class TextureFormat
 {
     UNKNOWN = 0,
@@ -538,6 +372,379 @@ constexpr bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_
     return (flags & req_flag) == req_flag;
 }
 
+enum class ShaderStageFlags: uint32_t
+{
+    NONE = 0x0u,
+    VERTEX = 0x00000001u,
+    TESSELLATION_CONTROL = 0x00000002u,
+    TESSELLATION_EVALUATION = 0x00000004u,
+    GEOMETRY = 0x00000008u,
+    FRAGMENT = 0x00000010u,
+    COMPUTE = 0x00000020u,
+    ALL_GRAPHICS = 0x0000001Fu,
+    RAYGEN = 0x00000100u,
+    ANY_HIT = 0x00000200u,
+    CLOSEST_HIT = 0x00000400u,
+    MISS = 0x00000800u,
+    INTERSECTION = 0x00001000u,
+    CALLABLE = 0x00002000u,
+    TASK = 0x00000040u,
+    MESH = 0x00000080u,
+    ALL = 0x7FFFFFFFu,
+};
+
+constexpr ShaderStageFlags operator|(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator|=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr ShaderStageFlags operator&(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator&=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr ShaderStageFlags operator^(const ShaderStageFlags lhs, const ShaderStageFlags rhs)
+{
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr ShaderStageFlags &operator^=(ShaderStageFlags &lhs, const ShaderStageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr ShaderStageFlags operator~(const ShaderStageFlags flag)
+{
+    return static_cast<ShaderStageFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const ShaderStageFlags flags, const ShaderStageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class SubgroupFeatureFlags: uint32_t
+{
+    NONE = 0u,
+    BASIC = 0x00000001u,
+    VOTE = 0x00000002u,
+    ARITHMETIC = 0x00000004u,
+    BALLOT = 0x00000008u,
+    SHUFFLE = 0x00000010u,
+    SHUFFLE_RELATIVE = 0x00000020u,
+    CLUSTERED = 0x00000040u,
+    QUAD = 0x00000080u,
+    PARTITIONED = 0x00000100u,
+    ROTATE = 0x00000200u,
+    ROTATE_CLUSTERED = 0x00000400u,
+};
+
+constexpr SubgroupFeatureFlags operator|(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator|=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr SubgroupFeatureFlags operator&(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator&=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr SubgroupFeatureFlags operator^(const SubgroupFeatureFlags lhs, const SubgroupFeatureFlags rhs)
+{
+    return static_cast<SubgroupFeatureFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr SubgroupFeatureFlags &operator^=(SubgroupFeatureFlags &lhs, const SubgroupFeatureFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr SubgroupFeatureFlags operator~(const SubgroupFeatureFlags flag)
+{
+    return static_cast<SubgroupFeatureFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const SubgroupFeatureFlags flags, const SubgroupFeatureFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class ResolveModeFlags: uint8_t
+{
+    NONE = 0x00u,
+    SAMPLE_ZERO = 0x01u,
+    AVERAGE = 0x02u,
+    MIN = 0x04u,
+    MAX = 0x08u,
+};
+
+constexpr ResolveModeFlags operator|(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator|=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr ResolveModeFlags operator&(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator&=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr ResolveModeFlags operator^(const ResolveModeFlags lhs, const ResolveModeFlags rhs)
+{
+    return static_cast<ResolveModeFlags>(static_cast<uint8_t>(lhs) ^ static_cast<uint8_t>(rhs));
+}
+
+constexpr ResolveModeFlags &operator^=(ResolveModeFlags &lhs, const ResolveModeFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr ResolveModeFlags operator~(const ResolveModeFlags flag)
+{
+    return static_cast<ResolveModeFlags>(~static_cast<uint8_t>(flag));
+}
+
+constexpr bool hasFlag(const ResolveModeFlags flags, const ResolveModeFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class ShaderBindingType
+{
+    UNKNOWN = 0,
+    SAMPLER = 1,
+    COMBINED_IMAGE_SAMPLER = 2,
+    SAMPLED_IMAGE = 3,
+    STORAGE_IMAGE = 4,
+    UNIFORM_TEXEL_BUFFER = 5,
+    STORAGE_TEXEL_BUFFER = 6,
+    UNIFORM_BUFFER = 7,
+    STORAGE_BUFFER = 8,
+    UNIFORM_BUFFER_DYNAMIC = 9,
+    STORAGE_BUFFER_DYNAMIC = 10,
+    INPUT_ATTACHMENT = 11,
+    INLINE_UNIFORM_BLOCK = 12,
+    ACCELERATION_STRUCTURE = 13,
+    MUTABLE = 14,
+};
+
+struct ShaderBinding
+{
+    uint32_t index = 0;
+    ShaderBindingType type = ShaderBindingType::UNKNOWN;
+    ShaderStageFlags shader_stages = ShaderStageFlags::NONE;
+};
+
+enum class PipelineStageFlags: uint64_t
+{
+    NONE = 0ull,
+    TOP_OF_PIPE = 1ull << 0ull,
+    DRAW_INDIRECT = 1ull << 1ull,
+    VERTEX_INPUT = 1ull << 2ull,
+    VERTEX_SHADER = 1ull << 3ull,
+    TESSELLATION_CONTROL_SHADER = 1ull << 4ull,
+    TESSELLATION_EVALUATION_SHADER = 1ull << 5ull,
+    GEOMETRY_SHADER = 1ull << 6ull,
+    FRAGMENT_SHADER = 1ull << 7ull,
+    EARLY_FRAGMENT_TESTS = 1ull << 8ull,
+    LATE_FRAGMENT_TESTS = 1ull << 9ull,
+    COLOR_ATTACHMENT_OUTPUT = 1ull << 10ull,
+    COMPUTE_SHADER = 1ull << 11ull,
+    ALL_TRANSFER = 1ull << 12ull,
+    TRANSFER = 1ull << 13ull,
+    BOTTOM_OF_PIPE = 1ull << 14ull,
+    HOST = 1ull << 15ull,
+    ALL_GRAPHICS = 1ull << 16ull,
+    ALL_COMMANDS = 1ull << 17ull,
+    COPY = 1ull << 18ull,
+    RESOLVE = 1ull << 19ull,
+    BLIT = 1ull << 20ull,
+    CLEAR = 1ull << 21ull,
+    INDEX_INPUT = 1ull << 22ull,
+    VERTEX_ATTRIBUTE_INPUT = 1ull << 23ull,
+    PRE_RASTERIZATION_SHADERS = 1ull << 24ull,
+    VIDEO_DECODE = 1ull << 25ull,
+    VIDEO_ENCODE = 1ull << 26ull,
+    TRANSFORM_FEEDBACK = 1ull << 27ull,
+    CONDITIONAL_RENDERING = 1ull << 28ull,
+    COMMAND_PREPROCESS = 1ull << 29ull,
+    FRAGMENT_SHADING_RATE_ATTACHMENT = 1ull << 30ull,
+    ACCELERATION_STRUCTURE_BUILD = 1ull << 31ull,
+    RAY_TRACING_SHADER = 1ull << 32ull,
+    FRAGMENT_DENSITY_PROCESS = 1ull << 33ull,
+    TASK_SHADER = 1ull << 34ull,
+    MESH_SHADER = 1ull << 35ull,
+    ACCELERATION_STRUCTURE_COPY = 1ull << 36ull,
+    MICROMAP_BUILD = 1ull << 37ull,
+};
+
+constexpr PipelineStageFlags operator|(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) | static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator|=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr PipelineStageFlags operator&(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) & static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator&=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr PipelineStageFlags operator^(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
+{
+    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) ^ static_cast<uint64_t>(rhs));
+}
+
+constexpr PipelineStageFlags &operator^=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr PipelineStageFlags operator~(const PipelineStageFlags lhs)
+{
+    return static_cast<PipelineStageFlags>(~static_cast<uint64_t>(lhs));
+}
+
+constexpr bool hasFlag(const PipelineStageFlags flags, const PipelineStageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+enum class QueueFamilyFlags
+{
+    NONE = 0,
+    GRAPHICS = 1 << 0,
+    PRESENTATION = 1 << 1,
+    COMPUTE = 1 << 2,
+    TRANSFER = 1 << 3,
+};
+
+constexpr QueueFamilyFlags operator|(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
+{
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr QueueFamilyFlags &operator|=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr QueueFamilyFlags operator&(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
+{
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr QueueFamilyFlags &operator&=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr QueueFamilyFlags operator^(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
+{
+    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr QueueFamilyFlags &operator^=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr QueueFamilyFlags operator~(const QueueFamilyFlags flag)
+{
+    return static_cast<QueueFamilyFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const QueueFamilyFlags flags, const QueueFamilyFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
+struct QueueFamily
+{
+    uint32_t index = std::numeric_limits<uint32_t>::max();
+    uint32_t num_queues = 0;
+    QueueFamilyFlags support_flags = QueueFamilyFlags::NONE;
+
+    [[nodiscard]] bool isValid() const
+    {
+        return index < std::numeric_limits<uint32_t>::max() && num_queues > 0 &&
+               support_flags != QueueFamilyFlags::NONE;
+    }
+
+    [[nodiscard]] bool supportsRendering() const
+    {
+        return hasFlag(support_flags, QueueFamilyFlags::GRAPHICS);
+    }
+
+    [[nodiscard]] bool supportsPresentation() const
+    {
+        return hasFlag(support_flags, QueueFamilyFlags::PRESENTATION);
+    }
+
+    [[nodiscard]] bool supportsCompute() const
+    {
+        return hasFlag(support_flags, QueueFamilyFlags::COMPUTE);
+    }
+
+    [[nodiscard]] bool supportsTransfer() const
+    {
+        return hasFlag(support_flags, QueueFamilyFlags::TRANSFER);
+    }
+
+    [[nodiscard]] bool supportsSurfaceRendering() const
+    {
+        return supportsRendering() && supportsPresentation();
+    }
+
+    [[nodiscard]] bool supportsOnlyCompute() const
+    {
+        return supportsCompute() && !supportsRendering();
+    }
+
+    [[nodiscard]] bool supportsOnlyTransfer() const
+    {
+        return supportsTransfer() &&
+               !(supportsCompute() || supportsRendering());
+    }
+};
+
 enum class SwapchainBufferMode
 {
     UNKNOWN = 0,
@@ -553,6 +760,14 @@ enum class PresentMode
     MAILBOX = 2,
     FIFO = 3,
     FIFO_RELAXED = 4,
+};
+
+struct SwapchainData
+{
+    Size2D size{};
+    TextureFormat format{TextureFormat::UNKNOWN};
+    SwapchainBufferMode buffer_mode{SwapchainBufferMode::DOUBLE};
+    PresentMode present_mode{PresentMode::IMMEDIATE};
 };
 
 enum class GPUType
@@ -991,105 +1206,6 @@ struct GPULimits
     uint32_t max_ray_hit_attribute_size = 0;
 };
 
-
-enum class QueueFamilyFlags
-{
-    NONE = 0,
-    GRAPHICS = 1 << 0,
-    PRESENTATION = 1 << 1,
-    COMPUTE = 1 << 2,
-    TRANSFER = 1 << 3,
-};
-
-constexpr QueueFamilyFlags operator|(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
-{
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
-}
-
-constexpr QueueFamilyFlags &operator|=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr QueueFamilyFlags operator&(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
-{
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
-}
-
-constexpr QueueFamilyFlags &operator&=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr QueueFamilyFlags operator^(const QueueFamilyFlags lhs, const QueueFamilyFlags rhs)
-{
-    return static_cast<QueueFamilyFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
-}
-
-constexpr QueueFamilyFlags &operator^=(QueueFamilyFlags &lhs, const QueueFamilyFlags rhs)
-{
-    return lhs = lhs ^ rhs;
-}
-
-constexpr QueueFamilyFlags operator~(const QueueFamilyFlags flag)
-{
-    return static_cast<QueueFamilyFlags>(~static_cast<uint32_t>(flag));
-}
-
-constexpr bool hasFlag(const QueueFamilyFlags flags, const QueueFamilyFlags req_flag)
-{
-    return (flags & req_flag) == req_flag;
-}
-
-struct QueueFamily
-{
-    uint32_t index = std::numeric_limits<uint32_t>::max();
-    uint32_t num_queues = 0;
-    QueueFamilyFlags support_flags = QueueFamilyFlags::NONE;
-
-    [[nodiscard]] bool isValid() const
-    {
-        return index < std::numeric_limits<uint32_t>::max() && num_queues > 0 &&
-               support_flags != QueueFamilyFlags::NONE;
-    }
-
-    [[nodiscard]] bool supportsRendering() const
-    {
-        return hasFlag(support_flags, QueueFamilyFlags::GRAPHICS);
-    }
-
-    [[nodiscard]] bool supportsPresentation() const
-    {
-        return hasFlag(support_flags, QueueFamilyFlags::PRESENTATION);
-    }
-
-    [[nodiscard]] bool supportsCompute() const
-    {
-        return hasFlag(support_flags, QueueFamilyFlags::COMPUTE);
-    }
-
-    [[nodiscard]] bool supportsTransfer() const
-    {
-        return hasFlag(support_flags, QueueFamilyFlags::TRANSFER);
-    }
-
-    [[nodiscard]] bool supportsSurfaceRendering() const
-    {
-        return supportsRendering() && supportsPresentation();
-    }
-
-    [[nodiscard]] bool supportsOnlyCompute() const
-    {
-        return supportsCompute() && !supportsRendering();
-    }
-
-    [[nodiscard]] bool supportsOnlyTransfer() const
-    {
-        return supportsTransfer() &&
-               !(supportsCompute() || supportsRendering());
-    }
-};
-
 struct SurfaceData
 {
     /// HWND for Windows API, Window for X-LIB API.
@@ -1121,96 +1237,5 @@ struct DeviceInitializationData
     SurfaceData surface = {};
     GPUSelectionPreference gpu_preference = {};
 };
-
-struct SwapchainData
-{
-    Size2D size{};
-    TextureFormat format{TextureFormat::UNKNOWN};
-    SwapchainBufferMode buffer_mode{SwapchainBufferMode::DOUBLE};
-    PresentMode present_mode{PresentMode::IMMEDIATE};
-};
-
-enum class PipelineStageFlags: uint64_t
-{
-    NONE = 0ull,
-    TOP_OF_PIPE = 1ull << 0ull,
-    DRAW_INDIRECT = 1ull << 1ull,
-    VERTEX_INPUT = 1ull << 2ull,
-    VERTEX_SHADER = 1ull << 3ull,
-    TESSELLATION_CONTROL_SHADER = 1ull << 4ull,
-    TESSELLATION_EVALUATION_SHADER = 1ull << 5ull,
-    GEOMETRY_SHADER = 1ull << 6ull,
-    FRAGMENT_SHADER = 1ull << 7ull,
-    EARLY_FRAGMENT_TESTS = 1ull << 8ull,
-    LATE_FRAGMENT_TESTS = 1ull << 9ull,
-    COLOR_ATTACHMENT_OUTPUT = 1ull << 10ull,
-    COMPUTE_SHADER = 1ull << 11ull,
-    ALL_TRANSFER = 1ull << 12ull,
-    TRANSFER = 1ull << 13ull,
-    BOTTOM_OF_PIPE = 1ull << 14ull,
-    HOST = 1ull << 15ull,
-    ALL_GRAPHICS = 1ull << 16ull,
-    ALL_COMMANDS = 1ull << 17ull,
-    COPY = 1ull << 18ull,
-    RESOLVE = 1ull << 19ull,
-    BLIT = 1ull << 20ull,
-    CLEAR = 1ull << 21ull,
-    INDEX_INPUT = 1ull << 22ull,
-    VERTEX_ATTRIBUTE_INPUT = 1ull << 23ull,
-    PRE_RASTERIZATION_SHADERS = 1ull << 24ull,
-    VIDEO_DECODE = 1ull << 25ull,
-    VIDEO_ENCODE = 1ull << 26ull,
-    TRANSFORM_FEEDBACK = 1ull << 27ull,
-    CONDITIONAL_RENDERING = 1ull << 28ull,
-    COMMAND_PREPROCESS = 1ull << 29ull,
-    FRAGMENT_SHADING_RATE_ATTACHMENT = 1ull << 30ull,
-    ACCELERATION_STRUCTURE_BUILD = 1ull << 31ull,
-    RAY_TRACING_SHADER = 1ull << 32ull,
-    FRAGMENT_DENSITY_PROCESS = 1ull << 33ull,
-    TASK_SHADER = 1ull << 34ull,
-    MESH_SHADER = 1ull << 35ull,
-    ACCELERATION_STRUCTURE_COPY = 1ull << 36ull,
-    MICROMAP_BUILD = 1ull << 37ull,
-};
-
-constexpr PipelineStageFlags operator|(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
-{
-    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) | static_cast<uint64_t>(rhs));
-}
-
-constexpr PipelineStageFlags &operator|=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr PipelineStageFlags operator&(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
-{
-    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) & static_cast<uint64_t>(rhs));
-}
-
-constexpr PipelineStageFlags &operator&=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr PipelineStageFlags operator^(const PipelineStageFlags lhs, const PipelineStageFlags rhs)
-{
-    return static_cast<PipelineStageFlags>(static_cast<uint64_t>(lhs) ^ static_cast<uint64_t>(rhs));
-}
-
-constexpr PipelineStageFlags &operator^=(PipelineStageFlags &lhs, const PipelineStageFlags rhs)
-{
-    return lhs = lhs ^ rhs;
-}
-
-constexpr PipelineStageFlags operator~(const PipelineStageFlags lhs)
-{
-    return static_cast<PipelineStageFlags>(~static_cast<uint64_t>(lhs));
-}
-
-constexpr bool hasFlag(const PipelineStageFlags flags, const PipelineStageFlags req_flag)
-{
-    return (flags & req_flag) == req_flag;
-}
 }
 #endif // KIRANA_RENDERER_COMMON_HPP

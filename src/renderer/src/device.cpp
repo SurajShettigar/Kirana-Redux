@@ -346,6 +346,54 @@ Texture Device::createTexture(const Size2D &size, const TextureFormat format, co
     return texture;
 }
 
+DescriptorAllocator Device::createDescriptorAllocator(
+    const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
+    const uint32_t max_sets) const
+{
+    DescriptorAllocator allocator;
+    if (m_device)
+    {
+        allocator.init(m_device, binding_type_ratios, max_sets);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Descriptor Allocator. Device is not initialized.");
+    }
+    return allocator;
+}
+
+DescriptorLayout Device::createDescriptorLayout(const ShaderStageFlags shader_stages,
+                                                const std::vector<ShaderBinding> &bindings) const
+{
+    DescriptorLayout layout;
+    if (m_device)
+    {
+        layout.init(m_device, shader_stages, bindings);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Descriptor Layout. Device is not initialized.");
+    }
+    return layout;
+}
+
+Shader Device::createShader(const core::Filepath &source_path) const
+{
+    Shader shader;
+    if (m_device)
+    {
+        shader.init(m_device, source_path);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Shader. Device is not initialized.");
+    }
+    return shader;
+}
+
 Swapchain Device::createSwapchain(const SwapchainData &data) const
 {
     Swapchain swapchain;
