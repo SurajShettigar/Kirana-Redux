@@ -647,6 +647,13 @@ constexpr bool hasFlag(const PipelineStageFlags flags, const PipelineStageFlags 
     return (flags & req_flag) == req_flag;
 }
 
+enum class PipelineType: uint8_t
+{
+    GRAPHICS = 0,
+    COMPUTE = 1,
+    RAY_TRACING = 2,
+};
+
 enum class QueueFamilyFlags
 {
     NONE = 0,

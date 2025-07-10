@@ -9,7 +9,7 @@
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
 #include "descriptor_allocator.hpp"
-#include "shader.hpp"
+#include "pipeline_compute.hpp"
 
 namespace kirana::renderer
 {
@@ -91,9 +91,14 @@ public:
         const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
         uint32_t max_sets = 1024) const;
 
-    [[nodiscard]] DescriptorLayout createDescriptorLayout(ShaderStageFlags shader_stages, const std::vector<ShaderBinding> &bindings = {}) const;
+    [[nodiscard]] DescriptorLayout createDescriptorLayout(ShaderStageFlags shader_stages,
+                                                          const std::vector<ShaderBinding> &bindings = {}) const;
 
     [[nodiscard]] Shader createShader(const core::Filepath &source_path) const;
+
+    [[nodiscard]] PipelineLayout createPipelineLayout(const std::vector<DescriptorLayout> &layouts) const;
+
+    [[nodiscard]] PipelineCompute createComputePipeline(const PipelineLayout &layout, const Shader &shader) const;
 
     [[nodiscard]] Swapchain createSwapchain(const SwapchainData &data) const;
 

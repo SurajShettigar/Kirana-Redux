@@ -394,6 +394,37 @@ Shader Device::createShader(const core::Filepath &source_path) const
     return shader;
 }
 
+PipelineLayout Device::createPipelineLayout(const std::vector<DescriptorLayout> &layouts) const
+{
+    PipelineLayout layout;
+    if (m_device)
+    {
+        layout.init(m_device, layouts);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Pipeline Layout. Device is not initialized.");
+    }
+    return layout;
+}
+
+PipelineCompute Device::createComputePipeline(const PipelineLayout &layout, const Shader &shader) const
+{
+    PipelineCompute pipeline;
+    if (m_device)
+    {
+        pipeline.init(m_device, layout, shader);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Compute Pipeline. Device is not initialized.");
+    }
+    return pipeline;
+}
+
+
 Swapchain Device::createSwapchain(const SwapchainData &data) const
 {
     Swapchain swapchain;

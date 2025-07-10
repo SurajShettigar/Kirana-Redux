@@ -38,6 +38,18 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_render_target = m_device.createTexture(swapchain_data.size, TextureFormat::R32G32B32A32_SFLOAT,
                                                  TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
                                                  TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
+
+        // TODO: Example render loop. Move it to a separate class.
+        m_descriptor_allocator = m_device.createDescriptorAllocator(
+            {ShaderBindingTypeRatios{ShaderBindingType::STORAGE_IMAGE}});
+        m_layout = m_device.createDescriptorLayout(ShaderStageFlags::COMPUTE,
+                                                   {ShaderBinding{0, ShaderBindingType::STORAGE_IMAGE}});
+        m_set = m_descriptor_allocator.allocate(m_layout, {ShaderBindingResource{0, &m_render_target}});
+        m_pipeline_layout = m_device.createPipelineLayout({m_layout});
+        m_shader = m_device.createShader("shaders/gradient.spv");
+        m_pipeline = m_device.createComputePipeline(m_pipeline_layout, m_shader);
+
+        m_current_index = 0;
     }
     return status;
 }
@@ -65,8 +77,18 @@ void Renderer::render()
     queue.addSignalSemaphore(render_semaphore);
 
     encoder.begin();
+
     encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
-    encoder.clearTexture(m_render_target, {1.0f, 0.0f, 0.0f, 1.0f});
+
+    encoder.bindComputePipeline(m_pipeline);
+    encoder.bindDescriptorSet(m_pipeline_layout, 0, m_set);
+    const auto [width, height] = m_render_target.getSize();
+    const std::array<uint32_t, 3> group_count = {
+        static_cast<uint32_t>(std::ceil(static_cast<float>(width) / 16.0f)),
+        static_cast<uint32_t>(std::ceil(static_cast<float>(height) / 16.0f)),
+        1};
+    encoder.dispatch(group_count);
+
     encoder.transitionTextureLayout(m_render_target, TextureLayout::TRANSFER_SRC_OPTIMAL);
     encoder.transitionTextureLayout(swapchain_texture, TextureLayout::TRANSFER_DST_OPTIMAL);
     encoder.blitTexture(m_render_target, swapchain_texture);
@@ -92,6 +114,13 @@ void Renderer::clean()
         return;
     }
     m_device.waitIdle();
+
+    m_pipeline.destroy();
+    m_shader.destroy();
+    m_pipeline_layout.destroy();
+    m_layout.destroy();
+    m_descriptor_allocator.destroy();
+
     m_render_target.destroy();
     if (!m_ctxs.empty())
     {

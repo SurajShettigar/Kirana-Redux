@@ -7,6 +7,8 @@
 #include <array>
 
 #include "texture.hpp"
+#include "descriptor_set.hpp"
+#include "pipeline_compute.hpp"
 
 namespace kirana::renderer
 {
@@ -52,6 +54,13 @@ public:
      */
     void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
 
+    void bindComputePipeline(const PipelineCompute &pipeline) const;
+
+    void bindDescriptorSet(const PipelineLayout &layout, uint32_t index, const DescriptorSet &set,
+                           const std::vector<uint32_t> &dynamic_offsets = {}) const;
+
+    void dispatch(const std::array<uint32_t, 3> &group_count) const;
+
     [[nodiscard]] bool isValid() const
     {
         return m_pool != nullptr && m_buffer != nullptr;
@@ -61,6 +70,8 @@ private:
     vk::Device m_device{nullptr};
     vk::CommandPool m_pool{nullptr};
     vk::CommandBuffer m_buffer{nullptr};
+
+    mutable vk::PipelineBindPoint m_current_pipeline_bind_point{vk::PipelineBindPoint::eGraphics};
 
     bool init(vk::Device device, uint32_t queue_family);
 };

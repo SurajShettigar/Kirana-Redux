@@ -613,6 +613,20 @@ constexpr vk::PipelineStageFlags2 getPipelineStageFlags(const PipelineStageFlags
     return out_flags;
 }
 
+constexpr vk::PipelineBindPoint getPipelineBindPoint(const PipelineType type)
+{
+    switch (type)
+    {
+    case PipelineType::COMPUTE:
+        return vk::PipelineBindPoint::eCompute;
+    case PipelineType::RAY_TRACING:
+        return vk::PipelineBindPoint::eRayTracingKHR;
+    case PipelineType::GRAPHICS:
+    default:
+        return vk::PipelineBindPoint::eGraphics;
+    }
+}
+
 constexpr QueueFamilyFlags getQueueFamilyFlags(const vk::QueueFlags flags,
                                                const bool presentation_support)
 {

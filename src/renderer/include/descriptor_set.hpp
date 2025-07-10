@@ -14,7 +14,7 @@ struct ShaderBindingResource
     uint32_t index = 0;
     union
     {
-        const Texture *texture;
+        const Texture *texture = nullptr;
     };
 };
 

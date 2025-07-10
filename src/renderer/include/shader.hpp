@@ -24,6 +24,11 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] vk::ShaderModule getNativeHandle() const
+    {
+        return m_handle;
+    }
+
 private:
     FilePath m_source_path{};
 

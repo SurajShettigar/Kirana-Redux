@@ -116,5 +116,23 @@ void CommandEncoder::blitTexture(const Texture &src, const Texture &dst, Rect2D 
     m_buffer.blitImage2(blit_info);
 }
 
+void CommandEncoder::bindComputePipeline(const PipelineCompute &pipeline) const
+{
+    m_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline.getNativeHandle());
+    m_current_pipeline_bind_point = vk::PipelineBindPoint::eCompute;
+}
+
+void CommandEncoder::bindDescriptorSet(const PipelineLayout &layout, const uint32_t index, const DescriptorSet &set,
+                                       const std::vector<uint32_t> &dynamic_offsets) const
+{
+    m_buffer.bindDescriptorSets(m_current_pipeline_bind_point, layout.getNativeHandle(), index, set.getNativeHandle(),
+                                dynamic_offsets);
+}
+
+void CommandEncoder::dispatch(const std::array<uint32_t, 3> &group_count) const
+{
+    m_buffer.dispatch(group_count[0], group_count[1], group_count[2]);
+}
+
 
 }

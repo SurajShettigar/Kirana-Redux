@@ -41,6 +41,14 @@ private:
     std::vector<RenderContext> m_ctxs{};
     Texture m_render_target {};
 
+    // TODO: Example render loop. Move it to a separate class.
+    DescriptorAllocator m_descriptor_allocator{};
+    DescriptorLayout m_layout{};
+    DescriptorSet m_set{};
+    PipelineLayout m_pipeline_layout{};
+    Shader m_shader{};
+    PipelineCompute m_pipeline{};
+
     size_t m_current_index{0};
 };
 }
