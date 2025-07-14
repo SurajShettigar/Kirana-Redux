@@ -5,7 +5,9 @@
 #define KIRANA_RENDERER_MEMORY_ALLOCATOR_HPP
 
 #include <vma/vk_mem_alloc.h>
-#include<vulkan/vulkan.hpp>
+
+#include "command_encoder.hpp"
+#include "synchronization.hpp"
 
 namespace kirana::renderer
 {
@@ -41,7 +43,7 @@ public:
         return m_id != other.m_id;
     }
 
-    bool isValid() const
+    [[nodiscard]] bool isValid() const
     {
         return m_id < std::numeric_limits<uint32_t>::max();
     }
@@ -88,11 +90,20 @@ public:
     AllocationID createImage(const vk::ImageCreateInfo &create_info, vk::Image *out_image) const;
     void destroyImage(AllocationID id, vk::Image image) const;
 
+    AllocationID createBuffer(const CommandEncoder &encoder, const vk::BufferCreateInfo &create_info,
+                              vk::Buffer *out_buffer,
+                              uint64_t data_size = 0, const uint8_t *data_buffer = nullptr) const;
+    void destroyBuffer(AllocationID id, vk::Buffer buffer) const;
+
+
+    bool tryReleaseTemporaries(const Fence &fence) const;
+
 private:
     VmaAllocator m_handle{nullptr};
 
     mutable uint32_t m_allocation_count{0};
     mutable std::unordered_map<AllocationID, Allocation> m_allocations{};
+    mutable std::unordered_map<AllocationID, vk::Buffer> m_staging_buffers{};
 
     bool init(vk::Instance instance, vk::PhysicalDevice gpu, vk::Device device);
 };

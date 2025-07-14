@@ -48,6 +48,10 @@ void Fence::destroy()
     }
 }
 
+bool Fence::isSignaled() const
+{
+    return m_device.getFenceStatus(m_handle) == vk::Result::eSuccess;
+}
 
 bool Fence::wait(const uint64_t timeout) const
 {

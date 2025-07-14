@@ -69,6 +69,96 @@ struct Rect3D
     }
 };
 
+struct BufferRegion
+{
+    uint64_t offset = 0;
+    uint64_t size = 0;
+};
+
+struct BufferCopyRegion
+{
+    uint64_t src_offset = 0;
+    uint64_t dst_offset = 0;
+    uint64_t size = 0;
+};
+
+struct TextureCopyRegion
+{
+    Offset2D src_offset;
+    Offset2D dst_offset;
+    Size2D size;
+};
+
+enum class BufferUsageFlags: uint32_t
+{
+    UNKNOWN = 0x0u,
+    TRANSFER_SRC = 0x00000001u,
+    TRANSFER_DST = 0x00000002u,
+    UNIFORM_TEXEL_BUFFER = 0x00000004u,
+    STORAGE_TEXEL_BUFFER = 0x00000008u,
+    UNIFORM_BUFFER = 0x00000010u,
+    STORAGE_BUFFER = 0x00000020u,
+    INDEX_BUFFER = 0x00000040u,
+    VERTEX_BUFFER = 0x00000080u,
+    INDIRECT_BUFFER = 0x00000100u,
+    SHADER_DEVICE_ADDRESS = 0x00020000u,
+    VIDEO_DECODE_SRC = 0x00002000u,
+    VIDEO_DECODE_DST = 0x00004000u,
+    TRANSFORM_FEEDBACK_BUFFER = 0x00000800u,
+    TRANSFORM_FEEDBACK_COUNTER_BUFFER = 0x00001000u,
+    CONDITIONAL_RENDERING = 0x00000200u,
+    ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY = 0x00080000u,
+    ACCELERATION_STRUCTURE_STORAGE = 0x00100000u,
+    SHADER_BINDING_TABLE = 0x00000400u,
+    VIDEO_ENCODE_DST = 0x00008000u,
+    VIDEO_ENCODE_SRC = 0x00010000u,
+    SAMPLER_DESCRIPTOR_BUFFER = 0x00200000u,
+    RESOURCE_DESCRIPTOR_BUFFER = 0x00400000u,
+    PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER = 0x04000000u,
+    MICROMAP_BUILD_INPUT_READ_ONLY = 0x00800000u,
+    MICROMAP_STORAGE = 0x01000000u,
+};
+
+constexpr BufferUsageFlags operator|(const BufferUsageFlags lhs, const BufferUsageFlags rhs)
+{
+    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr BufferUsageFlags &operator|=(BufferUsageFlags &lhs, const BufferUsageFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr BufferUsageFlags operator&(const BufferUsageFlags lhs, const BufferUsageFlags rhs)
+{
+    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr BufferUsageFlags &operator&=(BufferUsageFlags &lhs, const BufferUsageFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr BufferUsageFlags operator^(const BufferUsageFlags lhs, const BufferUsageFlags rhs)
+{
+    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr BufferUsageFlags &operator^=(BufferUsageFlags &lhs, const BufferUsageFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr BufferUsageFlags operator~(const BufferUsageFlags flag)
+{
+    return static_cast<BufferUsageFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const BufferUsageFlags flags, const BufferUsageFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
 enum class TextureFormat
 {
     UNKNOWN = 0,
@@ -563,6 +653,90 @@ struct ShaderBinding
     ShaderBindingType type = ShaderBindingType::UNKNOWN;
     ShaderStageFlags shader_stages = ShaderStageFlags::NONE;
 };
+
+enum class MemoryAccessFlags: uint64_t
+{
+    NONE = 0x0u,
+    INDIRECT_COMMAND_READ = 0x00000001ull,
+    INDEX_READ = 0x00000002ull,
+    VERTEX_ATTRIBUTE_READ = 0x00000004ull,
+    UNIFORM_READ = 0x00000008ull,
+    INPUT_ATTACHMENT_READ = 0x00000010ull,
+    SHADER_READ = 0x00000020ull,
+    SHADER_WRITE = 0x00000040ull,
+    COLOR_ATTACHMENT_READ = 0x00000080ull,
+    COLOR_ATTACHMENT_WRITE = 0x00000100ull,
+    DEPTH_STENCIL_ATTACHMENT_READ = 0x00000200ull,
+    DEPTH_STENCIL_ATTACHMENT_WRITE = 0x00000400ull,
+    TRANSFER_READ = 0x00000800ull,
+    TRANSFER_WRITE = 0x00001000ull,
+    HOST_READ = 0x00002000ull,
+    HOST_WRITE = 0x00004000ull,
+    MEMORY_READ = 0x00008000ull,
+    MEMORY_WRITE = 0x00010000ull,
+    COMMAND_PREPROCESS_READ = 0x00020000ull,
+    COMMAND_PREPROCESS_WRITE = 0x00040000ull,
+    COLOR_ATTACHMENT_READ_NONCOHERENT = 0x00080000ull,
+    CONDITIONAL_RENDERING_READ = 0x00100000ull,
+    ACCELERATION_STRUCTURE_READ = 0x00200000ull,
+    ACCELERATION_STRUCTURE_WRITE = 0x00400000ull,
+    FRAGMENT_SHADING_RATE_ATTACHMENT_READ = 0x00800000ull,
+    FRAGMENT_DENSITY_MAP_READ = 0x01000000ull,
+    TRANSFORM_FEEDBACK_WRITE = 0x02000000ull,
+    TRANSFORM_FEEDBACK_COUNTER_READ = 0x04000000ull,
+    TRANSFORM_FEEDBACK_COUNTER_WRITE = 0x08000000ull,
+    SHADER_SAMPLED_READ = 0x100000000ull,
+    SHADER_STORAGE_READ = 0x200000000ull,
+    SHADER_STORAGE_WRITE = 0x400000000ull,
+    VIDEO_DECODE_READ = 0x800000000ull,
+    VIDEO_DECODE_WRITE = 0x1000000000ull,
+    VIDEO_ENCODE_READ = 0x2000000000ull,
+    VIDEO_ENCODE_WRITE = 0x4000000000ull,
+    SHADER_BINDING_TABLE_READ = 0x10000000000ull,
+    DESCRIPTOR_BUFFER_READ = 0x20000000000ull,
+    MICROMAP_READ = 0x100000000000ull,
+    MICROMAP_WRITE = 0x200000000000ull,
+};
+
+constexpr MemoryAccessFlags operator|(const MemoryAccessFlags lhs, const MemoryAccessFlags rhs)
+{
+    return static_cast<MemoryAccessFlags>(static_cast<uint64_t>(lhs) | static_cast<uint64_t>(rhs));
+}
+
+constexpr MemoryAccessFlags &operator|=(MemoryAccessFlags &lhs, const MemoryAccessFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr MemoryAccessFlags operator&(const MemoryAccessFlags lhs, const MemoryAccessFlags rhs)
+{
+    return static_cast<MemoryAccessFlags>(static_cast<uint64_t>(lhs) & static_cast<uint64_t>(rhs));
+}
+
+constexpr MemoryAccessFlags &operator&=(MemoryAccessFlags &lhs, const MemoryAccessFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr MemoryAccessFlags operator^(const MemoryAccessFlags lhs, const MemoryAccessFlags rhs)
+{
+    return static_cast<MemoryAccessFlags>(static_cast<uint64_t>(lhs) ^ static_cast<uint64_t>(rhs));
+}
+
+constexpr MemoryAccessFlags &operator^=(MemoryAccessFlags &lhs, const MemoryAccessFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr MemoryAccessFlags operator~(const MemoryAccessFlags lhs)
+{
+    return static_cast<MemoryAccessFlags>(~static_cast<uint64_t>(lhs));
+}
+
+constexpr bool hasFlag(const MemoryAccessFlags flags, const MemoryAccessFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
 
 enum class PipelineStageFlags: uint64_t
 {

@@ -15,6 +15,7 @@ namespace kirana::renderer
 class Texture
 {
     friend class Device;
+    friend class MemoryAllocator;
     friend class CommandEncoder;
     friend class Swapchain;
 

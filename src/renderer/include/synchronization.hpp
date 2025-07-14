@@ -41,7 +41,7 @@ private:
     PipelineStageFlags m_stage_mask{PipelineStageFlags::TOP_OF_PIPE};
 
     bool init(vk::Device device, PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE);
-    vk::SemaphoreSubmitInfo getSubmitInfo() const;
+    [[nodiscard]] vk::SemaphoreSubmitInfo getSubmitInfo() const;
 };
 
 
@@ -61,6 +61,7 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] bool isSignaled() const;
     [[nodiscard]] bool wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
     void reset() const;
 private:

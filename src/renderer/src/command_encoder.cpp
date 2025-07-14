@@ -4,6 +4,10 @@
 #include "command_encoder.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "buffer.hpp"
+#include "texture.hpp"
+#include "pipeline_layout.hpp"
+#include "pipeline_compute.hpp"
 
 namespace kirana::renderer
 {
@@ -44,25 +48,93 @@ void CommandEncoder::destroy()
     }
 }
 
-void CommandEncoder::transitionTextureLayout(Texture &texture, const TextureLayout new_layout) const
+void CommandEncoder::addBufferBarrier(const Buffer &buffer, const MemoryAccessFlags src_access,
+                                      const MemoryAccessFlags dst_access, const PipelineStageFlags src_stage,
+                                      const PipelineStageFlags dst_stage) const
 {
-    const vk::ImageLayout src_layout = getImageLayout(texture.getLayout());
-    const vk::ImageLayout target_layout = getImageLayout(new_layout);
+    const auto barrier = vk::BufferMemoryBarrier2{getPipelineStageFlags(src_stage), getAccessFlags(src_access),
+                                                  getPipelineStageFlags(dst_stage), getAccessFlags(dst_access),
+                                                  vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                                                  buffer.getNativeHandle(), 0, vk::WholeSize};
+    vk::DependencyInfo dep_info = {};
+    dep_info.setBufferMemoryBarriers({barrier});
+    m_buffer.pipelineBarrier2(dep_info);
+}
+
+void CommandEncoder::copyBuffer(const Buffer &src, const Buffer &dst,
+                                const std::vector<BufferCopyRegion> &regions) const
+{
+    std::vector<vk::BufferCopy2> vk_regions = {};
+    if (regions.empty())
+    {
+        vk_regions.emplace_back(0, 0, src.getSize());
+    }
+    else
+    {
+        for (const auto &r : regions)
+        {
+            vk_regions.emplace_back(r.src_offset, r.dst_offset, r.size);
+        }
+    }
+    m_buffer.copyBuffer2(vk::CopyBufferInfo2{src.getNativeHandle(), dst.getNativeHandle(), vk_regions});
+}
+
+void CommandEncoder::copyTexture(const Texture &src, const Texture &dst,
+                                 const std::vector<TextureCopyRegion> &regions) const
+{
+    const vk::ImageAspectFlags src_aspect = isDepthTextureFormat(src.getFormat())
+                                                ? vk::ImageAspectFlagBits::eDepth
+                                                : vk::ImageAspectFlagBits::eColor;
+    const vk::ImageAspectFlags dst_aspect = isDepthTextureFormat(dst.getFormat())
+                                                ? vk::ImageAspectFlagBits::eDepth
+                                                : vk::ImageAspectFlagBits::eColor;
+    const auto src_subresource = vk::ImageSubresourceLayers{src_aspect, 0, 0, 1};
+    const auto dst_subresource = vk::ImageSubresourceLayers{dst_aspect, 0, 0, 1};
+
+    std::vector<vk::ImageCopy2> vk_regions = {};
+    if (regions.empty())
+    {
+        vk_regions.emplace_back(src_subresource, vk::Offset3D{0, 0, 0}, dst_subresource,
+                                vk::Offset3D{0, 0, 0}, getExtent3D(src.getSize()));
+    }
+    else
+    {
+        for (const auto &r : regions)
+        {
+            vk_regions.emplace_back(src_subresource, getOffset3D(r.src_offset), dst_subresource,
+                                    getOffset3D(r.dst_offset), getExtent3D(r.size));
+        }
+    }
+    m_buffer.copyImage2(vk::CopyImageInfo2{src.getNativeHandle(), getImageLayout(src.getLayout()),
+                                           dst.getNativeHandle(), getImageLayout(dst.getLayout()), vk_regions});
+}
+
+void CommandEncoder::addTextureBarrier(Texture &texture, const TextureLayout new_layout,
+                                       const MemoryAccessFlags src_access, const MemoryAccessFlags dst_access,
+                                       const PipelineStageFlags src_stage, const PipelineStageFlags dst_stage) const
+{
     const vk::ImageAspectFlags image_aspect = isDepthTextureFormat(texture.getFormat())
                                                   ? vk::ImageAspectFlagBits::eDepth
                                                   : vk::ImageAspectFlagBits::eColor;
-    const auto image_barrier = vk::ImageMemoryBarrier2{
-        vk::PipelineStageFlagBits2::eAllCommands, vk::AccessFlagBits2::eMemoryWrite,
-        vk::PipelineStageFlagBits2::eAllCommands, vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-        src_layout, target_layout, {}, {}, texture.getNativeHandle(),
-        vk::ImageSubresourceRange{image_aspect, 0, vk::RemainingMipLevels, 0,
-                                  vk::RemainingArrayLayers}};
-
-    auto dep_info = vk::DependencyInfo{};
-    dep_info.setImageMemoryBarriers({image_barrier});
+    const auto subresource = vk::ImageSubresourceRange{image_aspect, 0, vk::RemainingMipLevels, 0,
+                                                       vk::RemainingArrayLayers};
+    const auto barrier = vk::ImageMemoryBarrier2{getPipelineStageFlags(src_stage), getAccessFlags(src_access),
+                                                 getPipelineStageFlags(dst_stage), getAccessFlags(dst_access),
+                                                 getImageLayout(texture.getLayout()), getImageLayout(new_layout),
+                                                 vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                                                 texture.getNativeHandle(), subresource};
+    vk::DependencyInfo dep_info = {};
+    dep_info.setImageMemoryBarriers({barrier});
     m_buffer.pipelineBarrier2(dep_info);
-
     texture.m_layout = new_layout;
+}
+
+
+void CommandEncoder::transitionTextureLayout(Texture &texture, const TextureLayout new_layout) const
+{
+    addTextureBarrier(texture, new_layout, MemoryAccessFlags::MEMORY_WRITE,
+                      MemoryAccessFlags::MEMORY_WRITE | MemoryAccessFlags::MEMORY_READ,
+                      PipelineStageFlags::ALL_COMMANDS, PipelineStageFlags::ALL_COMMANDS);
 }
 
 void CommandEncoder::clearTexture(const Texture &texture, const std::array<float, 4> &color,

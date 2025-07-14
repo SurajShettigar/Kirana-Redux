@@ -4,14 +4,20 @@
 #ifndef KIRANA_RENDERER_COMMAND_ENCODER_HPP
 #define KIRANA_RENDERER_COMMAND_ENCODER_HPP
 
-#include <array>
+#include <vulkan/vulkan.hpp>
 
-#include "texture.hpp"
-#include "descriptor_set.hpp"
-#include "pipeline_compute.hpp"
+#include "common.hpp"
+
+#include <array>
 
 namespace kirana::renderer
 {
+class Buffer;
+class Texture;
+class PipelineLayout;
+class PipelineCompute;
+class DescriptorSet;
+
 struct CommandSubmitInfo
 {
     vk::CommandBufferSubmitInfo info{};
@@ -27,8 +33,28 @@ public:
 
     void destroy();
 
+    [[nodiscard]] bool isValid() const
+    {
+        return m_pool != nullptr && m_buffer != nullptr;
+    }
+
+    [[nodiscard]] vk::CommandBuffer getNativeHandle() const
+    {
+        return m_buffer;
+    }
+
     void begin() const;
     [[nodiscard]] CommandSubmitInfo finish() const;
+
+    void addBufferBarrier(const Buffer &buffer, MemoryAccessFlags src_access, MemoryAccessFlags dst_access,
+                          PipelineStageFlags src_stage, PipelineStageFlags dst_stage) const;
+
+    void copyBuffer(const Buffer &src, const Buffer &dst, const std::vector<BufferCopyRegion> &regions = {}) const;
+
+    void addTextureBarrier(Texture &texture, TextureLayout new_layout, MemoryAccessFlags src_access,
+                           MemoryAccessFlags dst_access, PipelineStageFlags src_stage,
+                           PipelineStageFlags dst_stage) const;
+
     /**
      * Transitions the texture layout from current to the given one. The texture is updated with the new value, but it
      * does not take effect until the command encoder is submitted to the queue.
@@ -45,6 +71,7 @@ public:
      */
     void clearTexture(const Texture &texture, const std::array<float, 4> &color, uint32_t stencil = 0) const;
 
+    void copyTexture(const Texture &src, const Texture &dst, const std::vector<TextureCopyRegion> &regions = {}) const;
     /**
      * Copies texture content from one texture to another.
      * @param src The source texture from which the content will be copied from.
@@ -60,11 +87,6 @@ public:
                            const std::vector<uint32_t> &dynamic_offsets = {}) const;
 
     void dispatch(const std::array<uint32_t, 3> &group_count) const;
-
-    [[nodiscard]] bool isValid() const
-    {
-        return m_pool != nullptr && m_buffer != nullptr;
-    }
 
 private:
     vk::Device m_device{nullptr};
