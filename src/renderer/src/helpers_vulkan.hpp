@@ -70,60 +70,7 @@ constexpr std::array<vk::Offset3D, 2> getOffset3DFromRect(const Rect3D &rect)
 
 constexpr vk::BufferUsageFlags getBufferUsageFlags(const BufferUsageFlags flags)
 {
-    vk::BufferUsageFlags out_flags;
-
-    if (hasFlag(flags, BufferUsageFlags::TRANSFER_SRC))
-        out_flags |= vk::BufferUsageFlagBits::eTransferSrc;
-    if (hasFlag(flags, BufferUsageFlags::TRANSFER_DST))
-        out_flags |= vk::BufferUsageFlagBits::eTransferDst;
-    if (hasFlag(flags, BufferUsageFlags::UNIFORM_TEXEL_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-    if (hasFlag(flags, BufferUsageFlags::STORAGE_TEXEL_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
-    if (hasFlag(flags, BufferUsageFlags::UNIFORM_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eUniformBuffer;
-    if (hasFlag(flags, BufferUsageFlags::STORAGE_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eStorageBuffer;
-    if (hasFlag(flags, BufferUsageFlags::INDEX_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eIndexBuffer;
-    if (hasFlag(flags, BufferUsageFlags::VERTEX_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eVertexBuffer;
-    if (hasFlag(flags, BufferUsageFlags::INDIRECT_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
-    if (hasFlag(flags, BufferUsageFlags::SHADER_DEVICE_ADDRESS))
-        out_flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
-    if (hasFlag(flags, BufferUsageFlags::VIDEO_DECODE_SRC))
-        out_flags |= vk::BufferUsageFlagBits::eVideoDecodeSrcKHR;
-    if (hasFlag(flags, BufferUsageFlags::VIDEO_DECODE_DST))
-        out_flags |= vk::BufferUsageFlagBits::eVideoDecodeDstKHR;
-    if (hasFlag(flags, BufferUsageFlags::TRANSFORM_FEEDBACK_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT;
-    if (hasFlag(flags, BufferUsageFlags::TRANSFORM_FEEDBACK_COUNTER_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT;
-    if (hasFlag(flags, BufferUsageFlags::CONDITIONAL_RENDERING))
-        out_flags |= vk::BufferUsageFlagBits::eConditionalRenderingEXT;
-    if (hasFlag(flags, BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY))
-        out_flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
-    if (hasFlag(flags, BufferUsageFlags::ACCELERATION_STRUCTURE_STORAGE))
-        out_flags |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
-    if (hasFlag(flags, BufferUsageFlags::SHADER_BINDING_TABLE))
-        out_flags |= vk::BufferUsageFlagBits::eShaderBindingTableKHR;
-    if (hasFlag(flags, BufferUsageFlags::VIDEO_ENCODE_DST))
-        out_flags |= vk::BufferUsageFlagBits::eVideoEncodeDstKHR;
-    if (hasFlag(flags, BufferUsageFlags::VIDEO_ENCODE_SRC))
-        out_flags |= vk::BufferUsageFlagBits::eVideoEncodeSrcKHR;
-    if (hasFlag(flags, BufferUsageFlags::SAMPLER_DESCRIPTOR_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT;
-    if (hasFlag(flags, BufferUsageFlags::RESOURCE_DESCRIPTOR_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT;
-    if (hasFlag(flags, BufferUsageFlags::PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER))
-        out_flags |= vk::BufferUsageFlagBits::ePushDescriptorsDescriptorBufferEXT;
-    if (hasFlag(flags, BufferUsageFlags::MICROMAP_BUILD_INPUT_READ_ONLY))
-        out_flags |= vk::BufferUsageFlagBits::eMicromapBuildInputReadOnlyEXT;
-    if (hasFlag(flags, BufferUsageFlags::MICROMAP_STORAGE))
-        out_flags |= vk::BufferUsageFlagBits::eMicromapStorageEXT;
-
-    return out_flags;
+    return static_cast<vk::BufferUsageFlags>(static_cast<uint32_t>(flags));
 }
 
 constexpr vk::Format getFormat(const TextureFormat format)
@@ -515,40 +462,7 @@ constexpr GPUType getGPUType(const vk::PhysicalDeviceType type)
 
 constexpr vk::ShaderStageFlags getShaderStageFlags(const ShaderStageFlags flags)
 {
-    vk::ShaderStageFlags out_flags;
-    if (hasFlag(flags, ShaderStageFlags::VERTEX))
-        out_flags |= vk::ShaderStageFlagBits::eVertex;
-    if (hasFlag(flags, ShaderStageFlags::TESSELLATION_CONTROL))
-        out_flags |= vk::ShaderStageFlagBits::eTessellationControl;
-    if (hasFlag(flags, ShaderStageFlags::TESSELLATION_EVALUATION))
-        out_flags |= vk::ShaderStageFlagBits::eTessellationEvaluation;
-    if (hasFlag(flags, ShaderStageFlags::GEOMETRY))
-        out_flags |= vk::ShaderStageFlagBits::eGeometry;
-    if (hasFlag(flags, ShaderStageFlags::FRAGMENT))
-        out_flags |= vk::ShaderStageFlagBits::eFragment;
-    if (hasFlag(flags, ShaderStageFlags::COMPUTE))
-        out_flags |= vk::ShaderStageFlagBits::eCompute;
-    if (hasFlag(flags, ShaderStageFlags::ALL_GRAPHICS))
-        out_flags |= vk::ShaderStageFlagBits::eAllGraphics;
-    if (hasFlag(flags, ShaderStageFlags::ALL))
-        out_flags |= vk::ShaderStageFlagBits::eAll;
-    if (hasFlag(flags, ShaderStageFlags::RAYGEN))
-        out_flags |= vk::ShaderStageFlagBits::eRaygenKHR;
-    if (hasFlag(flags, ShaderStageFlags::ANY_HIT))
-        out_flags |= vk::ShaderStageFlagBits::eAnyHitKHR;
-    if (hasFlag(flags, ShaderStageFlags::CLOSEST_HIT))
-        out_flags |= vk::ShaderStageFlagBits::eClosestHitKHR;
-    if (hasFlag(flags, ShaderStageFlags::MISS))
-        out_flags |= vk::ShaderStageFlagBits::eMissKHR;
-    if (hasFlag(flags, ShaderStageFlags::INTERSECTION))
-        out_flags |= vk::ShaderStageFlagBits::eIntersectionKHR;
-    if (hasFlag(flags, ShaderStageFlags::CALLABLE))
-        out_flags |= vk::ShaderStageFlagBits::eCallableKHR;
-    if (hasFlag(flags, ShaderStageFlags::TASK))
-        out_flags |= vk::ShaderStageFlagBits::eTaskEXT;
-    if (hasFlag(flags, ShaderStageFlags::MESH))
-        out_flags |= vk::ShaderStageFlagBits::eMeshEXT;
-    return out_flags;
+    return static_cast<vk::ShaderStageFlags>(static_cast<uint32_t>(flags));
 }
 
 constexpr vk::DescriptorType getDescriptorType(const ShaderBindingType type)
@@ -591,170 +505,12 @@ constexpr vk::DescriptorType getDescriptorType(const ShaderBindingType type)
 
 constexpr vk::AccessFlags2 getAccessFlags(const MemoryAccessFlags flags)
 {
-    vk::AccessFlags2 out_flags = vk::AccessFlagBits2::eNone;
-
-    if (hasFlag(flags, MemoryAccessFlags::INDIRECT_COMMAND_READ))
-        out_flags |= vk::AccessFlagBits2::eIndirectCommandRead;
-    if (hasFlag(flags, MemoryAccessFlags::INDEX_READ))
-        out_flags |= vk::AccessFlagBits2::eIndexRead;
-    if (hasFlag(flags, MemoryAccessFlags::VERTEX_ATTRIBUTE_READ))
-        out_flags |= vk::AccessFlagBits2::eVertexAttributeRead;
-    if (hasFlag(flags, MemoryAccessFlags::UNIFORM_READ))
-        out_flags |= vk::AccessFlagBits2::eUniformRead;
-    if (hasFlag(flags, MemoryAccessFlags::INPUT_ATTACHMENT_READ))
-        out_flags |= vk::AccessFlagBits2::eInputAttachmentRead;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_READ))
-        out_flags |= vk::AccessFlagBits2::eShaderRead;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_WRITE))
-        out_flags |= vk::AccessFlagBits2::eShaderWrite;
-    if (hasFlag(flags, MemoryAccessFlags::COLOR_ATTACHMENT_READ))
-        out_flags |= vk::AccessFlagBits2::eColorAttachmentRead;
-    if (hasFlag(flags, MemoryAccessFlags::COLOR_ATTACHMENT_WRITE))
-        out_flags |= vk::AccessFlagBits2::eColorAttachmentWrite;
-    if (hasFlag(flags, MemoryAccessFlags::DEPTH_STENCIL_ATTACHMENT_READ))
-        out_flags |= vk::AccessFlagBits2::eDepthStencilAttachmentRead;
-    if (hasFlag(flags, MemoryAccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE))
-        out_flags |= vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
-    if (hasFlag(flags, MemoryAccessFlags::TRANSFER_READ))
-        out_flags |= vk::AccessFlagBits2::eTransferRead;
-    if (hasFlag(flags, MemoryAccessFlags::TRANSFER_WRITE))
-        out_flags |= vk::AccessFlagBits2::eTransferWrite;
-    if (hasFlag(flags, MemoryAccessFlags::HOST_READ))
-        out_flags |= vk::AccessFlagBits2::eHostRead;
-    if (hasFlag(flags, MemoryAccessFlags::HOST_WRITE))
-        out_flags |= vk::AccessFlagBits2::eHostWrite;
-    if (hasFlag(flags, MemoryAccessFlags::MEMORY_READ))
-        out_flags |= vk::AccessFlagBits2::eMemoryRead;
-    if (hasFlag(flags, MemoryAccessFlags::MEMORY_WRITE))
-        out_flags |= vk::AccessFlagBits2::eMemoryWrite;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_SAMPLED_READ))
-        out_flags |= vk::AccessFlagBits2::eShaderSampledRead;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_STORAGE_READ))
-        out_flags |= vk::AccessFlagBits2::eShaderStorageRead;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_STORAGE_WRITE))
-        out_flags |= vk::AccessFlagBits2::eShaderStorageWrite;
-    if (hasFlag(flags, MemoryAccessFlags::VIDEO_DECODE_READ))
-        out_flags |= vk::AccessFlagBits2::eVideoDecodeReadKHR;
-    if (hasFlag(flags, MemoryAccessFlags::VIDEO_DECODE_WRITE))
-        out_flags |= vk::AccessFlagBits2::eVideoDecodeWriteKHR;
-    if (hasFlag(flags, MemoryAccessFlags::VIDEO_ENCODE_READ))
-        out_flags |= vk::AccessFlagBits2::eVideoEncodeReadKHR;
-    if (hasFlag(flags, MemoryAccessFlags::VIDEO_ENCODE_WRITE))
-        out_flags |= vk::AccessFlagBits2::eVideoEncodeWriteKHR;
-    if (hasFlag(flags, MemoryAccessFlags::TRANSFORM_FEEDBACK_WRITE))
-        out_flags |= vk::AccessFlagBits2::eTransformFeedbackWriteEXT;
-    if (hasFlag(flags, MemoryAccessFlags::TRANSFORM_FEEDBACK_COUNTER_READ))
-        out_flags |= vk::AccessFlagBits2::eTransformFeedbackCounterReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::TRANSFORM_FEEDBACK_COUNTER_WRITE))
-        out_flags |= vk::AccessFlagBits2::eTransformFeedbackCounterWriteEXT;
-    if (hasFlag(flags, MemoryAccessFlags::CONDITIONAL_RENDERING_READ))
-        out_flags |= vk::AccessFlagBits2::eConditionalRenderingReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::COMMAND_PREPROCESS_READ))
-        out_flags |= vk::AccessFlagBits2::eCommandPreprocessReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::COMMAND_PREPROCESS_WRITE))
-        out_flags |= vk::AccessFlagBits2::eCommandPreprocessWriteEXT;
-    if (hasFlag(flags, MemoryAccessFlags::FRAGMENT_SHADING_RATE_ATTACHMENT_READ))
-        out_flags |= vk::AccessFlagBits2::eFragmentShadingRateAttachmentReadKHR;
-    if (hasFlag(flags, MemoryAccessFlags::ACCELERATION_STRUCTURE_READ))
-        out_flags |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-    if (hasFlag(flags, MemoryAccessFlags::ACCELERATION_STRUCTURE_WRITE))
-        out_flags |= vk::AccessFlagBits2::eAccelerationStructureWriteKHR;
-    if (hasFlag(flags, MemoryAccessFlags::FRAGMENT_DENSITY_MAP_READ))
-        out_flags |= vk::AccessFlagBits2::eFragmentDensityMapReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::COLOR_ATTACHMENT_READ_NONCOHERENT))
-        out_flags |= vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT;
-    if (hasFlag(flags, MemoryAccessFlags::DESCRIPTOR_BUFFER_READ))
-        out_flags |= vk::AccessFlagBits2::eDescriptorBufferReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::SHADER_BINDING_TABLE_READ))
-        out_flags |= vk::AccessFlagBits2::eShaderBindingTableReadKHR;
-    if (hasFlag(flags, MemoryAccessFlags::MICROMAP_READ))
-        out_flags |= vk::AccessFlagBits2::eMicromapReadEXT;
-    if (hasFlag(flags, MemoryAccessFlags::MICROMAP_WRITE))
-        out_flags |= vk::AccessFlagBits2::eMicromapWriteEXT;
-
-    return out_flags;
+    return static_cast<vk::AccessFlags2>(static_cast<uint64_t>(flags));
 }
 
 constexpr vk::PipelineStageFlags2 getPipelineStageFlags(const PipelineStageFlags flags)
 {
-    vk::PipelineStageFlags2 out_flags = vk::PipelineStageFlagBits2::eNone;
-    if (hasFlag(flags, PipelineStageFlags::TOP_OF_PIPE))
-        out_flags |= vk::PipelineStageFlagBits2::eTopOfPipe;
-    if (hasFlag(flags, PipelineStageFlags::DRAW_INDIRECT))
-        out_flags |= vk::PipelineStageFlagBits2::eDrawIndirect;
-    if (hasFlag(flags, PipelineStageFlags::VERTEX_INPUT))
-        out_flags |= vk::PipelineStageFlagBits2::eVertexInput;
-    if (hasFlag(flags, PipelineStageFlags::VERTEX_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eVertexShader;
-    if (hasFlag(flags, PipelineStageFlags::TESSELLATION_CONTROL_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eTessellationControlShader;
-    if (hasFlag(flags, PipelineStageFlags::TESSELLATION_EVALUATION_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eTessellationEvaluationShader;
-    if (hasFlag(flags, PipelineStageFlags::GEOMETRY_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eGeometryShader;
-    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eFragmentShader;
-    if (hasFlag(flags, PipelineStageFlags::EARLY_FRAGMENT_TESTS))
-        out_flags |= vk::PipelineStageFlagBits2::eEarlyFragmentTests;
-    if (hasFlag(flags, PipelineStageFlags::LATE_FRAGMENT_TESTS))
-        out_flags |= vk::PipelineStageFlagBits2::eLateFragmentTests;
-    if (hasFlag(flags, PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT))
-        out_flags |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-    if (hasFlag(flags, PipelineStageFlags::COMPUTE_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eComputeShader;
-    if (hasFlag(flags, PipelineStageFlags::ALL_TRANSFER))
-        out_flags |= vk::PipelineStageFlagBits2::eAllTransfer;
-    if (hasFlag(flags, PipelineStageFlags::TRANSFER))
-        out_flags |= vk::PipelineStageFlagBits2::eTransfer;
-    if (hasFlag(flags, PipelineStageFlags::BOTTOM_OF_PIPE))
-        out_flags |= vk::PipelineStageFlagBits2::eBottomOfPipe;
-    if (hasFlag(flags, PipelineStageFlags::HOST))
-        out_flags |= vk::PipelineStageFlagBits2::eHost;
-    if (hasFlag(flags, PipelineStageFlags::ALL_GRAPHICS))
-        out_flags |= vk::PipelineStageFlagBits2::eAllGraphics;
-    if (hasFlag(flags, PipelineStageFlags::ALL_COMMANDS))
-        out_flags |= vk::PipelineStageFlagBits2::eAllCommands;
-    if (hasFlag(flags, PipelineStageFlags::COPY))
-        out_flags |= vk::PipelineStageFlagBits2::eCopy;
-    if (hasFlag(flags, PipelineStageFlags::RESOLVE))
-        out_flags |= vk::PipelineStageFlagBits2::eResolve;
-    if (hasFlag(flags, PipelineStageFlags::BLIT))
-        out_flags |= vk::PipelineStageFlagBits2::eBlit;
-    if (hasFlag(flags, PipelineStageFlags::CLEAR))
-        out_flags |= vk::PipelineStageFlagBits2::eClear;
-    if (hasFlag(flags, PipelineStageFlags::INDEX_INPUT))
-        out_flags |= vk::PipelineStageFlagBits2::eIndexInput;
-    if (hasFlag(flags, PipelineStageFlags::VERTEX_ATTRIBUTE_INPUT))
-        out_flags |= vk::PipelineStageFlagBits2::eVertexAttributeInput;
-    if (hasFlag(flags, PipelineStageFlags::PRE_RASTERIZATION_SHADERS))
-        out_flags |= vk::PipelineStageFlagBits2::ePreRasterizationShaders;
-    if (hasFlag(flags, PipelineStageFlags::VIDEO_DECODE))
-        out_flags |= vk::PipelineStageFlagBits2::eVideoDecodeKHR;
-    if (hasFlag(flags, PipelineStageFlags::VIDEO_ENCODE))
-        out_flags |= vk::PipelineStageFlagBits2::eVideoEncodeKHR;
-    if (hasFlag(flags, PipelineStageFlags::TRANSFORM_FEEDBACK))
-        out_flags |= vk::PipelineStageFlagBits2::eTransformFeedbackEXT;
-    if (hasFlag(flags, PipelineStageFlags::CONDITIONAL_RENDERING))
-        out_flags |= vk::PipelineStageFlagBits2::eConditionalRenderingEXT;
-    if (hasFlag(flags, PipelineStageFlags::COMMAND_PREPROCESS))
-        out_flags |= vk::PipelineStageFlagBits2::eCommandPreprocessEXT;
-    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_SHADING_RATE_ATTACHMENT))
-        out_flags |= vk::PipelineStageFlagBits2::eFragmentShadingRateAttachmentKHR;
-    if (hasFlag(flags, PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD))
-        out_flags |= vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
-    if (hasFlag(flags, PipelineStageFlags::RAY_TRACING_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-    if (hasFlag(flags, PipelineStageFlags::FRAGMENT_DENSITY_PROCESS))
-        out_flags |= vk::PipelineStageFlagBits2::eFragmentDensityProcessEXT;
-    if (hasFlag(flags, PipelineStageFlags::TASK_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-    if (hasFlag(flags, PipelineStageFlags::MESH_SHADER))
-        out_flags |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-    if (hasFlag(flags, PipelineStageFlags::ACCELERATION_STRUCTURE_COPY))
-        out_flags |= vk::PipelineStageFlagBits2::eAccelerationStructureCopyKHR;
-    if (hasFlag(flags, PipelineStageFlags::MICROMAP_BUILD))
-        out_flags |= vk::PipelineStageFlagBits2::eMicromapBuildEXT;
-    return out_flags;
+    return static_cast<vk::PipelineStageFlags2>(static_cast<uint64_t>(flags));
 }
 
 constexpr vk::PipelineBindPoint getPipelineBindPoint(const PipelineType type)
@@ -997,7 +753,7 @@ inline GPUFeatures getGPUFeatures(const vk::PhysicalDevice device)
     gpu_features.synchronization_2 = features_1_3.synchronization2;
     gpu_features.texture_compression_ASTC_HDR = features_1_3.textureCompressionASTC_HDR;
     gpu_features.shader_zero_initialize_workgroup_memory = features_1_3.shaderZeroInitializeWorkgroupMemory;
-    gpu_features.dynamic_Rendering = features_1_3.dynamicRendering;
+    gpu_features.dynamic_rendering = features_1_3.dynamicRendering;
     gpu_features.shader_integer_dot_product = features_1_3.shaderIntegerDotProduct;
     gpu_features.maintenance_4 = features_1_3.maintenance4;
     // Vulkan 1.4 features
@@ -1752,7 +1508,7 @@ inline uint32_t getGPUFeatureScore(const GPUFeatures &f, const GPUFeatures &p)
     if (p.shader_zero_initialize_workgroup_memory && f.shader_zero_initialize_workgroup_memory == p.
         shader_zero_initialize_workgroup_memory)
         score += 1;
-    if (p.dynamic_Rendering && f.dynamic_Rendering == p.dynamic_Rendering)
+    if (p.dynamic_rendering && f.dynamic_rendering == p.dynamic_rendering)
         score += 1;
     if (p.shader_integer_dot_product && f.shader_integer_dot_product == p.shader_integer_dot_product)
         score += 1;
@@ -3003,7 +2759,7 @@ inline void getEnabledFeatures(const GPUFeatures &f, EnabledFeatures *const out_
         features_1_3.textureCompressionASTC_HDR = true;
     if (f.shader_zero_initialize_workgroup_memory)
         features_1_3.shaderZeroInitializeWorkgroupMemory = true;
-    if (f.dynamic_Rendering)
+    if (f.dynamic_rendering)
         features_1_3.dynamicRendering = true;
     if (f.shader_integer_dot_product)
         features_1_3.shaderIntegerDotProduct = true;

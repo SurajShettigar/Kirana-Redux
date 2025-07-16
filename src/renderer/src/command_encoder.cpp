@@ -8,6 +8,7 @@
 #include "texture.hpp"
 #include "pipeline_layout.hpp"
 #include "pipeline_compute.hpp"
+#include "descriptor_set.hpp"
 
 namespace kirana::renderer
 {
@@ -205,6 +206,4 @@ void CommandEncoder::dispatch(const std::array<uint32_t, 3> &group_count) const
 {
     m_buffer.dispatch(group_count[0], group_count[1], group_count[2]);
 }
-
-
 }

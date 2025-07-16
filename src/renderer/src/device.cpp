@@ -379,12 +379,13 @@ DescriptorLayout Device::createDescriptorLayout(const ShaderStageFlags shader_st
     return layout;
 }
 
-Shader Device::createShader(const core::Filepath &source_path) const
+Shader Device::createShader(const core::Filepath &source_path, const ShaderStageFlags stage,
+                            const std::string &entry_point) const
 {
     Shader shader;
     if (m_device)
     {
-        shader.init(m_device, source_path);
+        shader.init(m_device, source_path, stage, entry_point);
     }
     else
     {

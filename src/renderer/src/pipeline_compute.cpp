@@ -13,8 +13,10 @@ bool PipelineCompute::init(const vk::Device device, const PipelineLayout &layout
     m_device = device;
 
     const auto stage_create_info = vk::PipelineShaderStageCreateInfo{vk::PipelineShaderStageCreateFlags{},
-                                                                     vk::ShaderStageFlagBits::eCompute,
-                                                                     shader.getNativeHandle(), "main"};
+                                                                     static_cast<vk::ShaderStageFlagBits>(static_cast<
+                                                                         uint32_t>(shader.getStage())),
+                                                                     shader.getNativeHandle(),
+                                                                     shader.getEntryPoint().c_str()};
     const auto create_info = vk::ComputePipelineCreateInfo{vk::PipelineCreateFlags{}, stage_create_info,
                                                            layout.getNativeHandle()};
 

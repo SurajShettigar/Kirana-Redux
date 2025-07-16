@@ -18,22 +18,27 @@ void Shader::destroy()
     }
 }
 
-bool Shader::init(const vk::Device device, const FilePath &source_path)
+bool Shader::init(const vk::Device device, const FilePath &source_path, const ShaderStageFlags stage,
+                  const std::string &entry_point)
 {
     m_device = device;
-    if (!core::fileExists(source_path))
+    m_source_path = source_path;
+    m_stage = stage;
+    m_entry_point = entry_point;
+
+    if (!core::fileExists(m_source_path))
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Shader file does not exist: " + source_path.string());
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Shader file does not exist: " + m_source_path.string());
         return false;
     }
-    const auto file_size = core::getFileSize(source_path);
+    const auto file_size = core::getFileSize(m_source_path);
     if (file_size == 0)
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Shader file is empty: " + source_path.string());
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Shader file is empty: " + m_source_path.string());
         return false;
     }
     std::vector<uint32_t> file_buffer(file_size / sizeof(uint32_t));
-    core::readFile(source_path, true, reinterpret_cast<char *>(file_buffer.data()));
+    core::readFile(m_source_path, true, reinterpret_cast<char *>(file_buffer.data()));
 
     const auto create_info = vk::ShaderModuleCreateInfo{vk::ShaderModuleCreateFlags{}, file_size, file_buffer.data()};
     m_handle = m_device.createShaderModule(create_info);

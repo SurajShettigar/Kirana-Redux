@@ -46,7 +46,7 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
                                                    {ShaderBinding{0, ShaderBindingType::STORAGE_IMAGE}});
         m_set = m_descriptor_allocator.allocate(m_layout, {ShaderBindingResource{0, &m_render_target}});
         m_pipeline_layout = m_device.createPipelineLayout({m_layout});
-        m_shader = m_device.createShader("shaders/gradient.spv");
+        m_shader = m_device.createShader("shaders/gradient.spv", ShaderStageFlags::COMPUTE);
         m_pipeline = m_device.createComputePipeline(m_pipeline_layout, m_shader);
 
         m_current_index = 0;

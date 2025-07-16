@@ -94,7 +94,8 @@ public:
     [[nodiscard]] DescriptorLayout createDescriptorLayout(ShaderStageFlags shader_stages,
                                                           const std::vector<ShaderBinding> &bindings = {}) const;
 
-    [[nodiscard]] Shader createShader(const core::Filepath &source_path) const;
+    [[nodiscard]] Shader createShader(const core::Filepath &source_path, ShaderStageFlags stage,
+                                      const std::string &entry_point = "main") const;
 
     [[nodiscard]] PipelineLayout createPipelineLayout(const std::vector<DescriptorLayout> &layouts) const;
 

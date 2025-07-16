@@ -11,6 +11,7 @@ add_library(renderer
         src/pipeline_layout.cpp
         src/shader.cpp
         src/pipeline_compute.cpp
+        src/pipeline_graphics.cpp
         src/command_encoder.cpp
         src/queue.cpp
         src/renderer.cpp)
