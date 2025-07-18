@@ -17,7 +17,7 @@ include(Dependencies)
 # Internal dependencies
 add_subdirectory(src/core)
 add_subdirectory(src/renderer)
+add_subdirectory(src/hydra)
 add_subdirectory(src/app)
 
-target_compile_definitions(Kirana PUBLIC NOMINMAX)
 target_link_libraries(Kirana PUBLIC app)

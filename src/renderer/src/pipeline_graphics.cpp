@@ -13,11 +13,11 @@ inline vk::PipelineVertexInputStateCreateInfo getVertexInput(const std::vector<V
     std::vector<vk::VertexInputBindingDescription> vertex_bindings{};
     std::vector<vk::VertexInputAttributeDescription> vertex_attribs{};
     vertex_bindings.reserve(vb_layouts.size());
-    for (size_t i = 0; i < vb_layouts.size(); ++i)
+    for (uint32_t i = 0; i < vb_layouts.size(); ++i)
     {
         const auto &vb_layout = vb_layouts[i];
-        vertex_bindings.emplace_back(i, vb_layout.stride, static_cast<vk::VertexInputRate>(vb_layout.input_rate));
-        for (size_t j = 0; j < vb_layout.attributes.size(); ++j)
+        vertex_bindings.emplace_back(i, vb_layout.stride, static_cast<vk::VertexInputRate>(static_cast<uint8_t>(vb_layout.input_rate)));
+        for (uint32_t j = 0; j < vb_layout.attributes.size(); ++j)
         {
             const auto &vb_attrib = vb_layout.attributes[j];
             vertex_attribs.emplace_back(j, i, getFormat(vb_attrib.format), vb_attrib.offset);
