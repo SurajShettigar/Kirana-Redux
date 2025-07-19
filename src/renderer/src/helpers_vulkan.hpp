@@ -10,11 +10,19 @@
 
 namespace kirana::renderer
 {
-const auto LOG_CHANNEL_VULKAN = "RENDERER_VULKAN";
+const std::string LOG_CHANNEL_VULKAN = "RENDERER_VULKAN";
 
 /// Timeout in nanoseconds.
 constexpr uint32_t FENCE_WAIT_TIMEOUT = 1000000000; // 1 second
 constexpr uint32_t SWAPCHAIN_FETCH_TIMEOUT = 1000000000; // 1 second
+
+inline void setDebugName(const vk::Device device, const vk::ObjectType type, const uint64_t handle,
+                         const std::string &name)
+{
+#ifdef DEBUG
+    device.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT{type, handle, name.c_str()});
+#endif
+}
 
 constexpr vk::Extent2D getExtent2D(const Size2D &size)
 {

@@ -4,13 +4,15 @@
 #include "pipeline_compute.hpp"
 
 #include "helpers_vulkan.hpp"
-#include "logger.hpp"
+
+#include <logger.hpp>
 
 namespace kirana::renderer
 {
-bool PipelineCompute::init(const vk::Device device, const PipelineLayout &layout, const Shader &shader)
+bool PipelineCompute::init(const vk::Device device, const std::string &name, const PipelineLayout &layout, const Shader &shader)
 {
     m_device = device;
+    m_name = name;
 
     const auto stage_create_info = vk::PipelineShaderStageCreateInfo{vk::PipelineShaderStageCreateFlags{},
                                                                      static_cast<vk::ShaderStageFlagBits>(static_cast<
@@ -27,6 +29,11 @@ bool PipelineCompute::init(const vk::Device device, const PipelineLayout &layout
         return false;
     }
     m_handle = result.value;
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkPipeline>(m_handle));
+        setDebugName(m_device, vk::ObjectType::ePipeline, handle, m_name);
+    }
     return true;
 }
 

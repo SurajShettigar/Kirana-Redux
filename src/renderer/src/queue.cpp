@@ -8,12 +8,17 @@
 
 namespace kirana::renderer
 {
-Queue::Queue(const vk::Device device, const uint32_t index, const uint32_t family_index, const QueueFamilyFlags type)
-    : m_device{device}, m_index{index}, m_family_index{family_index}, m_type{type},
-      m_handle{device.getQueue(family_index, index)}
+Queue::Queue(const vk::Device device, const std::string &name, const uint32_t index, const uint32_t family_index,
+             const QueueFamilyFlags type)
+    : m_name{name}, m_index{index}, m_family_index{family_index}, m_type{type}, m_device{device},
+      m_handle{m_device.getQueue(family_index, index)}
 {
+    if (!name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkQueue>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eQueue, handle, name);
+    }
 }
-
 
 void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence)
 {

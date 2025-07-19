@@ -31,20 +31,25 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::DescriptorSet getNativeHandle() const
     {
         return m_handle;
     }
 
-    void updateBindingResources(const DescriptorLayout &layout, const std::vector<ShaderBindingResource> &resources) const;
+    void updateBindingResources(const DescriptorLayout &layout,
+                                const std::vector<ShaderBindingResource> &resources) const;
+
 private:
+    std::string m_name{};
     vk::Device m_device{nullptr};
     vk::DescriptorSet m_handle{nullptr};
 
-    DescriptorSet(const vk::Device device, const vk::DescriptorSet handle):
-        m_device{device}, m_handle{handle}
-    {
-    }
+    DescriptorSet(vk::Device device, vk::DescriptorSet handle, std::string name);
 };
 }
 

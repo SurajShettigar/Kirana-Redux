@@ -30,6 +30,11 @@ public:
         return m_handle != nullptr && m_view != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] const Size2D &getSize() const
     {
         return m_size;
@@ -56,6 +61,7 @@ public:
     }
 
 private:
+    std::string m_name{};
     Size2D m_size{};
     TextureFormat m_format{};
     TextureUsageFlags m_usage{};
@@ -68,17 +74,13 @@ private:
 
     AllocationID m_alloc_id{};
 
-    bool init(vk::Device device, const Size2D &size, TextureFormat format,
-              TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
-              TextureLayout layout = TextureLayout::UNKNOWN, const MemoryAllocator *allocator = nullptr);
+    bool init(vk::Device device, const std::string &name, const Size2D &size, TextureFormat format,
+              TextureUsageFlags usage = TextureUsageFlags::UNKNOWN, TextureLayout layout = TextureLayout::UNKNOWN,
+              const MemoryAllocator *allocator = nullptr);
 
-    explicit Texture(const vk::Device device, const vk::Image image, const vk::ImageView view, const Size2D &size,
-                     const TextureFormat format, const TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
-                     const TextureLayout layout = TextureLayout::UNKNOWN)
-        : m_size{size}, m_format{format}, m_usage{usage}, m_layout{layout}, m_device{device}, m_handle{image},
-          m_view{view}
-    {
-    }
+    explicit Texture(vk::Device device, const std::string &name, vk::Image image, vk::ImageView view,
+                     const Size2D &size, TextureFormat format, TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
+                     TextureLayout layout = TextureLayout::UNKNOWN);
 };
 }
 

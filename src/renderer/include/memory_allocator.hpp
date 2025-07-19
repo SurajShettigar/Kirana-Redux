@@ -91,8 +91,7 @@ public:
     void destroyImage(AllocationID id, vk::Image image) const;
 
     AllocationID createBuffer(const CommandEncoder &encoder, const vk::BufferCreateInfo &create_info,
-                              vk::Buffer *out_buffer,
-                              uint64_t data_size = 0, const uint8_t *data_buffer = nullptr) const;
+                              const uint8_t *data_buffer, vk::Buffer *out_buffer) const;
     void destroyBuffer(AllocationID id, vk::Buffer buffer) const;
 
 

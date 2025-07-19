@@ -24,16 +24,22 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::Pipeline getNativeHandle() const
     {
         return m_handle;
     }
 
 private:
+    std::string m_name{};
     vk::Device m_device{nullptr};
     vk::Pipeline m_handle{nullptr};
 
-    bool init(vk::Device device, const PipelineLayout &layout, const Shader &shader);
+    bool init(vk::Device device, const std::string &name, const PipelineLayout &layout, const Shader &shader);
 };
 }
 

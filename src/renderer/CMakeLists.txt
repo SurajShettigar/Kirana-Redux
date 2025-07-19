@@ -22,3 +22,6 @@ target_link_libraries(renderer PUBLIC core Vulkan::Vulkan)
 # Vulkan header pre-processor directives
 target_compile_definitions(renderer PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 target_compile_definitions(renderer PRIVATE PLATFORM=${CURRENT_PLATFORM})
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(renderer PUBLIC DEBUG=1)
+endif ()

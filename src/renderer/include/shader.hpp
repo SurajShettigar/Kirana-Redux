@@ -28,6 +28,11 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] const FilePath &getSourcePath() const
     {
         return m_source_path;
@@ -49,6 +54,7 @@ public:
     }
 
 private:
+    std::string m_name{};
     FilePath m_source_path{};
     ShaderStageFlags m_stage{};
     std::string m_entry_point{"main"};
@@ -56,7 +62,7 @@ private:
     vk::Device m_device{nullptr};
     vk::ShaderModule m_handle{nullptr};
 
-    bool init(vk::Device device, const FilePath &source_path, ShaderStageFlags stage,
+    bool init(vk::Device device, const std::string &name, const FilePath &source_path, ShaderStageFlags stage,
               const std::string &entry_point = "main");
 };
 }

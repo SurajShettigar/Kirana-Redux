@@ -24,6 +24,11 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::Buffer getNativeHandle() const
     {
         return m_handle;
@@ -35,6 +40,7 @@ public:
     }
 
 private:
+    std::string m_name{};
     uint64_t m_size{};
     BufferUsageFlags m_usage{};
 
@@ -44,8 +50,9 @@ private:
 
     AllocationID m_alloc_id{};
 
-    bool init(vk::Device device, uint64_t size, BufferUsageFlags usage = BufferUsageFlags::UNKNOWN,
-              const MemoryAllocator *allocator = nullptr);
+    bool init(vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
+              const std::string &name, uint64_t size, const uint8_t *data = nullptr,
+              BufferUsageFlags usage = BufferUsageFlags::UNKNOWN);
 };
 }
 

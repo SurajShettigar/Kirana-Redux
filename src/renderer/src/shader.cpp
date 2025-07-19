@@ -18,10 +18,11 @@ void Shader::destroy()
     }
 }
 
-bool Shader::init(const vk::Device device, const FilePath &source_path, const ShaderStageFlags stage,
+bool Shader::init(const vk::Device device, const std::string &name, const FilePath &source_path, const ShaderStageFlags stage,
                   const std::string &entry_point)
 {
     m_device = device;
+    m_name = name;
     m_source_path = source_path;
     m_stage = stage;
     m_entry_point = entry_point;
@@ -42,6 +43,12 @@ bool Shader::init(const vk::Device device, const FilePath &source_path, const Sh
 
     const auto create_info = vk::ShaderModuleCreateInfo{vk::ShaderModuleCreateFlags{}, file_size, file_buffer.data()};
     m_handle = m_device.createShaderModule(create_info);
+
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkShaderModule>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eShaderModule, handle, m_name);
+    }
     return true;
 }
 

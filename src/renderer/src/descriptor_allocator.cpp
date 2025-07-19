@@ -6,15 +6,14 @@
 #include "helpers_vulkan.hpp"
 
 #include <logger.hpp>
-#include <winsock2.h>
-
 
 namespace kirana::renderer
 {
-bool DescriptorAllocator::init(vk::Device device, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
-                               uint32_t max_sets)
+bool DescriptorAllocator::init(const vk::Device device, const std::string &name,
+                               const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, const uint32_t max_sets)
 {
     m_device = device;
+    m_name = name;
 
     if (binding_type_ratios.empty())
     {
@@ -36,6 +35,11 @@ bool DescriptorAllocator::init(vk::Device device, const std::vector<ShaderBindin
 
     const auto create_info = vk::DescriptorPoolCreateInfo{vk::DescriptorPoolCreateFlags{}, max_sets, pool_sizes};
     m_handle = m_device.createDescriptorPool(create_info);
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkDescriptorPool>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eDescriptorPool, handle, m_name);
+    }
     return true;
 }
 
@@ -48,13 +52,13 @@ void DescriptorAllocator::destroy()
     }
 }
 
-DescriptorSet DescriptorAllocator::allocate(const DescriptorLayout &layout,
+DescriptorSet DescriptorAllocator::allocate(const std::string &name, const DescriptorLayout &layout,
                                             const std::vector<ShaderBindingResource> &resources) const
 {
     const std::vector layout_handles = {layout.getNativeHandle()};
     const auto allocate_info = vk::DescriptorSetAllocateInfo{m_handle, layout_handles};
     const auto vk_set = m_device.allocateDescriptorSets(allocate_info)[0];
-    const auto set = DescriptorSet{m_device, vk_set};
+    const auto set = DescriptorSet{m_device, vk_set, name};
     if (!resources.empty())
     {
         set.updateBindingResources(layout, resources);

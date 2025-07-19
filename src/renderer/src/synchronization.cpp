@@ -4,16 +4,24 @@
 #include "synchronization.hpp"
 
 #include "helpers_vulkan.hpp"
+
 #include <logger.hpp>
 
 namespace kirana::renderer
 {
 
-bool Semaphore::init(const vk::Device device, const PipelineStageFlags stage_mask)
+bool Semaphore::init(const vk::Device device, const std::string &name, const PipelineStageFlags stage_mask)
 {
     m_device = device;
+    m_name = name;
     m_stage_mask = stage_mask;
     m_handle = m_device.createSemaphore(vk::SemaphoreCreateInfo{});
+
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eSemaphore, handle, m_name);
+    }
     return true;
 }
 
@@ -32,10 +40,16 @@ vk::SemaphoreSubmitInfo Semaphore::getSubmitInfo() const
 }
 
 
-bool Fence::init(const vk::Device device)
+bool Fence::init(const vk::Device device, const std::string &name)
 {
     m_device = device;
+    m_name = name;
     m_handle = m_device.createFence(vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkFence>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eFence, handle, m_name);
+    }
     return true;
 }
 

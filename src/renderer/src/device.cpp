@@ -4,11 +4,10 @@
 #include "device.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "queue.hpp"
 
 #include <map>
 #include <logger.hpp>
-
-#include "queue.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -32,6 +31,7 @@ namespace kirana::renderer
 {
 struct QueueInfo
 {
+    std::string name;
     uint32_t index;
     uint32_t family_index;
     QueueFamilyFlags type;
@@ -147,7 +147,7 @@ std::vector<QueueInfo> createQueues(const vk::PhysicalDevice gpu, const vk::Surf
         }
     }
 
-    std::vector queues = {QueueInfo{0, graphics_family_index, QueueFamilyFlags::GRAPHICS}};
+    std::vector queues = {QueueInfo{"Queue_Graphics", 0, graphics_family_index, QueueFamilyFlags::GRAPHICS}};
     if (surface != nullptr)
     {
         queues[0].type = queues[0].type | QueueFamilyFlags::PRESENTATION;
@@ -155,7 +155,7 @@ std::vector<QueueInfo> createQueues(const vk::PhysicalDevice gpu, const vk::Surf
     if (compute_family_index != graphics_family_index)
     {
         *out_queue_index_compute = static_cast<uint32_t>(queues.size());
-        queues.emplace_back(QueueInfo{0, compute_family_index, QueueFamilyFlags::COMPUTE});
+        queues.emplace_back(QueueInfo{"Queue_Compute", 0, compute_family_index, QueueFamilyFlags::COMPUTE});
     }
     else if (families[graphics_family_index].supportsCompute())
     {
@@ -166,7 +166,7 @@ std::vector<QueueInfo> createQueues(const vk::PhysicalDevice gpu, const vk::Surf
     if (transfer_family_index != graphics_family_index)
     {
         *out_queue_index_transfer = static_cast<uint32_t>(queues.size());
-        queues.emplace_back(QueueInfo{0, transfer_family_index, QueueFamilyFlags::TRANSFER});
+        queues.emplace_back(QueueInfo{"Queue_Transfer", 0, transfer_family_index, QueueFamilyFlags::TRANSFER});
     }
     else if (families[graphics_family_index].supportsTransfer())
     {
@@ -287,7 +287,7 @@ bool Device::init(const DeviceInitializationData &init_data)
         m_queues.reserve(queue_infos.size());
         for (const auto &q : queue_infos)
         {
-            m_queues.emplace_back(Queue{m_device, q.index, q.family_index, q.type});
+            m_queues.emplace_back(Queue{m_device, q.name, q.index, q.family_index, q.type});
         }
     }
 #pragma endregion
@@ -330,13 +330,14 @@ void Device::destroy()
     }
 }
 
-Texture Device::createTexture(const Size2D &size, const TextureFormat format, const TextureUsageFlags usage,
+Texture Device::createTexture(const std::string &name, const Size2D &size, const TextureFormat format,
+                              const TextureUsageFlags usage,
                               const TextureLayout layout) const
 {
     Texture texture;
     if (m_device)
     {
-        texture.init(m_device, size, format, usage, layout, &m_memory_allocator);
+        texture.init(m_device, name, size, format, usage, layout, &m_memory_allocator);
     }
     else
     {
@@ -346,14 +347,14 @@ Texture Device::createTexture(const Size2D &size, const TextureFormat format, co
     return texture;
 }
 
-DescriptorAllocator Device::createDescriptorAllocator(
-    const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
-    const uint32_t max_sets) const
+DescriptorAllocator Device::createDescriptorAllocator(const std::string &name,
+                                                      const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
+                                                      const uint32_t max_sets) const
 {
     DescriptorAllocator allocator;
     if (m_device)
     {
-        allocator.init(m_device, binding_type_ratios, max_sets);
+        allocator.init(m_device, name, binding_type_ratios, max_sets);
     }
     else
     {
@@ -363,13 +364,13 @@ DescriptorAllocator Device::createDescriptorAllocator(
     return allocator;
 }
 
-DescriptorLayout Device::createDescriptorLayout(const ShaderStageFlags shader_stages,
+DescriptorLayout Device::createDescriptorLayout(const std::string &name, const ShaderStageFlags shader_stages,
                                                 const std::vector<ShaderBinding> &bindings) const
 {
     DescriptorLayout layout;
     if (m_device)
     {
-        layout.init(m_device, shader_stages, bindings);
+        layout.init(m_device, name, shader_stages, bindings);
     }
     else
     {
@@ -379,13 +380,13 @@ DescriptorLayout Device::createDescriptorLayout(const ShaderStageFlags shader_st
     return layout;
 }
 
-Shader Device::createShader(const core::Filepath &source_path, const ShaderStageFlags stage,
+Shader Device::createShader(const std::string &name, const core::Filepath &source_path, const ShaderStageFlags stage,
                             const std::string &entry_point) const
 {
     Shader shader;
     if (m_device)
     {
-        shader.init(m_device, source_path, stage, entry_point);
+        shader.init(m_device, name, source_path, stage, entry_point);
     }
     else
     {
@@ -395,12 +396,12 @@ Shader Device::createShader(const core::Filepath &source_path, const ShaderStage
     return shader;
 }
 
-PipelineLayout Device::createPipelineLayout(const std::vector<DescriptorLayout> &layouts) const
+PipelineLayout Device::createPipelineLayout(const std::string &name, const std::vector<DescriptorLayout> &layouts) const
 {
     PipelineLayout layout;
     if (m_device)
     {
-        layout.init(m_device, layouts);
+        layout.init(m_device, name, layouts);
     }
     else
     {
@@ -410,12 +411,13 @@ PipelineLayout Device::createPipelineLayout(const std::vector<DescriptorLayout> 
     return layout;
 }
 
-PipelineCompute Device::createComputePipeline(const PipelineLayout &layout, const Shader &shader) const
+PipelineCompute Device::createComputePipeline(const std::string &name, const PipelineLayout &layout,
+                                              const Shader &shader) const
 {
     PipelineCompute pipeline;
     if (m_device)
     {
-        pipeline.init(m_device, layout, shader);
+        pipeline.init(m_device, name, layout, shader);
     }
     else
     {
@@ -426,12 +428,12 @@ PipelineCompute Device::createComputePipeline(const PipelineLayout &layout, cons
 }
 
 
-Swapchain Device::createSwapchain(const SwapchainData &data) const
+Swapchain Device::createSwapchain(const std::string &name, const SwapchainData &data) const
 {
     Swapchain swapchain;
     if (m_gpu && m_device && m_surface)
     {
-        swapchain.init(m_gpu, m_device, m_surface, data);
+        swapchain.init(m_gpu, m_device, m_surface, name, data);
     }
     else
     {
@@ -441,12 +443,12 @@ Swapchain Device::createSwapchain(const SwapchainData &data) const
     return swapchain;
 }
 
-CommandEncoder Device::createCommandEncoder(const Queue &compatible_queue) const
+CommandEncoder Device::createCommandEncoder(const std::string &name, const Queue &compatible_queue) const
 {
     CommandEncoder encoder;
     if (m_device && compatible_queue.isValid())
     {
-        encoder.init(m_device, compatible_queue.getFamilyIndex());
+        encoder.init(m_device, name, compatible_queue.getFamilyIndex());
     }
     else
     {
@@ -456,12 +458,12 @@ CommandEncoder Device::createCommandEncoder(const Queue &compatible_queue) const
     return encoder;
 }
 
-Semaphore Device::createSemaphore(const PipelineStageFlags stage_mask) const
+Semaphore Device::createSemaphore(const std::string &name, const PipelineStageFlags stage_mask) const
 {
     Semaphore semaphore;
     if (m_device)
     {
-        semaphore.init(m_device, stage_mask);
+        semaphore.init(m_device, name, stage_mask);
     }
     else
     {
@@ -471,12 +473,12 @@ Semaphore Device::createSemaphore(const PipelineStageFlags stage_mask) const
     return semaphore;
 }
 
-Fence Device::createFence() const
+Fence Device::createFence(const std::string &name) const
 {
     Fence fence;
     if (m_device)
     {
-        fence.init(m_device);
+        fence.init(m_device, name);
     }
     else
     {

@@ -9,10 +9,12 @@
 
 namespace kirana::renderer
 {
-bool DescriptorLayout::init(const vk::Device device, const ShaderStageFlags shader_stages,
+bool DescriptorLayout::init(const vk::Device device, const std::string &name, const ShaderStageFlags shader_stages,
                             const std::vector<ShaderBinding> &bindings)
 {
     m_device = device;
+    m_name = name;
+
     if (!bindings.empty())
     {
         m_bindings.reserve(m_bindings.size() + bindings.size());
@@ -36,6 +38,11 @@ bool DescriptorLayout::init(const vk::Device device, const ShaderStageFlags shad
 
     const auto create_info = vk::DescriptorSetLayoutCreateInfo{vk::DescriptorSetLayoutCreateFlags{}, vk_bindings};
     m_handle = m_device.createDescriptorSetLayout(create_info);
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkDescriptorSetLayout>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eDescriptorSetLayout, handle, m_name);
+    }
     return true;
 }
 

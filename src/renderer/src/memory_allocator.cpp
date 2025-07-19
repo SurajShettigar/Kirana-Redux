@@ -72,11 +72,10 @@ void MemoryAllocator::destroyImage(const AllocationID id, const vk::Image image)
 }
 
 AllocationID MemoryAllocator::createBuffer(const CommandEncoder &encoder, const vk::BufferCreateInfo &create_info,
-                                           vk::Buffer *out_buffer,
-                                           const uint64_t data_size, const uint8_t *data_buffer) const
+                                           const uint8_t *data_buffer, vk::Buffer *out_buffer) const
 {
     auto main_create_info = create_info;
-    if (data_size > 0 && data_buffer)
+    if (create_info.size > 0 && data_buffer)
     {
         main_create_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
     }
@@ -112,7 +111,7 @@ AllocationID MemoryAllocator::createBuffer(const CommandEncoder &encoder, const 
         if (memory_flags & vk::MemoryPropertyFlagBits::eHostVisible)
         {
             // If memory is allocated in the host-visible space, copy the data directly to the given buffer.
-            result = vmaCopyMemoryToAllocation(m_handle, data_buffer, allocation.handle, 0, data_size);
+            result = vmaCopyMemoryToAllocation(m_handle, data_buffer, allocation.handle, 0, main_create_info.size);
             if (result != VK_SUCCESS)
             {
                 core::Logger::error(LOG_CHANNEL_VULKAN,
@@ -123,7 +122,8 @@ AllocationID MemoryAllocator::createBuffer(const CommandEncoder &encoder, const 
                                                           vk::AccessFlagBits2::eHostWrite,
                                                           vk::PipelineStageFlagBits2::eAllCommands,
                                                           vk::AccessFlagBits2::eMemoryRead, vk::QueueFamilyIgnored,
-                                                          vk::QueueFamilyIgnored, *out_buffer, 0, data_size};
+                                                          vk::QueueFamilyIgnored, *out_buffer, 0,
+                                                          main_create_info.size};
             encoder.getNativeHandle().pipelineBarrier2(vk::DependencyInfo{vk::DependencyFlags{}, {}, {barrier}});
         }
         else
@@ -150,7 +150,8 @@ AllocationID MemoryAllocator::createBuffer(const CommandEncoder &encoder, const 
             }
             else
             {
-                const auto c_result = vmaCopyMemoryToAllocation(m_handle, data_buffer, s_alloc.handle, 0, data_size);
+                const auto c_result = vmaCopyMemoryToAllocation(m_handle, data_buffer, s_alloc.handle, 0,
+                                                                s_create_info.size);
                 if (c_result != VK_SUCCESS)
                 {
                     core::Logger::error(LOG_CHANNEL_VULKAN,
@@ -165,18 +166,18 @@ AllocationID MemoryAllocator::createBuffer(const CommandEncoder &encoder, const 
                                                             vk::PipelineStageFlagBits2::eTransfer,
                                                             vk::AccessFlagBits2::eTransferRead,
                                                             vk::QueueFamilyIgnored,
-                                                            vk::QueueFamilyIgnored, s_buffer, 0, data_size};
+                                                            vk::QueueFamilyIgnored, s_buffer, 0, s_create_info.size};
                     encoder.getNativeHandle().
                             pipelineBarrier2(vk::DependencyInfo{vk::DependencyFlags{}, {}, {barrier}});
 
-                    const std::vector copy_regions = {vk::BufferCopy2{0, 0, data_size}};
+                    const std::vector copy_regions = {vk::BufferCopy2{0, 0, s_create_info.size}};
                     encoder.getNativeHandle().copyBuffer2(vk::CopyBufferInfo2{s_buffer, *out_buffer, copy_regions});
 
                     barrier = vk::BufferMemoryBarrier2{vk::PipelineStageFlagBits2::eTransfer,
                                                        vk::AccessFlagBits2::eTransferWrite,
                                                        vk::PipelineStageFlagBits2::eAllCommands,
                                                        vk::AccessFlagBits2::eMemoryRead, vk::QueueFamilyIgnored,
-                                                       vk::QueueFamilyIgnored, *out_buffer, 0, data_size};
+                                                       vk::QueueFamilyIgnored, *out_buffer, 0, s_create_info.size};
                     encoder.getNativeHandle().
                             pipelineBarrier2(vk::DependencyInfo{vk::DependencyFlags{}, {}, {barrier}});
                 }

@@ -7,6 +7,16 @@
 
 namespace kirana::renderer
 {
+DescriptorSet::DescriptorSet(const vk::Device device, const vk::DescriptorSet handle, std::string name)
+    : m_name{std::move(name)}, m_device{device}, m_handle{handle}
+{
+    if (!m_name.empty())
+    {
+        const auto id = reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eDescriptorSet, id, m_name);
+    }
+}
+
 void DescriptorSet::updateBindingResources(const DescriptorLayout &layout,
                                            const std::vector<ShaderBindingResource> &resources) const
 {

@@ -5,18 +5,22 @@
 
 #include "helpers_vulkan.hpp"
 
+#include <logger.hpp>
+
 namespace kirana::renderer
 {
-bool Buffer::init(const vk::Device device, const uint64_t size, const BufferUsageFlags usage,
-                  const MemoryAllocator *allocator)
+bool Buffer::init(const vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
+                  const std::string &name, const uint64_t size, const uint8_t *data, const BufferUsageFlags usage)
 {
     m_device = device;
     m_allocator = allocator;
 
+    m_name = name;
+
     const auto create_info = vk::BufferCreateInfo{vk::BufferCreateFlags{}, size, getBufferUsageFlags(usage)};
     if (m_allocator)
     {
-        m_alloc_id = m_allocator->createBuffer(create_info, &m_handle);
+        m_alloc_id = m_allocator->createBuffer(encoder, create_info, data, &m_handle);
         if (!m_alloc_id.isValid())
         {
             return false;
@@ -25,6 +29,15 @@ bool Buffer::init(const vk::Device device, const uint64_t size, const BufferUsag
     else
     {
         m_handle = m_device.createBuffer(create_info);
+        if (data)
+        {
+            core::Logger::warn(LOG_CHANNEL_VULKAN, "When initializing with data, memory allocator is necessary.");
+        }
+    }
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkBuffer>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eBuffer, handle, m_name);
     }
     return true;
 }

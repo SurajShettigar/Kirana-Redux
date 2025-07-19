@@ -222,16 +222,22 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::Pipeline getNativeHandle() const
     {
         return m_handle;
     }
 
 private:
+    std::string m_name{};
     GraphicsState m_state{};
 
     vk::Device m_device{nullptr};
-    vk::PipelineVertexInputStateCreateInfo m_vertex_input_state {};
+    vk::PipelineVertexInputStateCreateInfo m_vertex_input_state{};
     vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state{};
     vk::PipelineViewportStateCreateInfo m_viewport_state{};
     vk::PipelineRasterizationStateCreateInfo m_rasterization_state{};
@@ -241,8 +247,8 @@ private:
     vk::PipelineDynamicStateCreateInfo m_dynamic_state{};
     vk::Pipeline m_handle{nullptr};
 
-    bool init(vk::Device device, const PipelineLayout &layout, const std::vector<Shader> &shaders,
-              const GraphicsState &state = {});
+    bool init(vk::Device device, const std::string &name, const PipelineLayout &layout,
+              const std::vector<Shader> &shaders, const GraphicsState &state = {});
 };
 }
 

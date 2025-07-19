@@ -7,10 +7,26 @@
 
 namespace kirana::renderer
 {
-bool Texture::init(const vk::Device device, const Size2D &size, const TextureFormat format,
+Texture::Texture(const vk::Device device, const std::string &name, const vk::Image image, const vk::ImageView view, const Size2D &size, const TextureFormat format, const TextureUsageFlags usage, const TextureLayout layout)
+: m_name{name}, m_size{size}, m_format{format}, m_usage{usage}, m_layout{layout}, m_device{device}, m_handle{image},
+  m_view{view}
+{
+    if (!m_name.empty())
+    {
+        auto handle = reinterpret_cast<uint64_t>(static_cast<VkImage>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eImage, handle, m_name);
+
+        const auto view_name = m_name + "_View";
+        handle = reinterpret_cast<uint64_t>(static_cast<VkImageView>(m_view));
+        setDebugName(m_device, vk::ObjectType::eImageView, handle, view_name);
+    }
+}
+
+bool Texture::init(const vk::Device device, const std::string &name, const Size2D &size, const TextureFormat format,
                    const TextureUsageFlags usage, const TextureLayout layout, const MemoryAllocator *allocator)
 {
     m_device = device;
+    m_name = name;
     m_allocator = allocator;
 
     m_size = size;
@@ -47,6 +63,15 @@ bool Texture::init(const vk::Device device, const Size2D &size, const TextureFor
                                                               img_aspect, 0, 1, 0, 1}};
     m_view = m_device.createImageView(view_create_info);
 
+    if (!m_name.empty())
+    {
+        auto handle = reinterpret_cast<uint64_t>(static_cast<VkImage>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eImage, handle, m_name);
+
+        const auto view_name = m_name + "_View";
+        handle = reinterpret_cast<uint64_t>(static_cast<VkImageView>(m_view));
+        setDebugName(m_device, vk::ObjectType::eImageView, handle, view_name);
+    }
     return true;
 }
 

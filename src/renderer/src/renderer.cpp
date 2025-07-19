@@ -10,10 +10,10 @@ namespace kirana::renderer
 bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data)
 {
     bool status = m_device.init(init_data);
-    m_fence = m_device.createFence();
+    m_fence = m_device.createFence("Fence_Main");
     if (status && init_data.surface.isValid())
     {
-        m_swapchain = m_device.createSwapchain(swapchain_data);
+        m_swapchain = m_device.createSwapchain("Swapchain", swapchain_data);
         status = m_swapchain.isValid();
     }
     if (status)
@@ -25,29 +25,32 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_ctxs.reserve(num_ctxs);
         for (size_t i = 0; i < num_ctxs; ++i)
         {
-            const auto encoder = m_device.createCommandEncoder(m_device.getGraphicsQueue());
-            const auto render_semaphore = m_device.createSemaphore(PipelineStageFlags::ALL_GRAPHICS);
+            const auto encoder = m_device.createCommandEncoder("Encoder_Compute", m_device.getGraphicsQueue());
+            const auto render_semaphore = m_device.createSemaphore("Semaphore_Render");
             Semaphore swapchain_semaphore;
             if (has_swapchain)
             {
-                swapchain_semaphore = m_device.createSemaphore(PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
+                swapchain_semaphore = m_device.createSemaphore("Semaphore_Swapchain",
+                                                               PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
             }
             m_ctxs.emplace_back(RenderContext{encoder, swapchain_semaphore, render_semaphore});
         }
 
-        m_render_target = m_device.createTexture(swapchain_data.size, TextureFormat::R32G32B32A32_SFLOAT,
+        m_render_target = m_device.createTexture("Render_Target_Color", swapchain_data.size,
+                                                 TextureFormat::R32G32B32A32_SFLOAT,
                                                  TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
                                                  TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
 
         // TODO: Example render loop. Move it to a separate class.
-        m_descriptor_allocator = m_device.createDescriptorAllocator(
-            {ShaderBindingTypeRatios{ShaderBindingType::STORAGE_IMAGE}});
-        m_layout = m_device.createDescriptorLayout(ShaderStageFlags::COMPUTE,
+        m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
+                                                                    {ShaderBindingTypeRatios{ShaderBindingType::STORAGE_IMAGE}});
+        m_layout = m_device.createDescriptorLayout("Descriptor_Layout_Gradient", ShaderStageFlags::COMPUTE,
                                                    {ShaderBinding{0, ShaderBindingType::STORAGE_IMAGE}});
-        m_set = m_descriptor_allocator.allocate(m_layout, {ShaderBindingResource{0, &m_render_target}});
-        m_pipeline_layout = m_device.createPipelineLayout({m_layout});
-        m_shader = m_device.createShader("shaders/gradient.spv", ShaderStageFlags::COMPUTE);
-        m_pipeline = m_device.createComputePipeline(m_pipeline_layout, m_shader);
+        m_set = m_descriptor_allocator.allocate("Descriptor_Set_Gradient", m_layout,
+                                                {ShaderBindingResource{0, &m_render_target}});
+        m_pipeline_layout = m_device.createPipelineLayout("Pipeline_Layout_Gradient", {m_layout});
+        m_shader = m_device.createShader("Shader_Gradient", "shaders/gradient.spv", ShaderStageFlags::COMPUTE);
+        m_pipeline = m_device.createComputePipeline("Pipeline_Gradient", m_pipeline_layout, m_shader);
 
         m_current_index = 0;
     }

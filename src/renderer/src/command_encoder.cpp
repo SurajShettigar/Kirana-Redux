@@ -12,15 +12,30 @@
 
 namespace kirana::renderer
 {
-bool CommandEncoder::init(const vk::Device device, const uint32_t queue_family)
+bool CommandEncoder::init(const vk::Device device, const std::string &name, const uint32_t queue_family)
 {
     m_device = device;
+    m_name = name;
     const auto pool_create_info = vk::CommandPoolCreateInfo{vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                                                             queue_family};
     m_pool = m_device.createCommandPool(pool_create_info);
 
     const auto buffer_create_info = vk::CommandBufferAllocateInfo{m_pool, vk::CommandBufferLevel::ePrimary, 1};
     m_buffer = m_device.allocateCommandBuffers(buffer_create_info).front();
+
+#ifdef DEBUG
+    if (!m_name.empty())
+    {
+
+        auto new_name = "Command_Pool_" + m_name;
+        auto handle = reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(m_pool));
+        setDebugName(m_device, vk::ObjectType::eCommandPool, handle, new_name);
+
+        new_name = "Command_Buffer_" + m_name;
+        handle = reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(m_buffer));
+        setDebugName(m_device, vk::ObjectType::eCommandBuffer, handle, new_name);
+    }
+#endif
     return true;
 }
 

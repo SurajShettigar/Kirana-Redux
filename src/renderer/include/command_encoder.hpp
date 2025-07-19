@@ -38,6 +38,11 @@ public:
         return m_pool != nullptr && m_buffer != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::CommandBuffer getNativeHandle() const
     {
         return m_buffer;
@@ -89,13 +94,15 @@ public:
     void dispatch(const std::array<uint32_t, 3> &group_count) const;
 
 private:
+    std::string m_name{};
+
     vk::Device m_device{nullptr};
     vk::CommandPool m_pool{nullptr};
     vk::CommandBuffer m_buffer{nullptr};
 
     mutable vk::PipelineBindPoint m_current_pipeline_bind_point{vk::PipelineBindPoint::eGraphics};
 
-    bool init(vk::Device device, uint32_t queue_family);
+    bool init(vk::Device device, const std::string &name, uint32_t queue_family);
 };
 }
 

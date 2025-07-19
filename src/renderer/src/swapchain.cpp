@@ -3,16 +3,17 @@
 
 #include "swapchain.hpp"
 
-#include <logger.hpp>
-
 #include "helpers_vulkan.hpp"
+
+#include <logger.hpp>
 
 namespace kirana::renderer
 {
 bool Swapchain::init(const vk::PhysicalDevice gpu, const vk::Device device, const vk::SurfaceKHR surface,
-                     const SwapchainData &data)
+                     const std::string &name, const SwapchainData &data)
 {
     m_device = device;
+    m_name = name;
     m_data = data;
     const auto extent = getExtent2D(m_data.size);
     auto format = getFormat(m_data.format);
@@ -85,8 +86,10 @@ bool Swapchain::init(const vk::PhysicalDevice gpu, const vk::Device device, cons
 
     m_textures.reserve(num_images);
     const auto images = m_device.getSwapchainImagesKHR(m_handle);
-    for (const auto &image : images)
+    for (size_t i = 0; i < images.size(); ++i)
     {
+        const auto &image = images[i];
+        const std::string image_name = m_name.empty() ? "" : m_name + "_Image_" + std::to_string(i);
         const auto view_create_info = vk::ImageViewCreateInfo{vk::ImageViewCreateFlags{0}, image,
                                                               vk::ImageViewType::e2D,
                                                               format, vk::ComponentMapping{},
@@ -94,7 +97,13 @@ bool Swapchain::init(const vk::PhysicalDevice gpu, const vk::Device device, cons
                                                                   vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
         const vk::ImageView view = m_device.createImageView(view_create_info);
-        m_textures.emplace_back(Texture{m_device, image, view, data.size, data.format});
+        m_textures.emplace_back(Texture{m_device, image_name, image, view, data.size, data.format});
+    }
+
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkSwapchainKHR>(m_handle));
+        setDebugName(m_device, vk::ObjectType::eSwapchainKHR, handle, m_name);
     }
     return true;
 }

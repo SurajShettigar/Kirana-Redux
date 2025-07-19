@@ -19,7 +19,7 @@ int Application::init()
     std::transform(app_name.begin(), app_name.end(), app_name.begin(), ::toupper);
 
 
-    core::Logger::get().init(app_name, core::Logger::Level::DEBUG);
+    core::Logger::get().init(app_name, core::Logger::Level::L_DEBUG);
     m_time_manager.init();
 
     m_input_manager.init();

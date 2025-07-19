@@ -23,20 +23,26 @@ public:
     ~Swapchain() = default;
 
     void destroy();
+    [[nodiscard]] bool isValid() const
+    {
+        return m_handle != nullptr && !m_textures.empty();
+    }
+
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
 
     [[nodiscard]] size_t getTextureCount() const
     {
         return m_textures.size();
     }
 
-    [[nodiscard]] bool isValid() const
-    {
-        return m_handle != nullptr && !m_textures.empty();
-    }
 
     Texture &getTexture(const Semaphore &semaphore);
     SwapchainPresentInfo present() const;
 private:
+    std::string m_name{};
     SwapchainData m_data{};
 
     vk::Device m_device{nullptr};
@@ -45,7 +51,7 @@ private:
 
     uint32_t m_swapchain_image_index{0};
 
-    bool init(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR surface, const SwapchainData &data);
+    bool init(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR surface, const std::string &name, const SwapchainData &data);
 };
 }
 

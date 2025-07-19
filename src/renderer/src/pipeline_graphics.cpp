@@ -4,7 +4,8 @@
 #include "pipeline_graphics.hpp"
 
 #include "helpers_vulkan.hpp"
-#include "logger.hpp"
+
+#include <logger.hpp>
 
 namespace kirana::renderer
 {
@@ -16,7 +17,8 @@ inline vk::PipelineVertexInputStateCreateInfo getVertexInput(const std::vector<V
     for (uint32_t i = 0; i < vb_layouts.size(); ++i)
     {
         const auto &vb_layout = vb_layouts[i];
-        vertex_bindings.emplace_back(i, vb_layout.stride, static_cast<vk::VertexInputRate>(static_cast<uint8_t>(vb_layout.input_rate)));
+        vertex_bindings.emplace_back(i, vb_layout.stride,
+                                     static_cast<vk::VertexInputRate>(static_cast<uint8_t>(vb_layout.input_rate)));
         for (uint32_t j = 0; j < vb_layout.attributes.size(); ++j)
         {
             const auto &vb_attrib = vb_layout.attributes[j];
@@ -110,10 +112,11 @@ inline vk::PipelineDynamicStateCreateInfo getDynamicState()
     return vk::PipelineDynamicStateCreateInfo{vk::PipelineDynamicStateCreateFlags{}, dynamic_states};
 }
 
-bool PipelineGraphics::init(const vk::Device device, const PipelineLayout &layout, const std::vector<Shader> &shaders,
-                            const GraphicsState &state)
+bool PipelineGraphics::init(const vk::Device device, const std::string &name, const PipelineLayout &layout,
+                            const std::vector<Shader> &shaders, const GraphicsState &state)
 {
     m_device = device;
+    m_name = name;
 
     std::vector<vk::PipelineShaderStageCreateInfo> stage_create_infos{};
     stage_create_infos.reserve(shaders.size());
@@ -147,6 +150,12 @@ bool PipelineGraphics::init(const vk::Device device, const PipelineLayout &layou
         return false;
     }
     m_handle = result.value;
+
+    if (!m_name.empty())
+    {
+        const auto handle = reinterpret_cast<uint64_t>(static_cast<VkPipeline>(m_handle));
+        setDebugName(m_device, vk::ObjectType::ePipeline, handle, m_name);
+    }
     return true;
 }
 

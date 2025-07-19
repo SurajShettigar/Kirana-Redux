@@ -25,6 +25,11 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] PipelineStageFlags getStageMask() const
     {
         return m_stage_mask;
@@ -36,11 +41,13 @@ public:
     }
 
 private:
+    std::string m_name{};
+
     vk::Device m_device{nullptr};
     vk::Semaphore m_handle{nullptr};
     PipelineStageFlags m_stage_mask{PipelineStageFlags::TOP_OF_PIPE};
 
-    bool init(vk::Device device, PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE);
+    bool init(vk::Device device, const std::string &name, PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE);
     [[nodiscard]] vk::SemaphoreSubmitInfo getSubmitInfo() const;
 };
 
@@ -61,14 +68,21 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] bool isSignaled() const;
     [[nodiscard]] bool wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
     void reset() const;
 private:
+    std::string m_name{};
+
     vk::Device m_device{nullptr};
     vk::Fence m_handle{nullptr};
 
-    bool init(vk::Device device);
+    bool init(vk::Device device, const std::string &name);
 };
 }
 

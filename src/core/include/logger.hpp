@@ -18,12 +18,12 @@ class Logger : NoCopy
 public:
     enum class Level
     {
-        DEBUG = 0,
-        INFO = 1,
-        WARN = 2,
-        ERROR = 3,
-        NONE = 4,
-        COUNT = 5
+        L_NONE = 0,
+        L_DEBUG = 1,
+        L_INFO = 2,
+        L_WARN = 3,
+        L_ERROR = 4,
+        L_COUNT = 5
     };
 
     static Logger &get()
@@ -49,7 +49,7 @@ public:
      * @param level Log level indicating its severity. The log message will not
      * be processed if its level is below the one specified during initialization.
      */
-    static void log(const std::string &channel, const std::string &message, Level level = Level::DEBUG);
+    static void log(const std::string &channel, const std::string &message, Level level = Level::L_DEBUG);
 
     /**
      * Process a general log message based on the given level. The default channel
@@ -58,7 +58,7 @@ public:
      * @param level Log level indicating its severity. The log message will not
      * be processed if its level is below the one specified during initialization.
      */
-    void log(const std::string &message, const Level level = Level::DEBUG) const
+    void log(const std::string &message, const Level level = Level::L_DEBUG) const
     {
         log(m_channel, message, level);
     }
@@ -124,7 +124,7 @@ public:
     }
 
 private:
-    Level m_level = Level::DEBUG;
+    Level m_level = Level::L_DEBUG;
     std::string m_channel = "APP";
 
     Logger() = default;

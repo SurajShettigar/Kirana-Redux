@@ -34,16 +34,23 @@ public:
         return m_handle != nullptr;
     }
 
-    DescriptorSet allocate(const DescriptorLayout &layout,
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
+    DescriptorSet allocate(const std::string &name, const DescriptorLayout &layout,
                            const std::vector<ShaderBindingResource> &binding_resources = {}) const;
     void reset() const;
 
 private:
+    std::string m_name{};
+
     vk::Device m_device{nullptr};
     vk::DescriptorPool m_handle{nullptr};
 
-    bool init(vk::Device device, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
-              uint32_t max_sets = 1024);
+    bool init(vk::Device device, const std::string &name,
+              const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, uint32_t max_sets = 1024);
 };
 }
 

@@ -17,8 +17,8 @@ class Queue
 public:
     Queue() = default;
 
-    Queue(const uint32_t index, const uint32_t family_index, const QueueFamilyFlags type)
-        : m_index{index}, m_family_index{family_index}, m_type{type}
+    Queue(const std::string &name, const uint32_t index, const uint32_t family_index, const QueueFamilyFlags type)
+        : m_name{name}, m_index{index}, m_family_index{family_index}, m_type{type}
     {
     }
 
@@ -30,6 +30,11 @@ public:
                && m_index < std::numeric_limits<uint32_t>::max()
                && m_family_index < std::numeric_limits<uint32_t>::max()
                && m_type != QueueFamilyFlags::NONE;
+    }
+
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
     }
 
     [[nodiscard]] uint32_t getIndex() const
@@ -65,17 +70,17 @@ public:
     bool present(const SwapchainPresentInfo &swapchain_info);
 
 private:
+    std::string m_name{};
     uint32_t m_index = std::numeric_limits<uint32_t>::max();
     uint32_t m_family_index = std::numeric_limits<uint32_t>::max();
     QueueFamilyFlags m_type = QueueFamilyFlags::NONE;
 
     vk::Device m_device{nullptr};
     vk::Queue m_handle{nullptr};
-    std::vector<CommandEncoder> m_cmd_encoders{};
     std::vector<vk::SemaphoreSubmitInfo> m_wait_semaphores{};
     std::vector<vk::SemaphoreSubmitInfo> m_signal_semaphores{};
 
-    Queue(vk::Device device, uint32_t index, uint32_t family_index, QueueFamilyFlags type);
+    Queue(vk::Device device, const std::string &name, uint32_t index, uint32_t family_index, QueueFamilyFlags type);
 };
 }
 

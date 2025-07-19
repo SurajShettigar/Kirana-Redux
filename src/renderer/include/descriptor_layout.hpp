@@ -25,6 +25,11 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::DescriptorSetLayout getNativeHandle() const
     {
         return m_handle;
@@ -46,12 +51,14 @@ public:
     }
 
 private:
+    std::string m_name{};
     std::vector<ShaderBinding> m_bindings{};
 
     vk::Device m_device{nullptr};
     vk::DescriptorSetLayout m_handle{nullptr};
 
-    bool init(vk::Device device, ShaderStageFlags shader_stages, const std::vector<ShaderBinding> &bindings = {});
+    bool init(vk::Device device, const std::string &name, ShaderStageFlags shader_stages,
+              const std::vector<ShaderBinding> &bindings = {});
 };
 }
 

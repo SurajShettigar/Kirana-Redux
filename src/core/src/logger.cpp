@@ -11,16 +11,16 @@ inline spdlog::level::level_enum getLogLevel(const Logger::Level level)
 {
     switch (level)
     {
-    case Logger::Level::DEBUG:
-        return spdlog::level::debug;
-    case Logger::Level::INFO:
-        return spdlog::level::info;
-    case Logger::Level::WARN:
-        return spdlog::level::warn;
-    case Logger::Level::ERROR:
-        return spdlog::level::err;
-    case Logger::Level::NONE:
+    case Logger::Level::L_NONE:
         return spdlog::level::off;
+    case Logger::Level::L_DEBUG:
+        return spdlog::level::debug;
+    case Logger::Level::L_INFO:
+        return spdlog::level::info;
+    case Logger::Level::L_WARN:
+        return spdlog::level::warn;
+    case Logger::Level::L_ERROR:
+        return spdlog::level::err;
     default:
         return spdlog::level::trace;
     }

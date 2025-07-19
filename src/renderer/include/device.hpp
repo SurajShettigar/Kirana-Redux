@@ -4,7 +4,6 @@
 #ifndef KIRANA_RENDERER_DEVICE_HPP
 #define KIRANA_RENDERER_DEVICE_HPP
 
-#include "common.hpp"
 #include "queue.hpp"
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
@@ -83,31 +82,34 @@ public:
         return m_queues[m_queue_index_transfer];
     }
 
-    [[nodiscard]] Texture createTexture(const Size2D &size, TextureFormat format,
+    [[nodiscard]] Texture createTexture(const std::string &name, const Size2D &size, TextureFormat format,
                                         TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
                                         TextureLayout layout = TextureLayout::UNKNOWN) const;
 
     [[nodiscard]] DescriptorAllocator createDescriptorAllocator(
-        const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
+        const std::string &name, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
         uint32_t max_sets = 1024) const;
 
-    [[nodiscard]] DescriptorLayout createDescriptorLayout(ShaderStageFlags shader_stages,
+    [[nodiscard]] DescriptorLayout createDescriptorLayout(const std::string &name, ShaderStageFlags shader_stages,
                                                           const std::vector<ShaderBinding> &bindings = {}) const;
 
-    [[nodiscard]] Shader createShader(const core::Filepath &source_path, ShaderStageFlags stage,
-                                      const std::string &entry_point = "main") const;
+    [[nodiscard]] Shader createShader(const std::string &name, const core::Filepath &source_path,
+                                      ShaderStageFlags stage, const std::string &entry_point = "main") const;
 
-    [[nodiscard]] PipelineLayout createPipelineLayout(const std::vector<DescriptorLayout> &layouts) const;
+    [[nodiscard]] PipelineLayout createPipelineLayout(const std::string &name,
+                                                      const std::vector<DescriptorLayout> &layouts) const;
 
-    [[nodiscard]] PipelineCompute createComputePipeline(const PipelineLayout &layout, const Shader &shader) const;
+    [[nodiscard]] PipelineCompute createComputePipeline(const std::string &name, const PipelineLayout &layout,
+                                                        const Shader &shader) const;
 
-    [[nodiscard]] Swapchain createSwapchain(const SwapchainData &data) const;
+    [[nodiscard]] Swapchain createSwapchain(const std::string &name, const SwapchainData &data) const;
 
-    [[nodiscard]] CommandEncoder createCommandEncoder(const Queue &compatible_queue) const;
+    [[nodiscard]] CommandEncoder createCommandEncoder(const std::string &name, const Queue &compatible_queue) const;
 
-    [[nodiscard]] Semaphore createSemaphore(PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE) const;
+    [[nodiscard]] Semaphore createSemaphore(const std::string &name,
+                                            PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE) const;
 
-    [[nodiscard]] Fence createFence() const;
+    [[nodiscard]] Fence createFence(const std::string &name) const;
 
     void waitIdle() const;
 

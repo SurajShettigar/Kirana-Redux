@@ -23,16 +23,23 @@ public:
         return m_handle != nullptr;
     }
 
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
     [[nodiscard]] vk::PipelineLayout getNativeHandle() const
     {
         return m_handle;
     }
 
 private:
+    std::string m_name{};
+
     vk::Device m_device{nullptr};
     vk::PipelineLayout m_handle{nullptr};
 
-    bool init(vk::Device device, const std::vector<DescriptorLayout> &layouts);
+    bool init(vk::Device device, const std::string &name, const std::vector<DescriptorLayout> &layouts);
 };
 }
 
