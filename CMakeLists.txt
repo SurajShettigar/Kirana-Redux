@@ -13,6 +13,7 @@ add_executable(Kirana src/main.cpp)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(Platform)
 include(Dependencies)
+include(Shaders)
 
 # Internal dependencies
 add_subdirectory(src/core)

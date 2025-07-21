@@ -25,7 +25,13 @@ void DescriptorSet::updateBindingResources(const DescriptorLayout &layout,
     for (const auto &r : resources)
     {
         const auto &binding = layout.getBinding(r.index);
-        if (binding.type == ShaderBindingType::SAMPLED_IMAGE || binding.type == ShaderBindingType::STORAGE_IMAGE)
+        if (binding.type == ShaderBindingType::STORAGE_BUFFER || binding.type == ShaderBindingType::UNIFORM_BUFFER)
+        {
+            vk::DescriptorBufferInfo buffer_info{r.buffer->getNativeHandle(), 0, vk::WholeSize};
+            vk::WriteDescriptorSet write{m_handle, r.index, 0, getDescriptorType(binding.type), {}, {buffer_info}};
+            writes.emplace_back(write);
+        }
+        else if (binding.type == ShaderBindingType::SAMPLED_IMAGE || binding.type == ShaderBindingType::STORAGE_IMAGE)
         {
             // TODO: Handle image descriptor binding with sampler.
             vk::DescriptorImageInfo image_info{{}, r.texture->getNativeViewHandle(),

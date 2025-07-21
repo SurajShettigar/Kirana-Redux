@@ -9,6 +9,7 @@
 #include "command_encoder.hpp"
 #include "descriptor_allocator.hpp"
 #include "pipeline_compute.hpp"
+#include "pipeline_render.hpp"
 
 namespace kirana::renderer
 {
@@ -82,6 +83,10 @@ public:
         return m_queues[m_queue_index_transfer];
     }
 
+    [[nodiscard]] Buffer createBuffer(const CommandEncoder &encoder, const std::string &name, uint64_t size,
+                                      const uint8_t *data = nullptr,
+                                      BufferUsageFlags usage = BufferUsageFlags::UNKNOWN) const;
+
     [[nodiscard]] Texture createTexture(const std::string &name, const Size2D &size, TextureFormat format,
                                         TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
                                         TextureLayout layout = TextureLayout::UNKNOWN) const;
@@ -94,13 +99,18 @@ public:
                                                           const std::vector<ShaderBinding> &bindings = {}) const;
 
     [[nodiscard]] Shader createShader(const std::string &name, const core::Filepath &source_path,
-                                      ShaderStageFlags stage, const std::string &entry_point = "main") const;
+                                      const std::vector<ShaderStageFlags> &stages = {ShaderStageFlags::COMPUTE},
+                                      const std::vector<std::string> &entry_points = {"main"}) const;
 
     [[nodiscard]] PipelineLayout createPipelineLayout(const std::string &name,
                                                       const std::vector<DescriptorLayout> &layouts) const;
 
     [[nodiscard]] PipelineCompute createComputePipeline(const std::string &name, const PipelineLayout &layout,
                                                         const Shader &shader) const;
+
+    [[nodiscard]] PipelineRender createRenderPipeline(const std::string &name, const PipelineLayout &layout,
+                                                      const std::vector<Shader> &shaders,
+                                                      const RenderState &state = {}) const;
 
     [[nodiscard]] Swapchain createSwapchain(const std::string &name, const SwapchainData &data) const;
 
@@ -110,6 +120,8 @@ public:
                                             PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE) const;
 
     [[nodiscard]] Fence createFence(const std::string &name) const;
+
+    bool tryReleaseTemporaryResources(const Fence &fence);
 
     void waitIdle() const;
 

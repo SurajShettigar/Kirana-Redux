@@ -16,8 +16,10 @@ bool Buffer::init(const vk::Device device, const MemoryAllocator *allocator, con
     m_allocator = allocator;
 
     m_name = name;
+    m_size = size;
+    m_usage = usage;
 
-    const auto create_info = vk::BufferCreateInfo{vk::BufferCreateFlags{}, size, getBufferUsageFlags(usage)};
+    const auto create_info = vk::BufferCreateInfo{vk::BufferCreateFlags{}, m_size, getBufferUsageFlags(m_usage)};
     if (m_allocator)
     {
         m_alloc_id = m_allocator->createBuffer(encoder, create_info, data, &m_handle);

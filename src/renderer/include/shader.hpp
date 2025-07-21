@@ -38,14 +38,14 @@ public:
         return m_source_path;
     }
 
-    [[nodiscard]] ShaderStageFlags getStage() const
+    [[nodiscard]] const std::vector<ShaderStageFlags> &getStages() const
     {
-        return m_stage;
+        return m_stages;
     }
 
-    [[nodiscard]] const std::string &getEntryPoint() const
+    [[nodiscard]] const std::vector<std::string> &getEntryPoints() const
     {
-        return m_entry_point;
+        return m_entry_points;
     }
 
     [[nodiscard]] vk::ShaderModule getNativeHandle() const
@@ -56,14 +56,15 @@ public:
 private:
     std::string m_name{};
     FilePath m_source_path{};
-    ShaderStageFlags m_stage{};
-    std::string m_entry_point{"main"};
+    std::vector<ShaderStageFlags> m_stages{};
+    std::vector<std::string> m_entry_points{};
 
     vk::Device m_device{nullptr};
     vk::ShaderModule m_handle{nullptr};
 
-    bool init(vk::Device device, const std::string &name, const FilePath &source_path, ShaderStageFlags stage,
-              const std::string &entry_point = "main");
+    bool init(vk::Device device, const std::string &name, const FilePath &source_path,
+              const std::vector<ShaderStageFlags> &stages = {ShaderStageFlags::COMPUTE},
+              const std::vector<std::string> &entry_points = {"main"});
 };
 }
 

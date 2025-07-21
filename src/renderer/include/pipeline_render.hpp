@@ -1,8 +1,8 @@
 // Copyright 2025 Suraj Shettigar
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KIRANA_RENDERER_PIPELINE_GRAPHICS_HPP
-#define KIRANA_RENDERER_PIPELINE_GRAPHICS_HPP
+#ifndef KIRANA_RENDERER_PIPELINE_RENDER_HPP
+#define KIRANA_RENDERER_PIPELINE_RENDER_HPP
 
 #include "pipeline_layout.hpp"
 #include "shader.hpp"
@@ -198,22 +198,34 @@ struct ColorBlendState
     }
 };
 
-struct GraphicsState
+struct ColorAttachment
+{
+    TextureFormat format{TextureFormat::UNKNOWN};
+    ColorBlendState blend_state{};
+};
+
+struct DepthStencilAttachment
+{
+    TextureFormat format{TextureFormat::UNKNOWN};
+    DepthStencilState state{};
+};
+
+struct RenderState
 {
     RasterizationState rasterization{};
     MultisampleState multisample{};
-    DepthStencilState depth_stencil{};
     std::vector<VertexBufferLayout> vertex_buffer_layouts{};
-    std::vector<ColorBlendState> attachment_blend_states{};
+    std::vector<ColorAttachment> color_attachments{};
+    DepthStencilAttachment depth_stencil_attachment{};
 };
 
-class PipelineGraphics
+class PipelineRender
 {
     friend class Device;
 
 public:
-    PipelineGraphics() = default;
-    ~PipelineGraphics() = default;
+    PipelineRender() = default;
+    ~PipelineRender() = default;
 
     void destroy();
 
@@ -234,7 +246,7 @@ public:
 
 private:
     std::string m_name{};
-    GraphicsState m_state{};
+    RenderState m_state{};
 
     vk::Device m_device{nullptr};
     vk::PipelineVertexInputStateCreateInfo m_vertex_input_state{};
@@ -242,14 +254,18 @@ private:
     vk::PipelineViewportStateCreateInfo m_viewport_state{};
     vk::PipelineRasterizationStateCreateInfo m_rasterization_state{};
     vk::PipelineMultisampleStateCreateInfo m_multisample_state{};
-    vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state{};
     vk::PipelineColorBlendStateCreateInfo m_color_blend_state{};
+    vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state{};
+    std::vector<vk::DynamicState> m_dynamic_states{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
     vk::PipelineDynamicStateCreateInfo m_dynamic_state{};
+    std::vector<vk::Format> m_color_formats{};
+    vk::Format m_depth_format{};
+    vk::PipelineRenderingCreateInfo m_rendering_state{};
     vk::Pipeline m_handle{nullptr};
 
     bool init(vk::Device device, const std::string &name, const PipelineLayout &layout,
-              const std::vector<Shader> &shaders, const GraphicsState &state = {});
+              const std::vector<Shader> &shaders, const RenderState &state = {});
 };
 }
 
-#endif //KIRANA_RENDERER_PIPELINE_GRAPHICS_HPP
+#endif //KIRANA_RENDERER_PIPELINE_RENDER_HPP

@@ -9,16 +9,16 @@
 
 namespace kirana::renderer
 {
-bool PipelineCompute::init(const vk::Device device, const std::string &name, const PipelineLayout &layout, const Shader &shader)
+bool PipelineCompute::init(const vk::Device device, const std::string &name, const PipelineLayout &layout,
+                           const Shader &shader)
 {
     m_device = device;
     m_name = name;
 
-    const auto stage_create_info = vk::PipelineShaderStageCreateInfo{vk::PipelineShaderStageCreateFlags{},
-                                                                     static_cast<vk::ShaderStageFlagBits>(static_cast<
-                                                                         uint32_t>(shader.getStage())),
-                                                                     shader.getNativeHandle(),
-                                                                     shader.getEntryPoint().c_str()};
+    const auto vk_stage = static_cast<vk::ShaderStageFlagBits>(static_cast<uint32_t>(shader.getStages()[0]));
+    const auto vk_entry_point = shader.getEntryPoints()[0].c_str();
+    const auto stage_create_info = vk::PipelineShaderStageCreateInfo{vk::PipelineShaderStageCreateFlags{}, vk_stage,
+                                                                     shader.getNativeHandle(), vk_entry_point};
     const auto create_info = vk::ComputePipelineCreateInfo{vk::PipelineCreateFlags{}, stage_create_info,
                                                            layout.getNativeHandle()};
 

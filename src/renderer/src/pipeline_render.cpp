@@ -1,7 +1,7 @@
 // Copyright 2025 Suraj Shettigar
 // SPDX-License-Identifier: Apache-2.0
 
-#include "pipeline_graphics.hpp"
+#include "pipeline_render.hpp"
 
 #include "helpers_vulkan.hpp"
 
@@ -80,7 +80,7 @@ inline vk::PipelineDepthStencilStateCreateInfo getDepthStencilState(const DepthS
         state.test_stencil, stencil_front, stencil_back};
 }
 
-inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vector<ColorBlendState> &attachment_states)
+inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vector<ColorAttachment> &attachments)
 {
     const auto getBlendFactor = [](const BlendFactor factor) {
         return static_cast<vk::BlendFactor>(static_cast<uint8_t>(factor));
@@ -89,10 +89,9 @@ inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vecto
         return static_cast<vk::BlendOp>(static_cast<uint8_t>(op));
     };
     std::vector<vk::PipelineColorBlendAttachmentState> blend_attachments{};
-    blend_attachments.reserve(attachment_states.size());
-    for (const auto &state : attachment_states)
+    blend_attachments.reserve(attachments.size());
+    for (const auto &[_, state] : attachments)
     {
-
         blend_attachments.emplace_back(state.enable_blend,
                                        getBlendFactor(state.src_color_blend_factor),
                                        getBlendFactor(state.dst_color_blend_factor),
@@ -106,14 +105,35 @@ inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vecto
         vk::PipelineColorBlendStateCreateFlags{}, false, vk::LogicOp::eCopy, blend_attachments};
 }
 
-inline vk::PipelineDynamicStateCreateInfo getDynamicState()
+inline vk::PipelineDynamicStateCreateInfo getDynamicState(const std::vector<vk::DynamicState> &dynamic_states)
 {
-    std::vector dynamic_states{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
     return vk::PipelineDynamicStateCreateInfo{vk::PipelineDynamicStateCreateFlags{}, dynamic_states};
 }
 
-bool PipelineGraphics::init(const vk::Device device, const std::string &name, const PipelineLayout &layout,
-                            const std::vector<Shader> &shaders, const GraphicsState &state)
+inline vk::PipelineRenderingCreateInfo getRenderingState(const std::vector<ColorAttachment> &color_attachments,
+                                                         const DepthStencilAttachment &depth_stencil_attachment,
+                                                         std::vector<vk::Format> &out_color_formats,
+                                                         vk::Format &out_depth_format)
+{
+    auto create_info = vk::PipelineRenderingCreateInfo{};
+    out_color_formats.clear();
+    out_color_formats.reserve(color_attachments.size());
+    for (const auto &[format, _] : color_attachments)
+    {
+        out_color_formats.push_back(getFormat(format));
+    }
+    create_info.setColorAttachmentFormats(out_color_formats);
+    if (depth_stencil_attachment.format != TextureFormat::UNKNOWN)
+    {
+        out_depth_format = getFormat(depth_stencil_attachment.format);
+        create_info.setDepthAttachmentFormat(out_depth_format);
+        create_info.setStencilAttachmentFormat(out_depth_format);
+    }
+    return create_info;
+}
+
+bool PipelineRender::init(const vk::Device device, const std::string &name, const PipelineLayout &layout,
+                          const std::vector<Shader> &shaders, const RenderState &state)
 {
     m_device = device;
     m_name = name;
@@ -122,9 +142,14 @@ bool PipelineGraphics::init(const vk::Device device, const std::string &name, co
     stage_create_infos.reserve(shaders.size());
     for (const auto &s : shaders)
     {
-        const auto stage = static_cast<vk::ShaderStageFlagBits>(static_cast<uint32_t>(s.getStage()));
-        stage_create_infos.emplace_back(vk::PipelineShaderStageCreateFlags{}, stage, s.getNativeHandle(),
-                                        s.getEntryPoint().c_str());
+        const auto num_stages = s.getStages().size();
+        for (size_t i = 0; i < num_stages; ++i)
+        {
+            const auto stage = static_cast<vk::ShaderStageFlagBits>(static_cast<uint32_t>(s.getStages()[i]));
+            const auto entry_point = s.getEntryPoints()[i].c_str();
+            stage_create_infos.emplace_back(vk::PipelineShaderStageCreateFlags{}, stage, s.getNativeHandle(),
+                                            entry_point);
+        }
     }
 
     m_vertex_input_state = getVertexInput(state.vertex_buffer_layouts);
@@ -132,16 +157,19 @@ bool PipelineGraphics::init(const vk::Device device, const std::string &name, co
     m_viewport_state = getViewportState();
     m_rasterization_state = getRasterState(state.rasterization);
     m_multisample_state = getMultisampleState(state.multisample);
-    m_depth_stencil_state = getDepthStencilState(state.depth_stencil);
-    m_color_blend_state = getColorBlendState(state.attachment_blend_states);
-    m_dynamic_state = getDynamicState();
+    m_depth_stencil_state = getDepthStencilState(state.depth_stencil_attachment.state);
+    m_color_blend_state = getColorBlendState(state.color_attachments);
+    m_dynamic_state = getDynamicState(m_dynamic_states);
 
-    const auto create_info = vk::GraphicsPipelineCreateInfo{vk::PipelineCreateFlags{}, stage_create_infos,
-                                                            &m_vertex_input_state, &m_input_assembly_state, {},
-                                                            &m_viewport_state, &m_rasterization_state,
-                                                            &m_multisample_state,
-                                                            &m_depth_stencil_state, &m_color_blend_state,
-                                                            &m_dynamic_state, layout.getNativeHandle()};
+    auto create_info = vk::GraphicsPipelineCreateInfo{vk::PipelineCreateFlags{}, stage_create_infos,
+                                                      &m_vertex_input_state, &m_input_assembly_state, {},
+                                                      &m_viewport_state, &m_rasterization_state,
+                                                      &m_multisample_state,
+                                                      &m_depth_stencil_state, &m_color_blend_state,
+                                                      &m_dynamic_state, layout.getNativeHandle()};
+
+    m_rendering_state = getRenderingState(state.color_attachments, state.depth_stencil_attachment, m_color_formats, m_depth_format);
+    create_info.pNext = &m_rendering_state;
 
     const auto result = m_device.createGraphicsPipeline(nullptr, create_info);
     if (result.result != vk::Result::eSuccess)
@@ -159,7 +187,7 @@ bool PipelineGraphics::init(const vk::Device device, const std::string &name, co
     return true;
 }
 
-void PipelineGraphics::destroy()
+void PipelineRender::destroy()
 {
     if (m_device && m_handle)
     {

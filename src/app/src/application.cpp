@@ -35,6 +35,7 @@ int Application::init()
     renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
     gpu.features.synchronization_2 = true;
     gpu.features.dynamic_rendering = true;
+    gpu.features.buffer_device_address = true;
     const bool is_initialized = m_renderer.
         init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain);
 

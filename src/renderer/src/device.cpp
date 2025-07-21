@@ -330,6 +330,24 @@ void Device::destroy()
     }
 }
 
+Buffer Device::createBuffer(const CommandEncoder &encoder, const std::string &name, const uint64_t size,
+                            const uint8_t *data,
+                            const BufferUsageFlags usage) const
+{
+    Buffer buffer;
+    if (m_device)
+    {
+        buffer.init(m_device, &m_memory_allocator, encoder, name, size, data, usage);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create buffer. Device is not initialized.");
+    }
+    return buffer;
+}
+
+
 Texture Device::createTexture(const std::string &name, const Size2D &size, const TextureFormat format,
                               const TextureUsageFlags usage,
                               const TextureLayout layout) const
@@ -380,13 +398,14 @@ DescriptorLayout Device::createDescriptorLayout(const std::string &name, const S
     return layout;
 }
 
-Shader Device::createShader(const std::string &name, const core::Filepath &source_path, const ShaderStageFlags stage,
-                            const std::string &entry_point) const
+Shader Device::createShader(const std::string &name, const core::Filepath &source_path,
+                            const std::vector<ShaderStageFlags> &stages,
+                            const std::vector<std::string> &entry_points) const
 {
     Shader shader;
     if (m_device)
     {
-        shader.init(m_device, name, source_path, stage, entry_point);
+        shader.init(m_device, name, source_path, stages, entry_points);
     }
     else
     {
@@ -423,6 +442,22 @@ PipelineCompute Device::createComputePipeline(const std::string &name, const Pip
     {
         core::Logger::error(LOG_CHANNEL_VULKAN,
                             "Failed to create Compute Pipeline. Device is not initialized.");
+    }
+    return pipeline;
+}
+
+PipelineRender Device::createRenderPipeline(const std::string &name, const PipelineLayout &layout,
+                                            const std::vector<Shader> &shaders, const RenderState &state) const
+{
+    PipelineRender pipeline;
+    if (m_device)
+    {
+        pipeline.init(m_device, name, layout, shaders, state);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Render Pipeline. Device is not initialized.");
     }
     return pipeline;
 }
@@ -486,6 +521,11 @@ Fence Device::createFence(const std::string &name) const
                             "Failed to create Fence. Device is not initialized.");
     }
     return fence;
+}
+
+bool Device::tryReleaseTemporaryResources(const Fence &fence)
+{
+    return m_memory_allocator.tryReleaseTemporaries(fence);
 }
 
 void Device::waitIdle() const

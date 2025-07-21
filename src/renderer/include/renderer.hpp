@@ -39,15 +39,33 @@ private:
     Fence m_fence{};
     Swapchain m_swapchain{};
     std::vector<RenderContext> m_ctxs{};
-    Texture m_render_target {};
+    Texture m_render_target{};
 
     // TODO: Example render loop. Move it to a separate class.
+    // DescriptorAllocator m_descriptor_allocator{};
+    // DescriptorLayout m_layout{};
+    // DescriptorSet m_set{};
+    // PipelineLayout m_pipeline_layout{};
+    // Shader m_shader{};
+    // PipelineCompute m_pipeline{};
+
+    std::vector<uint32_t> m_indices{0, 1, 2};
+    std::vector<std::array<float, 4>> m_positions{{-1.0f, -1.0f, 0.0f, 0.0f}, {1.0f, -1.0f, 0.0f, 0.0f},
+                                                  {0.0f, 0.0f, 0.0f, 0.0f}};
+    std::vector<std::array<float, 4>> m_colors{{1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f},
+                                               {0.0f, 0.0f, 1.0f, 1.0f}};
+    Buffer m_buffer_indices{};
+    Buffer m_buffer_positions{};
+    Buffer m_buffer_colors{};
+    Fence m_data_fence{};
+    CommandEncoder m_data_encoder{};
+
     DescriptorAllocator m_descriptor_allocator{};
     DescriptorLayout m_layout{};
     DescriptorSet m_set{};
     PipelineLayout m_pipeline_layout{};
     Shader m_shader{};
-    PipelineCompute m_pipeline{};
+    PipelineRender m_pipeline{};
 
     size_t m_current_index{0};
 };

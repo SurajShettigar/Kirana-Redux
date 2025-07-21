@@ -8,6 +8,7 @@
 #include "texture.hpp"
 #include "pipeline_layout.hpp"
 #include "pipeline_compute.hpp"
+#include "pipeline_render.hpp"
 #include "descriptor_set.hpp"
 
 namespace kirana::renderer
@@ -208,6 +209,12 @@ void CommandEncoder::bindComputePipeline(const PipelineCompute &pipeline) const
 {
     m_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline.getNativeHandle());
     m_current_pipeline_bind_point = vk::PipelineBindPoint::eCompute;
+}
+
+void CommandEncoder::bindRenderPipeline(const PipelineRender &pipeline) const
+{
+    m_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getNativeHandle());
+    m_current_pipeline_bind_point = vk::PipelineBindPoint::eGraphics;
 }
 
 void CommandEncoder::bindDescriptorSet(const PipelineLayout &layout, const uint32_t index, const DescriptorSet &set,

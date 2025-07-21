@@ -5,6 +5,7 @@
 #define KIRANA_RENDERER_DESCRIPTOR_SET_HPP
 
 #include <descriptor_layout.hpp>
+#include "buffer.hpp"
 #include "texture.hpp"
 
 namespace kirana::renderer
@@ -14,7 +15,8 @@ struct ShaderBindingResource
     uint32_t index = 0;
     union
     {
-        const Texture *texture = nullptr;
+        const Buffer *buffer;
+        const Texture *texture;
     };
 };
 

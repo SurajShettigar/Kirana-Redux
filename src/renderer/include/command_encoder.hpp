@@ -16,6 +16,7 @@ class Buffer;
 class Texture;
 class PipelineLayout;
 class PipelineCompute;
+class PipelineRender;
 class DescriptorSet;
 
 struct CommandSubmitInfo
@@ -87,6 +88,7 @@ public:
     void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
 
     void bindComputePipeline(const PipelineCompute &pipeline) const;
+    void bindRenderPipeline(const PipelineRender &pipeline) const;
 
     void bindDescriptorSet(const PipelineLayout &layout, uint32_t index, const DescriptorSet &set,
                            const std::vector<uint32_t> &dynamic_offsets = {}) const;

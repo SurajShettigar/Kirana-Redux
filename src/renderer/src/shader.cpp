@@ -18,14 +18,33 @@ void Shader::destroy()
     }
 }
 
-bool Shader::init(const vk::Device device, const std::string &name, const FilePath &source_path, const ShaderStageFlags stage,
-                  const std::string &entry_point)
+bool Shader::init(const vk::Device device, const std::string &name, const FilePath &source_path,
+                  const std::vector<ShaderStageFlags> &stages, const std::vector<std::string> &entry_points)
 {
+    if (stages.size() != entry_points.size())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Number of entry points must equal number of stages.");
+        return false;
+    }
+    if (entry_points.size() > 1)
+    {
+        const auto stage = stages[0];
+        for (size_t i = 1; i < entry_points.size(); ++i)
+        {
+            if (stages[i] == stage)
+            {
+                core::Logger::error(LOG_CHANNEL_VULKAN,
+                                    "Shader file cannot have multiple entry points for the same stage.");
+                return false;
+            }
+        }
+    }
+
     m_device = device;
     m_name = name;
     m_source_path = source_path;
-    m_stage = stage;
-    m_entry_point = entry_point;
+    m_stages = stages;
+    m_entry_points = entry_points;
 
     if (!core::fileExists(m_source_path))
     {
