@@ -5,6 +5,8 @@
 #include "memory_allocator.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "command_encoder.hpp"
+#include "synchronization.hpp"
 
 #include <logger.hpp>
 

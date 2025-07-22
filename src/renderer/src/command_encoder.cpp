@@ -205,6 +205,44 @@ void CommandEncoder::blitTexture(const Texture &src, const Texture &dst, Rect2D 
     m_buffer.blitImage2(blit_info);
 }
 
+void CommandEncoder::beginRendering(const std::vector<Texture> &color_attachments, const Texture &depth_attachment,
+                                    const std::string &name, const std::array<float, 4> &debug_color) const
+{
+#ifdef DEBUG
+    if (!name.empty())
+    {
+        m_has_render_label = true;
+        m_buffer.beginDebugUtilsLabelEXT(vk::DebugUtilsLabelEXT{name.c_str(), debug_color});
+    }
+#endif
+    if (color_attachments.empty() && !depth_attachment.isValid())
+    {
+        return;
+    }
+    const auto extent = color_attachments.size() > 0
+                            ? color_attachments[0].getSize()
+                            : depth_attachment.getSize();
+    const auto render_area = vk::Rect2D{vk::Offset2D{0, 0}, getExtent2D(extent)};
+
+    std::vector<vk::RenderingAttachmentInfo> color_attachments_info = {};
+    color_attachments_info.reserve(color_attachments.size());
+    for (const auto &c : color_attachments)
+    {
+        color_attachments_info.emplace_back(c.getNativeViewHandle(), getImageLayout(c.getLayout()));
+    }
+    auto render_info = vk::RenderingInfo{vk::RenderingFlags{}, render_area, 1};
+    render_info.setColorAttachments(color_attachments_info);
+
+    auto depth_attachment_info = vk::RenderingAttachmentInfo{};
+    if (depth_attachment.isValid())
+    {
+        depth_attachment_info = vk::RenderingAttachmentInfo{depth_attachment.getNativeViewHandle(),
+                                                            getImageLayout(depth_attachment.getLayout())};
+        render_info.setPDepthAttachment(&depth_attachment_info);
+    }
+    m_buffer.beginRendering(render_info);
+}
+
 void CommandEncoder::bindComputePipeline(const PipelineCompute &pipeline) const
 {
     m_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline.getNativeHandle());
@@ -224,8 +262,52 @@ void CommandEncoder::bindDescriptorSet(const PipelineLayout &layout, const uint3
                                 dynamic_offsets);
 }
 
+void CommandEncoder::bindIndexBuffer(const Buffer &buffer, const uint64_t offset, const IndexType index_type) const
+{
+    m_buffer.bindIndexBuffer(buffer.getNativeHandle(), offset, getIndexType(index_type));
+}
+
+void CommandEncoder::setViewport(const Rect2D &area, const float min_depth, const float max_depth) const
+{
+    const auto viewport = vk::Viewport{static_cast<float>(area.offset.x), static_cast<float>(area.offset.y),
+                                       static_cast<float>(area.size.width), static_cast<float>(area.size.height),
+                                       min_depth, max_depth};
+    m_buffer.setViewport(0, {viewport});
+}
+
+void CommandEncoder::setScissor(const Rect2D &area) const
+{
+    m_buffer.setScissor(0, {getRect2D(area)});
+}
+
+
 void CommandEncoder::dispatch(const std::array<uint32_t, 3> &group_count) const
 {
     m_buffer.dispatch(group_count[0], group_count[1], group_count[2]);
+}
+
+void CommandEncoder::draw(const uint32_t vertex_count, const uint32_t instance_count, const uint32_t first_vertex,
+                          const uint32_t first_instance) const
+{
+    m_buffer.draw(vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void CommandEncoder::drawIndexed(const uint32_t index_count, const uint32_t instance_count, const uint32_t first_index,
+                                 const int32_t vertex_offset,
+                                 const uint32_t first_instance) const
+{
+    m_buffer.drawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
+}
+
+void CommandEncoder::endRendering() const
+{
+#ifdef DEBUG
+    if (m_has_render_label)
+    {
+        m_buffer.endDebugUtilsLabelEXT();
+        m_has_render_label = false;
+    }
+#endif
+    m_buffer.endRendering();
 }
 }

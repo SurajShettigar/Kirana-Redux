@@ -13,6 +13,7 @@ namespace kirana::renderer
 {
 struct RenderContext
 {
+    Fence m_fence{};
     CommandEncoder encoder{};
     Semaphore swapchain_semaphore{};
     Semaphore render_semaphore{};
@@ -36,7 +37,6 @@ public:
 
 private:
     Device m_device{};
-    Fence m_fence{};
     Swapchain m_swapchain{};
     std::vector<RenderContext> m_ctxs{};
     Texture m_render_target{};
@@ -50,8 +50,8 @@ private:
     // PipelineCompute m_pipeline{};
 
     std::vector<uint32_t> m_indices{0, 1, 2};
-    std::vector<std::array<float, 4>> m_positions{{-1.0f, -1.0f, 0.0f, 0.0f}, {1.0f, -1.0f, 0.0f, 0.0f},
-                                                  {0.0f, 0.0f, 0.0f, 0.0f}};
+    std::vector<std::array<float, 4>> m_positions{{-1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f},
+                                                  {0.0f, -1.0f, 0.0f, 1.0f}};
     std::vector<std::array<float, 4>> m_colors{{1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f},
                                                {0.0f, 0.0f, 1.0f, 1.0f}};
     Buffer m_buffer_indices{};

@@ -1,13 +1,16 @@
-struct VertexInput {
-    uint index: SV_VertexID;
+struct VertexInput
+{
+    uint index : SV_VertexID;
 }
 
-struct VertexOutput {
+struct VertexOutput
+{
     float4 position : SV_Position;
     float4 color;
 }
 
-struct FragmentOutput {
+struct FragmentOutput
+{
     float4 color : SV_Target;
 }
 
@@ -15,11 +18,13 @@ StructuredBuffer<float4> positions;
 StructuredBuffer<float4> colors;
 
 [shader("vertex")]
-VertexOutput vertexMain(VertexInput input) {
+VertexOutput mainVS(VertexInput input)
+{
     return VertexOutput(positions[input.index], colors[input.index]);
 }
 
 [shader("fragment")]
-FragmentOutput fragmentMain(VertexOutput v_input) {
+FragmentOutput mainFS(VertexOutput v_input)
+{
     return FragmentOutput(v_input.color);
 }

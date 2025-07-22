@@ -24,6 +24,23 @@ inline void setDebugName(const vk::Device device, const vk::ObjectType type, con
 #endif
 }
 
+constexpr vk::IndexType getIndexType(const IndexType type)
+{
+    switch (type)
+    {
+    case IndexType::UINT8:
+        return vk::IndexType::eUint8;
+    case IndexType::UINT16:
+        return vk::IndexType::eUint16;
+    case IndexType::UINT32:
+        return vk::IndexType::eUint32;
+    case IndexType::NONE:
+        return vk::IndexType::eNoneKHR;
+    default:
+        return vk::IndexType::eUint32;
+    }
+}
+
 constexpr vk::Extent2D getExtent2D(const Size2D &size)
 {
     return vk::Extent2D{size.width, size.height};
@@ -74,6 +91,11 @@ constexpr std::array<vk::Offset3D, 2> getOffset3DFromRect(const Rect3D &rect)
             vk::Offset3D{rect.offset.x + static_cast<int32_t>(rect.size.width),
                          rect.offset.y + static_cast<int32_t>(rect.size.height),
                          rect.offset.z + static_cast<int32_t>(rect.size.depth)}};
+}
+
+constexpr vk::Rect2D getRect2D(const Rect2D &rect)
+{
+    return vk::Rect2D{getOffset2D(rect.offset), getExtent2D(rect.size)};
 }
 
 constexpr vk::BufferUsageFlags getBufferUsageFlags(const BufferUsageFlags flags)

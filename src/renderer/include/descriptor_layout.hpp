@@ -52,6 +52,7 @@ public:
 
 private:
     std::string m_name{};
+    ShaderStageFlags m_shader_stages{};
     std::vector<ShaderBinding> m_bindings{};
 
     vk::Device m_device{nullptr};

@@ -5,9 +5,7 @@
 #define KIRANA_RENDERER_MEMORY_ALLOCATOR_HPP
 
 #include <vma/vk_mem_alloc.h>
-
-#include "command_encoder.hpp"
-#include "synchronization.hpp"
+#include <vulkan/vulkan.hpp>
 
 namespace kirana::renderer
 {
@@ -66,6 +64,9 @@ struct std::hash<kirana::renderer::AllocationID>
 
 namespace kirana::renderer
 {
+class CommandEncoder;
+class Fence;
+
 class MemoryAllocator
 {
     struct Allocation

@@ -68,5 +68,5 @@ function(addShader SOURCE_FILE SHADER_DEPENDENCIES)
 endfunction()
 
 
-addShader(${SHADERS_ROOT_DIR_SOURCE}/gradient.slang "${SHADER_DEPS}")
-addShader(${SHADERS_ROOT_DIR_SOURCE}/basic.slang "${SHADER_DEPS}" "vertexMain" "fragmentMain")
+addShader(${SHADERS_ROOT_DIR_SOURCE}/gradient.slang "")
+addShader(${SHADERS_ROOT_DIR_SOURCE}/basic.slang "" "mainVS" "mainFS")

@@ -9,25 +9,29 @@
 
 namespace kirana::renderer
 {
-inline vk::PipelineVertexInputStateCreateInfo getVertexInput(const std::vector<VertexBufferLayout> &vb_layouts)
+inline vk::PipelineVertexInputStateCreateInfo getVertexInput(const std::vector<VertexBufferLayout> &vb_layouts,
+                                                             std::vector<vk::VertexInputBindingDescription> &
+                                                             out_vertex_bindings,
+                                                             std::vector<vk::VertexInputAttributeDescription> &
+                                                             out_vertex_attribs)
 {
-    std::vector<vk::VertexInputBindingDescription> vertex_bindings{};
-    std::vector<vk::VertexInputAttributeDescription> vertex_attribs{};
-    vertex_bindings.reserve(vb_layouts.size());
+    out_vertex_bindings.clear();
+    out_vertex_attribs.clear();
+    out_vertex_bindings.reserve(vb_layouts.size());
     for (uint32_t i = 0; i < vb_layouts.size(); ++i)
     {
         const auto &vb_layout = vb_layouts[i];
-        vertex_bindings.emplace_back(i, vb_layout.stride,
-                                     static_cast<vk::VertexInputRate>(static_cast<uint8_t>(vb_layout.input_rate)));
+        out_vertex_bindings.emplace_back(i, vb_layout.stride,
+                                         static_cast<vk::VertexInputRate>(static_cast<uint8_t>(vb_layout.input_rate)));
         for (uint32_t j = 0; j < vb_layout.attributes.size(); ++j)
         {
             const auto &vb_attrib = vb_layout.attributes[j];
-            vertex_attribs.emplace_back(j, i, getFormat(vb_attrib.format), vb_attrib.offset);
+            out_vertex_attribs.emplace_back(j, i, getFormat(vb_attrib.format), vb_attrib.offset);
         }
     }
-
+    return vk::PipelineVertexInputStateCreateInfo{};
     return vk::PipelineVertexInputStateCreateInfo{
-        vk::PipelineVertexInputStateCreateFlags{}, vertex_bindings, vertex_attribs};
+        vk::PipelineVertexInputStateCreateFlags{}, out_vertex_bindings, out_vertex_attribs};
 }
 
 inline vk::PipelineInputAssemblyStateCreateInfo getInputAssembly(const PrimitiveTopology topology)
@@ -37,11 +41,12 @@ inline vk::PipelineInputAssemblyStateCreateInfo getInputAssembly(const Primitive
         static_cast<vk::PrimitiveTopology>(static_cast<uint16_t>(topology)), false};
 }
 
-inline vk::PipelineViewportStateCreateInfo getViewportState()
+inline vk::PipelineViewportStateCreateInfo getViewportState(std::vector<vk::Viewport> &out_viewports,
+                                                            std::vector<vk::Rect2D> &out_scissors)
 {
-    const std::vector viewports{vk::Viewport{}};
-    const std::vector scissors{vk::Rect2D{}};
-    return vk::PipelineViewportStateCreateInfo{vk::PipelineViewportStateCreateFlags{}, viewports, scissors};
+    out_viewports = {vk::Viewport{0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f}};
+    out_scissors = {vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{1280, 720}}};
+    return vk::PipelineViewportStateCreateInfo{vk::PipelineViewportStateCreateFlags{}, out_viewports, out_scissors};
 }
 
 inline vk::PipelineRasterizationStateCreateInfo getRasterState(const RasterizationState &state)
@@ -80,7 +85,9 @@ inline vk::PipelineDepthStencilStateCreateInfo getDepthStencilState(const DepthS
         state.test_stencil, stencil_front, stencil_back};
 }
 
-inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vector<ColorAttachment> &attachments)
+inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vector<ColorAttachment> &attachments,
+                                                                std::vector<vk::PipelineColorBlendAttachmentState> &
+                                                                out_blend_attachments)
 {
     const auto getBlendFactor = [](const BlendFactor factor) {
         return static_cast<vk::BlendFactor>(static_cast<uint8_t>(factor));
@@ -88,21 +95,26 @@ inline vk::PipelineColorBlendStateCreateInfo getColorBlendState(const std::vecto
     const auto getBlendOp = [](const BlendOperation op) {
         return static_cast<vk::BlendOp>(static_cast<uint8_t>(op));
     };
-    std::vector<vk::PipelineColorBlendAttachmentState> blend_attachments{};
-    blend_attachments.reserve(attachments.size());
+    const auto getColorMask = [](const ColorComponentFlags comp) {
+        return static_cast<vk::ColorComponentFlags>(static_cast<uint8_t>(comp));
+    };
+
+    out_blend_attachments.clear();
+    out_blend_attachments.reserve(attachments.size());
     for (const auto &[_, state] : attachments)
     {
-        blend_attachments.emplace_back(state.enable_blend,
-                                       getBlendFactor(state.src_color_blend_factor),
-                                       getBlendFactor(state.dst_color_blend_factor),
-                                       getBlendOp(state.color_blend_op),
-                                       getBlendFactor(state.src_alpha_blend_factor),
-                                       getBlendFactor(state.dst_alpha_blend_factor),
-                                       getBlendOp(state.alpha_blend_op)
+        out_blend_attachments.emplace_back(state.enable_blend,
+                                           getBlendFactor(state.src_color_blend_factor),
+                                           getBlendFactor(state.dst_color_blend_factor),
+                                           getBlendOp(state.color_blend_op),
+                                           getBlendFactor(state.src_alpha_blend_factor),
+                                           getBlendFactor(state.dst_alpha_blend_factor),
+                                           getBlendOp(state.alpha_blend_op),
+                                           getColorMask(state.color_write_mask)
             );
     }
     return vk::PipelineColorBlendStateCreateInfo{
-        vk::PipelineColorBlendStateCreateFlags{}, false, vk::LogicOp::eCopy, blend_attachments};
+        vk::PipelineColorBlendStateCreateFlags{}, false, vk::LogicOp::eCopy, out_blend_attachments};
 }
 
 inline vk::PipelineDynamicStateCreateInfo getDynamicState(const std::vector<vk::DynamicState> &dynamic_states)
@@ -152,13 +164,14 @@ bool PipelineRender::init(const vk::Device device, const std::string &name, cons
         }
     }
 
-    m_vertex_input_state = getVertexInput(state.vertex_buffer_layouts);
+    m_vertex_input_state = getVertexInput(state.vertex_buffer_layouts, m_vertex_input_bindings,
+                                          m_vertex_input_attributes);
     m_input_assembly_state = getInputAssembly(state.rasterization.topology);
-    m_viewport_state = getViewportState();
+    m_viewport_state = getViewportState(m_viewports, m_scissor_rects);
     m_rasterization_state = getRasterState(state.rasterization);
     m_multisample_state = getMultisampleState(state.multisample);
     m_depth_stencil_state = getDepthStencilState(state.depth_stencil_attachment.state);
-    m_color_blend_state = getColorBlendState(state.color_attachments);
+    m_color_blend_state = getColorBlendState(state.color_attachments, m_color_blend_attachments);
     m_dynamic_state = getDynamicState(m_dynamic_states);
 
     auto create_info = vk::GraphicsPipelineCreateInfo{vk::PipelineCreateFlags{}, stage_create_infos,
@@ -168,7 +181,8 @@ bool PipelineRender::init(const vk::Device device, const std::string &name, cons
                                                       &m_depth_stencil_state, &m_color_blend_state,
                                                       &m_dynamic_state, layout.getNativeHandle()};
 
-    m_rendering_state = getRenderingState(state.color_attachments, state.depth_stencil_attachment, m_color_formats, m_depth_format);
+    m_rendering_state = getRenderingState(state.color_attachments, state.depth_stencil_attachment, m_color_formats,
+                                          m_depth_format);
     create_info.pNext = &m_rendering_state;
 
     const auto result = m_device.createGraphicsPipeline(nullptr, create_info);

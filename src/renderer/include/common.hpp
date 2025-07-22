@@ -11,6 +11,14 @@
 
 namespace kirana::renderer
 {
+enum class IndexType: uint8_t
+{
+    NONE = 0u,
+    UINT8 = 1u,
+    UINT16 = 2u,
+    UINT32 = 3u,
+};
+
 struct Size2D
 {
     uint32_t width = 0;

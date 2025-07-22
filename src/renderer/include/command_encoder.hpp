@@ -87,13 +87,28 @@ public:
      */
     void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
 
+    void beginRendering(const std::vector<Texture> &color_attachments, const Texture &depth_attachment,
+                        const std::string &name = "",
+                        const std::array<float, 4> &debug_color = {0.0f, 1.0f, 0.0, 1.0f}) const;
+
     void bindComputePipeline(const PipelineCompute &pipeline) const;
     void bindRenderPipeline(const PipelineRender &pipeline) const;
 
     void bindDescriptorSet(const PipelineLayout &layout, uint32_t index, const DescriptorSet &set,
                            const std::vector<uint32_t> &dynamic_offsets = {}) const;
 
+    void bindIndexBuffer(const Buffer &buffer, uint64_t offset = 0, IndexType index_type = IndexType::UINT32) const;
+
+    void setViewport(const Rect2D &area, float min_depth = 0.0f, float max_depth = 1.0f) const;
+    void setScissor(const Rect2D &area) const;
+
     void dispatch(const std::array<uint32_t, 3> &group_count) const;
+    void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex = 0,
+              uint32_t first_instance = 0) const;
+    void drawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index = 0, int32_t vertex_offset = 0,
+                     uint32_t first_instance = 0) const;
+
+    void endRendering() const;
 
 private:
     std::string m_name{};
@@ -102,6 +117,7 @@ private:
     vk::CommandPool m_pool{nullptr};
     vk::CommandBuffer m_buffer{nullptr};
 
+    mutable bool m_has_render_label {false};
     mutable vk::PipelineBindPoint m_current_pipeline_bind_point{vk::PipelineBindPoint::eGraphics};
 
     bool init(vk::Device device, const std::string &name, uint32_t queue_family);

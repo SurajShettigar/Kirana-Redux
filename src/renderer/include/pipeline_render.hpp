@@ -249,18 +249,31 @@ private:
     RenderState m_state{};
 
     vk::Device m_device{nullptr};
+
+    std::vector<vk::VertexInputBindingDescription> m_vertex_input_bindings{};
+    std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attributes{};
     vk::PipelineVertexInputStateCreateInfo m_vertex_input_state{};
+
     vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state{};
+
+    std::vector<vk::Viewport> m_viewports{};
+    std::vector<vk::Rect2D> m_scissor_rects{};
     vk::PipelineViewportStateCreateInfo m_viewport_state{};
+
     vk::PipelineRasterizationStateCreateInfo m_rasterization_state{};
     vk::PipelineMultisampleStateCreateInfo m_multisample_state{};
+
+    std::vector<vk::PipelineColorBlendAttachmentState> m_color_blend_attachments{};
     vk::PipelineColorBlendStateCreateInfo m_color_blend_state{};
     vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state{};
+
     std::vector<vk::DynamicState> m_dynamic_states{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
     vk::PipelineDynamicStateCreateInfo m_dynamic_state{};
+
     std::vector<vk::Format> m_color_formats{};
     vk::Format m_depth_format{};
     vk::PipelineRenderingCreateInfo m_rendering_state{};
+
     vk::Pipeline m_handle{nullptr};
 
     bool init(vk::Device device, const std::string &name, const PipelineLayout &layout,

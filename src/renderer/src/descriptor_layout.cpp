@@ -14,6 +14,7 @@ bool DescriptorLayout::init(const vk::Device device, const std::string &name, co
 {
     m_device = device;
     m_name = name;
+    m_shader_stages = shader_stages;
 
     if (!bindings.empty())
     {
@@ -32,7 +33,7 @@ bool DescriptorLayout::init(const vk::Device device, const std::string &name, co
     vk_bindings.reserve(m_bindings.size());
     for (const auto &b : m_bindings)
     {
-        const auto stages = b.shader_stages | shader_stages;
+        const auto stages = b.shader_stages | m_shader_stages;
         vk_bindings.emplace_back(b.index, getDescriptorType(b.type), 1, getShaderStageFlags(stages));
     }
 
