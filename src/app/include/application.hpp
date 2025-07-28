@@ -39,6 +39,8 @@ private:
 
     bool m_is_cleaned {false};
 
+    void onWindowEvent(core::WindowEventType type, const core::WindowEventData &data);
+
     int init();
     void update();
     void render();

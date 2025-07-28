@@ -28,14 +28,8 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
             const auto fence = m_device.createFence("Fence_Main_" + std::to_string(i));
             const auto encoder = m_device.createCommandEncoder("Encoder_Render_" + std::to_string(i),
                                                                m_device.getGraphicsQueue());
-            const auto render_semaphore = m_device.createSemaphore("Semaphore_Render_" + std::to_string(i));
-            Semaphore swapchain_semaphore;
-            if (has_swapchain)
-            {
-                swapchain_semaphore = m_device.createSemaphore("Semaphore_Swapchain_" + std::to_string(i),
-                                                               PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
-            }
-            m_ctxs.emplace_back(RenderContext{fence, encoder, swapchain_semaphore, render_semaphore});
+            const auto semaphore = m_device.createSemaphore("Semaphore_Render_" + std::to_string(i));
+            m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
         }
 
         m_render_target = m_device.createTexture("Render_Target_Color", swapchain_data.size,
@@ -101,9 +95,8 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
         m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader},
                                                    render_state);
-
-        m_current_index = 0;
     }
+    m_current_index = 0;
     return status;
 }
 
@@ -113,21 +106,26 @@ void Renderer::update()
 
 void Renderer::render()
 {
-    const auto &[fence, encoder, swapchain_semaphore, render_semaphore] = m_ctxs[m_current_index];
+    const auto &fence = m_ctxs[m_current_index].fence;
+    const auto &encoder = m_ctxs[m_current_index].encoder;
+    Queue &queue = m_device.getGraphicsQueue();
 
     if (!fence.wait(FENCE_WAIT_TIMEOUT))
     {
         return;
     }
-    fence.reset();
 
-    Queue &queue = m_device.getGraphicsQueue();
-    auto &swapchain_texture = m_swapchain.getTexture(swapchain_semaphore);
-
-    if (swapchain_semaphore.isValid())
+    const auto &swapchain_result = m_swapchain.getTexture();
+    if (!swapchain_result)
     {
-        queue.addWaitSemaphore(swapchain_semaphore);
+        return;
     }
+    const auto [swapchain_index, swapchain_texture, swapchain_semaphore] = swapchain_result.value();
+
+    fence.reset();
+    const auto &render_semaphore = m_ctxs[swapchain_index].semaphore;
+
+    queue.addWaitSemaphore(swapchain_semaphore);
     queue.addSignalSemaphore(render_semaphore);
 
     encoder.begin();
@@ -162,7 +160,7 @@ void Renderer::render()
     queue.submit(encoder.finish(), fence);
 
     queue.addWaitSemaphore(render_semaphore);
-    queue.present(m_swapchain.present());
+    queue.present(m_swapchain);
 
     m_current_index = (m_current_index + 1) % m_ctxs.size();
 }
@@ -195,10 +193,9 @@ void Renderer::clean()
     m_render_target.destroy();
     if (!m_ctxs.empty())
     {
-        for (auto &[fence, encoder, swapchain_semaphore, render_semaphore] : m_ctxs)
+        for (auto &[fence, encoder, semaphore] : m_ctxs)
         {
-            swapchain_semaphore.destroy();
-            render_semaphore.destroy();
+            semaphore.destroy();
             encoder.destroy();
             fence.destroy();
         }
@@ -206,5 +203,10 @@ void Renderer::clean()
     }
     m_swapchain.destroy();
     m_device.destroy();
+}
+
+void Renderer::resize(const Size2D &size)
+{
+    m_swapchain.resize(size);
 }
 }

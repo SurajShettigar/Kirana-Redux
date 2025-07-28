@@ -13,10 +13,9 @@ namespace kirana::renderer
 {
 struct RenderContext
 {
-    Fence m_fence{};
+    Fence fence{};
     CommandEncoder encoder{};
-    Semaphore swapchain_semaphore{};
-    Semaphore render_semaphore{};
+    Semaphore semaphore{};
 };
 
 class Renderer : core::NoCopy
@@ -35,6 +34,7 @@ public:
     void lateUpdate();
     void clean();
 
+    void resize(const Size2D &size);
 private:
     Device m_device{};
     Swapchain m_swapchain{};

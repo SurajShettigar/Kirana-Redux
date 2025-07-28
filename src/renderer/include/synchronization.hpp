@@ -40,6 +40,11 @@ public:
         m_stage_mask = stage_mask;
     }
 
+    [[nodiscard]] vk::Semaphore getNativeHandle() const
+    {
+        return m_handle;
+    }
+
 private:
     std::string m_name{};
 
@@ -47,7 +52,8 @@ private:
     vk::Semaphore m_handle{nullptr};
     PipelineStageFlags m_stage_mask{PipelineStageFlags::TOP_OF_PIPE};
 
-    bool init(vk::Device device, const std::string &name, PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE);
+    bool init(vk::Device device, const std::string &name,
+              PipelineStageFlags stage_mask = PipelineStageFlags::TOP_OF_PIPE);
     [[nodiscard]] vk::SemaphoreSubmitInfo getSubmitInfo() const;
 };
 

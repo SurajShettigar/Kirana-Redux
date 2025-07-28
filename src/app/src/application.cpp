@@ -13,6 +13,15 @@
 
 namespace kirana
 {
+void Application::onWindowEvent(const core::WindowEventType type, const core::WindowEventData &data)
+{
+    if (type == core::WindowEventType::RESIZING)
+    {
+        m_renderer.resize({static_cast<uint32_t>(data.size.width), static_cast<uint32_t>(data.size.height)});
+    }
+}
+
+
 int Application::init()
 {
     std::string app_name = std::string(APP_NAME);
@@ -28,6 +37,11 @@ int Application::init()
     m_main_window = m_window_manager.createWindow("Kirana", {1280, 720});
     m_window_manager.showWindow(m_main_window);
 
+    m_window_manager.getWindow(m_main_window).addOnWindowEventListener(
+        [&](const core::WindowEventType type, const core::WindowEventData &data) {
+            onWindowEvent(type, data);
+        });
+
     core::Window &window = m_window_manager.getWindow(m_main_window);
     const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
     const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}};
@@ -36,6 +50,8 @@ int Application::init()
     gpu.features.synchronization_2 = true;
     gpu.features.dynamic_rendering = true;
     gpu.features.buffer_device_address = true;
+    // gpu.features.acceleration_structure = true;
+    // gpu.features.ray_tracing_pipeline = true;
     const bool is_initialized = m_renderer.
         init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain);
 

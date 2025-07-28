@@ -4,6 +4,7 @@
 #ifndef KIRANA_CORE_WINDOW_MANAGER_HPP
 #define KIRANA_CORE_WINDOW_MANAGER_HPP
 
+#include <iostream>
 #include <memory>
 
 #include "no_copy.hpp"
@@ -44,7 +45,18 @@ public:
     /// Returns true if at least one window is visible on the screen.
     [[nodiscard]] bool isAnyWindowActive() const
     {
-        return !m_windows.empty();
+        if (m_windows.empty())
+        {
+            return false;
+        }
+        for (const auto &[_, window] : m_windows)
+        {
+            if (!window->isClosed())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// Returns the Window object with the given handle.
@@ -102,7 +114,7 @@ public:
             return;
         }
         getWindow(handle).close();
-        m_windows.erase(handle);
+        // TODO: Add a proper way to clean-up windows handles and event listeners.
     }
 
 private:

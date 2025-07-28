@@ -67,7 +67,7 @@ public:
     }
 
     void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence);
-    bool present(const SwapchainPresentInfo &swapchain_info);
+    bool present(Swapchain &swapchain);
 
 private:
     std::string m_name{};

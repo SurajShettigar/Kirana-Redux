@@ -52,10 +52,34 @@ public:
         }
     }
 
+    const std::string &getName() const
+    {
+        return m_name;
+    }
 
     const WindowSize &getSize() const
     {
         return m_size;
+    }
+
+    const WindowPosition &getPosition() const
+    {
+        return m_position;
+    }
+
+    bool isFocused() const
+    {
+        return m_focused;
+    }
+
+    bool isEnabled() const
+    {
+        return m_enabled;
+    }
+
+    bool isClosed() const
+    {
+        return m_closed;
     }
 
     /**
