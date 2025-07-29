@@ -41,6 +41,7 @@ set(OpenUSD_BIN_DIR ${OpenUSD_BUILD_OUTPUT_DIR}/bin)
 set(OpenUSD_CONFIG_FILE ${OpenUSD_BUILD_OUTPUT_DIR}/pxrConfig.cmake)
 
 if (NOT EXISTS ${OpenUSD_CONFIG_FILE})
+# TODO: Build USDView by creating a python virtual environment and executing OpenUSD build script.
     message("Building OpenUSD...")
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         execute_process(

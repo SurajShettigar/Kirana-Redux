@@ -20,13 +20,13 @@ TF_REGISTRY_FUNCTION(TfType)
 
 HdRenderDelegate *HdKiranaRendererPlugin::CreateRenderDelegate()
 {
-    kirana::core::Logger::get().init(LOG_CHANNEL_HYDRA, kirana::core::Logger::Level::DEBUG);
+    kirana::core::Logger::get().init(LOG_CHANNEL_HYDRA, kirana::core::Logger::Level::L_DEBUG);
     return new HdKiranaRenderDelegate();
 }
 
 HdRenderDelegate *HdKiranaRendererPlugin::CreateRenderDelegate(const HdRenderSettingsMap &settingsMap)
 {
-    kirana::core::Logger::get().init(LOG_CHANNEL_HYDRA, kirana::core::Logger::Level::DEBUG);
+    kirana::core::Logger::get().init(LOG_CHANNEL_HYDRA, kirana::core::Logger::Level::L_DEBUG);
     return new HdKiranaRenderDelegate(settingsMap);
 }
 
