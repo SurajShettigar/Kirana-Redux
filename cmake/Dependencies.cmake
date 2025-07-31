@@ -7,6 +7,10 @@ target_include_directories(cppcodec INTERFACE ext/cppcodec)
 # Link: https://github.com/gabime/spdlog
 add_subdirectory(ext/spdlog)
 
+# Glaze (JSON)
+#Link: https://stephenberry.github.io/glaze/
+add_subdirectory(ext/glaze)
+
 # Vulkan - Graphics API
 # Link: https://www.lunarg.com/vulkan-sdk/
 find_package(Vulkan REQUIRED)

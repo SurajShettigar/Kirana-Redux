@@ -11,6 +11,7 @@ namespace kirana::core
 {
 typedef std::filesystem::path Filepath;
 typedef std::ifstream FileStream;
+typedef std::ofstream FileStreamOut;
 
 static bool fileExists(const Filepath &filepath)
 {
@@ -45,7 +46,18 @@ static FileStream openFileToRead(const Filepath &filepath, const bool is_binary 
     return std::ifstream(filepath.string(), mode);
 }
 
+static FileStreamOut openFileToWrite(const Filepath &filepath, const bool is_binary = false)
+{
+    const std::ofstream::openmode mode = std::ios::out | std::ios::trunc | (is_binary ? std::ios::binary : 0);
+    return std::ofstream(filepath.string(), mode);
+}
+
 static void closeFile(FileStream &stream)
+{
+    stream.close();
+}
+
+static void closeFile(FileStreamOut &stream)
 {
     stream.close();
 }
@@ -85,6 +97,14 @@ static size_t readFile(const Filepath &filepath, const bool is_binary, char *out
     readFileChunk(stream, 0, size, out_data);
     closeFile(stream);
     return size;
+}
+
+static bool writeFile(const Filepath &filepath, const bool is_binary, const size_t size, const char *data)
+{
+    FileStreamOut stream = openFileToWrite(filepath, is_binary);
+    stream.write(data, size);
+    closeFile(stream);
+    return true;
 }
 }
 

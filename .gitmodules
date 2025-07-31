@@ -7,3 +7,6 @@
 [submodule "ext/spdlog"]
 	path = ext/spdlog
 	url = git@github.com:gabime/spdlog.git
+[submodule "ext/glaze"]
+	path = ext/glaze
+	url = https://github.com/stephenberry/glaze.git
