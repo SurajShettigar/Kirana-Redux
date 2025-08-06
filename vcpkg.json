@@ -1,0 +1,22 @@
+{
+  "name" : "kirana",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "b0190b451303865b89ced9767caaab140c39f980",
+  "dependencies" : [ {
+    "name" : "glaze",
+    "version>=" : "5.5.5"
+  }, {
+    "name" : "spdlog",
+    "version>=" : "1.15.3"
+  }, {
+    "name" : "cppcodec",
+    "version>=" : "0.2#4"
+  }, {
+    "name" : "openimageio",
+    "version>=" : "3.0.8.0#1"
+  }, {
+    "name" : "usd",
+    "version>=" : "25.5.1",
+    "features": ["imaging", "materialx"]
+  } ]
+}
