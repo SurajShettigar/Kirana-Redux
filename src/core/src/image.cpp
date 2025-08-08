@@ -1,0 +1,94 @@
+// Copyright 2025 Suraj Shettigar
+// SPDX-License-Identifier: Apache-2.0
+
+#include "image.hpp"
+
+#include "file_manager.hpp"
+#include "type_conversions.hpp"
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/filesystem.h>
+
+namespace kirana::core
+{
+
+inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::string &path, DataURI &out_uri)
+{
+    using namespace OIIO;
+    if (DataURI::isValid(path))
+    {
+        out_uri = DataURI::parse(path);
+        if (!out_uri.isValid())
+        {
+            return std::nullopt;
+        }
+        return Filesystem::IOMemReader(out_uri.data.data(), out_uri.data.size());
+    }
+    return std::nullopt;
+}
+
+Image::Image(std::string name, std::string path)
+    : m_name{std::move(name)}, m_path{std::move(path)}
+{
+    using namespace OIIO;
+
+    std::unique_ptr<ImageInput> img = nullptr;
+    DataURI data_uri{};
+    auto uri_reader = getUriReader(m_path, data_uri);
+    if (uri_reader)
+    {
+        auto filename = data_uri.media_type;
+        std::ranges::replace(filename, '/', '.');
+        img = ImageInput::open(filename, nullptr, &uri_reader.value());
+    }
+    else
+    {
+        img = ImageInput::open(m_path);
+    }
+
+    if (!img)
+    {
+        return;
+    }
+    const auto &img_spec = img->spec();
+    m_width = img_spec.width;
+    m_height = img_spec.height;
+    m_channels = img_spec.nchannels;
+    img->close();
+}
+
+bool Image::readPixels(std::vector<uint8_t> &out_buffer) const
+{
+    using namespace OIIO;
+    if (!isValid())
+    {
+        return false;
+    }
+
+    std::unique_ptr<ImageInput> img = nullptr;
+    DataURI data_uri{};
+    auto uri_reader = getUriReader(m_path, data_uri);
+    if (uri_reader)
+    {
+        auto filename = data_uri.media_type;
+        std::ranges::replace(filename, '/', '.');
+        img = ImageInput::open(filename, nullptr, &uri_reader.value());
+    }
+    else
+    {
+        img = ImageInput::open(m_path);
+    }
+
+    if (!img)
+    {
+        return false;
+    }
+    const size_t num_bytes = m_width * m_height * m_channels;
+    out_buffer.clear();
+    out_buffer.resize(num_bytes);
+
+    const bool status = img->read_image(0, 0, 0, static_cast<int32_t>(m_channels), TypeDesc::UINT8, out_buffer.data());
+    img->close();
+    return status;
+}
+}

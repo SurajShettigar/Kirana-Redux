@@ -36,7 +36,7 @@ struct SceneFileInfo
  * @param path The path to the given scene file.
  * @return Scene file information.
  */
-[[nodiscard]] SceneFileInfo getSceneFileInfo(const std::string &path);
+SceneFileInfo getSceneFileInfo(const std::string &path);
 
 
 /**
@@ -54,7 +54,7 @@ bool loadScene(const SceneFileInfo &info, Scene *out_scene);
  * returned.
  * @return Scene file information.
  */
-[[nodiscard]] SceneFileInfo loadScene(const std::string &path, Scene *out_scene = nullptr);
+SceneFileInfo loadScene(const std::string &path, Scene *out_scene = nullptr);
 }
 
 #endif //KIRANA_SCENE_LOADER_HPP

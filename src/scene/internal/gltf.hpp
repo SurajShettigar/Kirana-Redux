@@ -4,15 +4,19 @@
 #ifndef KIRANA_SCENE_GLTF_HPP
 #define KIRANA_SCENE_GLTF_HPP
 
-#include <string>
-#include <vector>
-#include <optional>
+#include <logger.hpp>
+#include <file_manager.hpp>
+#include <image.hpp>
+
 #include <glaze/glaze.hpp>
+
+#include <span>
 
 namespace kirana::scene
 {
 static const std::string LOG_CHANNEL_GLTF = "GLTF";
 
+#pragma region GLTF_STRUCTS
 using GLTF_INT_8 = int8_t;
 using GLTF_UINT_8 = uint8_t;
 using GLTF_INT_16 = int16_t;
@@ -447,7 +451,7 @@ struct GLTFMaterial
     std::optional<GLTFMaterialVolume> volume{};
 
     void setExtensions(const std::optional<glz::json_t> &extensions);
-    std::optional<glz::json_t> getExtensions() const;
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 };
 
 struct GLTFMeshPrimitive
@@ -636,8 +640,139 @@ struct GLTFDocument
         return asset.isValid();
     }
 };
-}
 
+struct GLTFBinaryHeader
+{
+    uint32_t magic_number{0};
+    uint32_t version{0};
+    uint32_t length{0};
+
+    GLTFBinaryHeader() = default;
+    ~GLTFBinaryHeader() = default;
+
+    explicit GLTFBinaryHeader(const std::span<uint8_t> file_buffer)
+    {
+        std::memcpy(this, file_buffer.data(), sizeof(GLTFBinaryHeader));
+    }
+
+    [[nodiscard]] bool isValid() const
+    {
+        // The first 4-bytes of GLB binary contain a magic number which translates to `gLTF` in ASCII.
+        return magic_number == 0x46546C67u;
+    }
+};
+
+enum class GLTFBinaryChunkType: uint32_t
+{
+    BIN = 0x004E4942u,
+    JSON = 0x4E4F534Au,
+};
+
+struct GLTFBinaryChunk
+{
+    uint32_t length{0};
+    GLTFBinaryChunkType type{GLTFBinaryChunkType::JSON};
+    std::span<uint8_t> buffer_span{};
+};
+
+class GLTFBinaryDocument
+{
+public:
+    GLTFBinaryDocument() = default;
+    ~GLTFBinaryDocument() = default;
+
+    /// Interprets the buffer as GLTF Binary and returns the formatted data based on the GLTF spec.
+    /// Refer: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#binary-header
+    explicit GLTFBinaryDocument(std::span<uint8_t> file_buffer);
+
+    [[nodiscard]] bool isValid() const
+    {
+        return m_header.isValid();
+    }
+
+    [[nodiscard]] std::span<const uint8_t> getJSONBuffer() const
+    {
+        for (const auto &chunk : m_chunks)
+        {
+            if (chunk.type == GLTFBinaryChunkType::JSON)
+            {
+                return chunk.buffer_span;
+            }
+        }
+        return {};
+    }
+
+    [[nodiscard]] std::span<const uint8_t> getBinaryBuffer() const
+    {
+        for (const auto &chunk : m_chunks)
+        {
+            if (chunk.type == GLTFBinaryChunkType::BIN)
+            {
+                return chunk.buffer_span;
+            }
+        }
+        return {};
+    }
+
+private:
+    GLTFBinaryHeader m_header{};
+    std::vector<GLTFBinaryChunk> m_chunks{};
+};
+
+class GLTFLoader
+{
+public:
+    GLTFLoader() = default;
+    ~GLTFLoader() = default;
+
+    /**
+     * Loads a GLTF / GLB file.
+     * @param path Path to the GLTF / GLB file.
+     * @param load_buffers If true, the external binary buffers (.bin) files are loaded into the memory.
+     */
+    explicit GLTFLoader(std::string path, bool load_buffers = false, bool load_images = false);
+
+    [[nodiscard]] bool isValid() const
+    {
+        return m_document.isValid();
+    }
+
+    [[nodiscard]] bool isBinary() const
+    {
+        return m_binary_doc.isValid();
+    }
+
+    [[nodiscard]] const GLTFDocument &getDocument() const
+    {
+        return m_document;
+    }
+
+    [[nodiscard]] std::span<const uint8_t> getBuffer(uint32_t buffer_index = 0);
+
+    [[nodiscard]] std::span<const uint8_t> getImageBuffer(uint32_t image_index);
+    [[nodiscard]] const core::Image &getImage(const uint32_t image_index) const
+    {
+        return m_images.at(image_index);
+    }
+private:
+    std::string m_path{};
+    std::string m_base_path{};
+
+    std::vector<uint8_t> m_buffer{};
+    std::unordered_map<uint32_t, std::span<const uint8_t>> m_buffer_views{};
+
+    std::unordered_map<uint32_t, std::vector<uint8_t>> m_image_buffers{};
+    std::unordered_map<uint32_t, core::Image> m_images{};
+
+    GLTFDocument m_document{};
+    GLTFBinaryDocument m_binary_doc{};
+
+    bool loadBuffer(uint32_t buffer_index);
+    bool loadImage(uint32_t image_index, bool load_pixels);
+};
+#pragma endregion
+}
+#pragma region GLAZE_JSON_SCHEMA
 template <>
 struct glz::meta<kirana::scene::GLTFAccessorType>
 {
@@ -882,7 +1017,7 @@ struct glz::meta<kirana::scene::GLTFMaterialAnisotropy>
     using T = kirana::scene::GLTFMaterialAnisotropy;
     static constexpr auto value = object(
         "anisotropyStrength", &T::strength,
-        "anisotropyRotation	", &T::rotation,
+        "anisotropyRotation", &T::rotation,
         "anisotropyTexture", &T::texture
         );
 };
@@ -893,7 +1028,7 @@ struct glz::meta<kirana::scene::GLTFMaterialClearcoat>
     using T = kirana::scene::GLTFMaterialClearcoat;
     static constexpr auto value = object(
         "clearcoatFactor", &T::factor,
-        "clearcoatTexture	", &T::texture,
+        "clearcoatTexture", &T::texture,
         "clearcoatRoughnessFactor", &T::roughness_factor,
         "clearcoatRoughnessTexture", &T::roughness_texture,
         "clearcoatNormalTexture", &T::normal_texture
@@ -906,7 +1041,7 @@ struct glz::meta<kirana::scene::GLTFMaterialDiffuseTransmission>
     using T = kirana::scene::GLTFMaterialDiffuseTransmission;
     static constexpr auto value = object(
         "diffuseTransmissionFactor", &T::factor,
-        "diffuseTransmissionTexture	", &T::texture,
+        "diffuseTransmissionTexture", &T::texture,
         "diffuseTransmissionColorFactor", &T::color_factor,
         "diffuseTransmissionColorTexture", &T::color_texture
         );
@@ -1184,4 +1319,5 @@ struct glz::meta<kirana::scene::GLTFDocument>
         "textures", &T::textures
         );
 };
+#pragma endregion
 #endif //KIRANA_SCENE_GLTF_HPP

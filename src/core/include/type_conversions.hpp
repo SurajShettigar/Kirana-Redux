@@ -11,6 +11,25 @@
 
 namespace kirana::core
 {
+struct DataURI
+{
+    std::string media_type{"text/plain"};
+    bool is_base64{false};
+    std::vector<uint8_t> data{};
+
+    static DataURI parse(const std::string &uri);
+
+    static bool isValid(const std::string &uri)
+    {
+        return uri.starts_with("data:");
+    }
+
+    [[nodiscard]] bool isValid() const
+    {
+        return !data.empty();
+    }
+};
+
 template <typename T1, typename T2>
 static T2 bit_cast(T1 val)
 {

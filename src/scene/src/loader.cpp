@@ -6,7 +6,6 @@
 #include "gltf.hpp"
 
 #include <logger.hpp>
-#include <file_manager.hpp>
 
 #include <algorithm>
 
@@ -27,25 +26,6 @@ inline SceneFileFormat getSceneFileFormat(const core::Filepath &filepath, std::s
             return SceneFileFormat::GLTF;
         }
     }
-
-    {
-        // Try to deduce the extension by reading the file header.
-        const auto file_size = core::getFileSize(filepath);
-
-        // Check for GLTF / GLB file format.
-        // Refer: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#binary-header
-        if (file_size >= 12)
-        {
-            std::vector<uint32_t> header(3);
-            core::readFileChunk(filepath, true, 0, 12, reinterpret_cast<char *>(header.data()));
-            if (header[0] == 0x46546C67) // ASCII for gLTF
-            {
-                out_extension = "glb";
-                return SceneFileFormat::GLTF;
-            }
-        }
-    }
-
     return SceneFileFormat::UNKNOWN;
 }
 
@@ -59,8 +39,7 @@ SceneFileInfo getSceneFileInfo(const std::string &path)
         core::Logger::error(LOG_CHANNEL_SCENE, "Invalid scene path: " + path);
         return info;
     }
-    const size_t file_size = core::getFileSize(filepath);
-    if (file_size == 0)
+    if (const size_t file_size = core::getFileSize(filepath); file_size == 0)
     {
         core::Logger::error(LOG_CHANNEL_SCENE, "Empty scene file: " + path);
         return info;
@@ -77,16 +56,13 @@ bool loadScene(const SceneFileInfo &info, Scene *out_scene)
         return false;
     }
 
-    std::string json_buffer{};
-    GLTFDocument document{};
-    if (const auto err = glz::read_file_json<glz::opts{.error_on_unknown_keys = false}>(
-        document, info.path, json_buffer); err)
+    if (info.format == SceneFileFormat::GLTF)
     {
-        const std::string err_msg = glz::format_error(err, json_buffer);
-        core::Logger::error(LOG_CHANNEL_SCENE, "Failed to parse GLTF json: " + err_msg);
-        return false;
+        const auto doc = GLTFLoader(info.path, true, true);
+        return doc.isValid();
     }
-    return true;
+
+    return false;
 }
 
 SceneFileInfo loadScene(const std::string &path, Scene *out_scene)

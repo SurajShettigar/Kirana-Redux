@@ -4,7 +4,7 @@
 #ifndef KIRANA_SCENE_SCENE_HPP
 #define KIRANA_SCENE_SCENE_HPP
 
-#include <common.hpp>
+#include "common.hpp"
 
 namespace kirana::scene
 {
