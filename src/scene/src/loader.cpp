@@ -29,6 +29,38 @@ inline SceneFileFormat getSceneFileFormat(const core::Filepath &filepath, std::s
     return SceneFileFormat::UNKNOWN;
 }
 
+inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
+{
+    const auto data = GLTFLoader(info.path, true, true);
+    if (!data.isValid())
+    {
+        return false;
+    }
+
+    std::unordered_map<uint32_t, MeshHandle> meshes{};
+    for (uint32_t index = 0; index < data.getDocument().meshes.size(); ++index)
+    {
+        const auto &mesh = data.getDocument().meshes[index];
+        if (const auto handle = out_scene->addMesh(mesh.name.value_or("")); handle.isValid())
+        {
+            meshes.insert(std::make_pair(index, handle));
+        }
+    }
+
+    for (const auto &node : data.getDocument().nodes)
+    {
+        if (node.mesh.has_value() && meshes.contains(node.mesh.value()))
+        {
+            out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, Transform{}, meshes.at(node.mesh.value()));
+        }
+        else
+        {
+            out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, Transform{});
+        }
+    }
+    return true;
+}
+
 SceneFileInfo getSceneFileInfo(const std::string &path)
 {
     SceneFileInfo info{path};
@@ -58,8 +90,7 @@ bool loadScene(const SceneFileInfo &info, Scene *out_scene)
 
     if (info.format == SceneFileFormat::GLTF)
     {
-        const auto doc = GLTFLoader(info.path, true, true);
-        return doc.isValid();
+        return loadGLTF(info, out_scene);
     }
 
     return false;

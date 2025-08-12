@@ -69,8 +69,6 @@ struct WindowEventData
 };
 
 typedef std::function<void(WindowEventType type, const WindowEventData &data)> WindowEventCallback;
-typedef std::function<void(Handle<Window> handle, WindowEventType type,
-                           const WindowEventData &data)> WindowManagerEventCallback;
 
 static const std::string WINDOW_EVENT_CLASS_NAME = "WindowManager";
 static constexpr WindowSize DEFAULT_WINDOW_SIZE = {640, 360};
