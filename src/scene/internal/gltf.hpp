@@ -4,8 +4,6 @@
 #ifndef KIRANA_SCENE_GLTF_HPP
 #define KIRANA_SCENE_GLTF_HPP
 
-#include <logger.hpp>
-#include <file_manager.hpp>
 #include <image.hpp>
 
 #include <glaze/glaze.hpp>
@@ -104,6 +102,18 @@ enum class GLTFAccessorType: uint32_t
     MAT_2 = 5u,
     MAT_3 = 6u,
     MAT_4 = 7u
+};
+
+enum class GLTFPrimitiveAttribute: uint32_t
+{
+    UNKNOWN = 0u,
+    POSITION = 1u,
+    NORMAL = 2u,
+    TANGENT = 3u,
+    TEX_COORD = 4u,
+    COLOR = 5u,
+    JOINTS = 6u,
+    WEIGHTS = 7u,
 };
 
 enum class GLTFPrimitiveMode : uint32_t
@@ -275,6 +285,54 @@ struct GLTFAccessor
     [[nodiscard]] bool isValid() const
     {
         return component_type != GLTFComponentType::UNKNOWN && type != GLTFAccessorType::UNKNOWN && count > 0;
+    }
+
+    [[nodiscard]] bool isSparse() const
+    {
+        return !buffer_view && sparse.has_value();
+    }
+
+    [[nodiscard]] size_t getPerElementSize() const
+    {
+        const auto componentSize = [](const GLTFComponentType type) -> size_t {
+            switch (type)
+            {
+            case GLTFComponentType::INT_8:
+            case GLTFComponentType::UINT_8:
+                return 1;
+            case GLTFComponentType::INT_16:
+            case GLTFComponentType::UINT_16:
+                return 2;
+            case GLTFComponentType::UINT_32:
+            case GLTFComponentType::FLOAT:
+                return 4;
+            case GLTFComponentType::UNKNOWN:
+            default:
+                return 0;
+            }
+        };
+        const auto numComponents = [](const GLTFAccessorType type) -> size_t {
+            switch (type)
+            {
+            case GLTFAccessorType::SCALAR:
+                return 1;
+            case GLTFAccessorType::VEC_2:
+                return 2;
+            case GLTFAccessorType::VEC_3:
+                return 3;
+            case GLTFAccessorType::VEC_4:
+            case GLTFAccessorType::MAT_2:
+                return 4;
+            case GLTFAccessorType::MAT_3:
+                return 9;
+            case GLTFAccessorType::MAT_4:
+                return 16;
+            case GLTFAccessorType::UNKNOWN:
+            default:
+                return 0;
+            }
+        };
+        return componentSize(component_type) * numComponents(type);
     }
 };
 
@@ -457,18 +515,83 @@ struct GLTFMaterial
 struct GLTFMeshPrimitive
 {
     /// Map of the mesh attribute name and its corresponding accessor index.
-    std::unordered_map<std::string, uint32_t> attributes{}; // required
+    std::map<std::string, uint32_t> attributes{}; // required
     /// Index of the accessor which contain vertex indices.
     std::optional<uint32_t> indices{};
     /// Index into the material array.
     std::optional<uint32_t> material{};
     GLTFPrimitiveMode mode{GLTFPrimitiveMode::TRIANGLES};
     /// Array of morph targets. Each morph target has a mapping of the attribute name and its corresponding accessor index.
-    std::vector<std::unordered_map<std::string, uint32_t>> targets{};
+    std::map<std::string, uint32_t> targets{};
 
     [[nodiscard]] bool isValid() const
     {
         return !attributes.empty();
+    }
+
+    [[nodiscard]] std::vector<uint32_t> getAttributeAccessor(const GLTFPrimitiveAttribute &attrib) const
+    {
+        if (attrib == GLTFPrimitiveAttribute::POSITION && attributes.contains("POSITION"))
+        {
+            return {attributes.at("POSITION")};
+        }
+        if (attrib == GLTFPrimitiveAttribute::NORMAL && attributes.contains("NORMAL"))
+        {
+            return {attributes.at("NORMAL")};
+        }
+        if (attrib == GLTFPrimitiveAttribute::TANGENT && attributes.contains("TANGENT"))
+        {
+            return {attributes.at("TANGENT")};
+        }
+        if (attrib == GLTFPrimitiveAttribute::TEX_COORD)
+        {
+            std::vector<uint32_t> result{};
+            for (const auto &[key, value] : attributes)
+            {
+                if (key.starts_with("TEXCOORD_"))
+                {
+                    result.push_back(value);
+                }
+            }
+            return result;
+        }
+        if (attrib == GLTFPrimitiveAttribute::COLOR)
+        {
+            std::vector<uint32_t> result{};
+            for (const auto &[key, value] : attributes)
+            {
+                if (key.starts_with("COLOR_"))
+                {
+                    result.push_back(value);
+                }
+            }
+            return result;
+        }
+        if (attrib == GLTFPrimitiveAttribute::JOINTS)
+        {
+            std::vector<uint32_t> result{};
+            for (const auto &[key, value] : attributes)
+            {
+                if (key.starts_with("JOINTS_"))
+                {
+                    result.push_back(value);
+                }
+            }
+            return result;
+        }
+        if (attrib == GLTFPrimitiveAttribute::WEIGHTS)
+        {
+            std::vector<uint32_t> result{};
+            for (const auto &[key, value] : attributes)
+            {
+                if (key.starts_with("WEIGHTS_"))
+                {
+                    result.push_back(value);
+                }
+            }
+            return result;
+        }
+        return {};
     }
 };
 
@@ -750,10 +873,14 @@ public:
     [[nodiscard]] std::span<const uint8_t> getBuffer(uint32_t buffer_index = 0);
 
     [[nodiscard]] std::span<const uint8_t> getImageBuffer(uint32_t image_index);
+
     [[nodiscard]] const core::Image &getImage(const uint32_t image_index) const
     {
         return m_images.at(image_index);
     }
+
+    bool loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_data);
+
 private:
     std::string m_path{};
     std::string m_base_path{};

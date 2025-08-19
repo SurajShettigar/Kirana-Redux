@@ -3,6 +3,8 @@
 
 #include "gltf.hpp"
 
+#include <logger.hpp>
+#include <file_manager.hpp>
 #include <type_conversions.hpp>
 
 namespace kirana::scene
@@ -434,4 +436,79 @@ std::span<const uint8_t> GLTFLoader::getBuffer(const uint32_t buffer_index)
     // No such buffer exists.
     return {};
 }
+
+std::span<const uint8_t> GLTFLoader::getImageBuffer(const uint32_t image_index)
+{
+    if (m_document.images.empty())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF, "No images found in the GLTF document");
+        return {};
+    }
+
+    // If the image buffer is preloaded, return it as is.
+    if (m_image_buffers.contains(image_index))
+    {
+        return m_image_buffers.at(image_index);
+    }
+
+    // If the image buffer exists in the document, load it and then return it.
+    if (loadImage(image_index, true))
+    {
+        return m_image_buffers.at(image_index);
+    }
+
+    // No such image exists.
+    return {};
+}
+
+bool GLTFLoader::loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_data)
+{
+    if (!accessor.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF, "Invalid accessor");
+        return false;
+    }
+    if (accessor.isSparse())
+    {
+        // TODO: Add support for GLTF sparse accessor.
+        core::Logger::warn(LOG_CHANNEL_GLTF, "Sparse accessor is not yet supported.");
+        return false;
+    }
+    if (accessor.buffer_view.value() >= m_document.buffer_views.size())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF,
+                            "Buffer view with index: " + std::to_string(accessor.buffer_view.value()) +
+                            " does not exist.");
+        return false;
+    }
+    const auto &view = m_document.buffer_views.at(accessor.buffer_view.value());
+    const auto &buffer_data = getBuffer(view.buffer);
+    if (buffer_data.empty())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF,
+                            "Buffer with index: " + std::to_string(view.buffer) + " does not exist or is empty.");
+    }
+
+    const uint64_t base_offset = accessor.byte_offset + view.byte_offset;
+    const size_t element_size = accessor.getPerElementSize();
+    if (const uint64_t byte_stride = view.byte_stride.value_or(0); byte_stride == 0)
+    {
+        const size_t copy_size = accessor.count * element_size;
+        std::memcpy(out_data, buffer_data.data() + base_offset, copy_size);
+    }
+    else
+    {
+        uint64_t src_offset = base_offset;
+        uint64_t dst_offset = 0;
+        for (uint32_t i = 0; i < accessor.count; ++i)
+        {
+            std::memcpy(out_data + dst_offset, buffer_data.data() + src_offset, element_size);
+            src_offset += byte_stride;
+            dst_offset += element_size;
+        }
+    }
+    return true;
+}
+
+
 }

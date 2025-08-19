@@ -8,15 +8,14 @@
 
 #include <vector>
 #include <queue>
-#include <optional>
 
 namespace kirana::core
 {
 /// Resource interface with generation and alive tracking
 struct IResource
 {
-    uint16_t generation{HANDLE_MAX_GENERATION};
-    bool alive{false};
+    uint32_t generation : 16 {HANDLE_MAX_GENERATION};
+    uint32_t status : 16 {0u};
 
     virtual ~IResource() = default;
 };
@@ -33,7 +32,7 @@ public:
     ResourceManager() = default;
     ~ResourceManager() = default;
 
-    [[nodiscard]] Handle<H> add(T &&resource)
+    [[nodiscard]] Handle<H> add(const T &resource)
     {
         uint64_t index;
 
@@ -41,7 +40,7 @@ public:
         {
             index = m_free_indices.front();
             m_free_indices.pop();
-            m_resources[index] = std::move(resource);
+            m_resources[index] = resource;
         }
         else
         {
@@ -50,11 +49,11 @@ public:
             {
                 return Handle<H>();
             }
-            m_resources.emplace_back(std::move(resource));
+            m_resources.push_back(resource);
         }
 
         auto &res = m_resources[index];
-        res.alive = true;
+        res.status = 1u;
         res.generation = res.generation == HANDLE_MAX_GENERATION ? 0 : res.generation + 1;
 
         return Handle<H>(index, res.generation);
@@ -65,21 +64,21 @@ public:
         if (!handle.isValid() || handle.getIndex() >= m_resources.size())
             return false;
         const auto &res = m_resources[handle.getIndex()];
-        return res.alive && res.generation == handle.generation;
+        return res.status && res.generation == handle.getGeneration();
     }
 
-    std::optional<T &> get(const Handle<H> handle)
+    T *get(const Handle<H> handle)
     {
         if (!isValid(handle))
-            return std::nullopt;
-        return &m_resources[handle.index];
+            return nullptr;
+        return &m_resources[handle.getIndex()];
     }
 
-    std::optional<const T &> get(const Handle<H> handle) const
+    const T *get(const Handle<H> handle) const
     {
         if (!isValid(handle))
-            return std::nullopt;
-        return &m_resources[handle.index];
+            return nullptr;
+        return &m_resources[handle.getIndex()];
     }
 
     bool remove(const Handle<H> handle)
@@ -87,10 +86,10 @@ public:
         if (!isValid(handle))
             return false;
 
-        auto &res = m_resources[handle.index];
+        auto &res = m_resources[handle.getIndex()];
         res = T();
-        res.alive = false;
-        m_free_indices.push(handle.index);
+        res.status = 0u;
+        m_free_indices.push(handle.getIndex());
         return true;
     }
 
@@ -99,7 +98,7 @@ public:
         std::vector<Handle<H>> result;
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.alive)
+            if (const auto &res = m_resources[i]; res.status)
             {
                 result.emplace_back(i, res.generation);
             }
@@ -112,7 +111,7 @@ public:
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (auto &res = m_resources[i]; res.alive)
+            if (auto &res = m_resources[i]; res.status)
             {
                 func(HandleType(i, res.generation), res);
             }
@@ -124,7 +123,7 @@ public:
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.alive)
+            if (const auto &res = m_resources[i]; res.status)
             {
                 func(HandleType(i, res.generation), res);
             }
@@ -141,18 +140,18 @@ public:
         return m_resources;
     }
 
-    size_t getSize() const
+    [[nodiscard]] size_t getSize() const
     {
         size_t count = 0;
         for (const auto &res : m_resources)
         {
-            if (res.alive)
+            if (res.status)
                 count++;
         }
         return count;
     }
 
-    size_t getFreeSlotCount() const
+    [[nodiscard]] size_t getFreeSlotCount() const
     {
         return m_free_indices.size();
     }
