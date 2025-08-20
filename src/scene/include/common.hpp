@@ -5,9 +5,10 @@
 #define KIRANA_SCENE_COMMON_HPP
 
 #include <handle.hpp>
+#include <vector2.hpp>
+#include <quaternion.hpp>
 
 #include <string>
-#include <array>
 
 namespace kirana::scene
 {
@@ -19,17 +20,12 @@ const std::string DEFAULT_NAME_CAMERA{"Camera"};
 const std::string DEFAULT_NAME_MESH{"Mesh"};
 const std::string DEFAULT_NAME_MATERIAL{"Material"};
 
-using FLOAT = float;
-using VECTOR_2 = std::array<FLOAT, 2>;
-using VECTOR_3 = std::array<FLOAT, 3>;
-using VECTOR_4 = std::array<FLOAT, 4>;
-using MATRIX_3 = std::array<VECTOR_3, 3>;
-using MATRIX_4 = std::array<VECTOR_4, 4>;
-
-static constexpr MATRIX_4 IDENTITY_MATRIX_4 = {VECTOR_4{1.0, 0.0, 0.0, 0.0},
-                                               VECTOR_4{0.0, 1.0, 0.0, 0.0},
-                                               VECTOR_4{0.0, 0.0, 1.0, 0.0},
-                                               VECTOR_4{0.0, 0.0, 0.0, 1.0}};
+using Float = float;
+using Vector2 = ganita::Vector2;
+using Vector3 = ganita::Vector3;
+using Vector4 = ganita::Vector4;
+using Matrix4 = ganita::Matrix4x4;
+using Quaternion = ganita::Quaternion;
 
 struct BufferRange
 {

@@ -1,0 +1,3 @@
+[submodule "ext/ganita"]
+	path = ext/ganita
+	url = https://github.com/SurajShettigar/ganita.git

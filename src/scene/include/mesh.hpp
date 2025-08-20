@@ -135,25 +135,44 @@ struct VertexBufferRange
 
 struct VertexBuffer
 {
-    std::vector<VECTOR_4> positions{};
-    std::vector<VECTOR_4> normals{};
-    std::vector<VECTOR_2> uvs{};
-    std::vector<VECTOR_4> colors{};
+    std::vector<Vector3> positions{};
+    std::vector<Vector3> normals{};
+    std::vector<Vector2> uvs{};
+    std::vector<Vector4> colors{};
 
     VertexBuffer() = default;
 
-    explicit VertexBuffer(const std::vector<VECTOR_4> &positions, const std::vector<VECTOR_4> &normals = {},
-                          const std::vector<VECTOR_2> &uvs = {}, const std::vector<VECTOR_4> &colors = {})
+    explicit VertexBuffer(const std::vector<Vector3> &positions, const std::vector<Vector3> &normals = {},
+                          const std::vector<Vector2> &uvs = {}, const std::vector<Vector4> &colors = {})
         : positions{positions}, normals{normals}, uvs{uvs}, colors{colors}
     {
     }
 
-    explicit VertexBuffer(const std::vector<VECTOR_3> &positions, const std::vector<VECTOR_3> &normals = {},
-                          const std::vector<VECTOR_2> &uvs = {}, const std::vector<VECTOR_4> &colors = {})
-        : uvs{uvs}, colors{colors}
+    explicit VertexBuffer(const std::vector<std::array<Float, 3>> &arr_positions,
+                          const std::vector<std::array<Float, 3>> &arr_normals = {},
+                          const std::vector<std::array<Float, 2>> &arr_uvs = {},
+                          const std::vector<std::array<Float, 4>> &arr_colors = {})
     {
-        setPositions(positions);
-        setNormals(normals);
+        positions.reserve(arr_positions.size());
+        for (const auto &p : arr_positions)
+        {
+            positions.emplace_back(p[0], p[1], p[2]);
+        }
+        normals.reserve(arr_normals.size());
+        for (const auto &n : arr_normals)
+        {
+            normals.emplace_back(n[0], n[1], n[2]);
+        }
+        uvs.reserve(arr_uvs.size());
+        for (const auto &uv : arr_uvs)
+        {
+            uvs.emplace_back(uv[0], uv[1]);
+        }
+        colors.reserve(arr_colors.size());
+        for (const auto &c : arr_colors)
+        {
+            colors.emplace_back(c[0], c[1], c[2], c[3]);
+        }
     }
 
     [[nodiscard]] bool isEmpty() const
@@ -161,56 +180,79 @@ struct VertexBuffer
         return positions.empty();
     }
 
-    [[nodiscard]] std::span<const VECTOR_4> getPositionRef(const BufferRange &range) const
+    [[nodiscard]] std::span<const Vector3> getPositionRef(const BufferRange &range) const
     {
         return range.getEnd() > positions.size()
-                   ? std::span<VECTOR_4>{}
+                   ? std::span<Vector3>{}
                    : std::span{positions.data() + range.offset, range.size};
     }
 
-    [[nodiscard]] std::span<const VECTOR_4> getNormalRef(const BufferRange &range) const
+    [[nodiscard]] std::span<const Vector3> getNormalRef(const BufferRange &range) const
     {
         return range.getEnd() > normals.size()
-                   ? std::span<VECTOR_4>{}
+                   ? std::span<Vector3>{}
                    : std::span{normals.data() + range.offset, range.size};
     }
 
-    [[nodiscard]] std::span<const VECTOR_2> getUVRef(const BufferRange &range) const
+    [[nodiscard]] std::span<const Vector2> getUVRef(const BufferRange &range) const
     {
-        return range.getEnd() > uvs.size() ? std::span<VECTOR_2>{} : std::span{uvs.data() + range.offset, range.size};
+        return range.getEnd() > uvs.size() ? std::span<Vector2>{} : std::span{uvs.data() + range.offset, range.size};
     }
 
-    [[nodiscard]] std::span<const VECTOR_4> getColorRef(const BufferRange &range) const
+    [[nodiscard]] std::span<const Vector4> getColorRef(const BufferRange &range) const
     {
         return range.getEnd() > colors.size()
-                   ? std::span<VECTOR_4>{}
+                   ? std::span<Vector4>{}
                    : std::span{colors.data() + range.offset, range.size};
     }
 
-    void setPositions(const std::vector<VECTOR_3> &pos)
+    void setPositions(const std::vector<std::array<Float, 3>> &arr_positions)
     {
         positions.clear();
-        for (const auto &p : pos)
+        positions.reserve(arr_positions.size());
+        for (const auto &p : arr_positions)
         {
-            positions.push_back(VECTOR_4{p[0], p[1], p[2], 0.0});
+            positions.emplace_back(p[0], p[1], p[2]);
         }
     }
 
-    void setNormals(const std::vector<VECTOR_3> &norm)
+    void setNormals(const std::vector<std::array<Float, 3>> &arr_normals)
     {
         normals.clear();
-        for (const auto &n : norm)
+        normals.reserve(arr_normals.size());
+        for (const auto &n : arr_normals)
         {
-            normals.push_back(VECTOR_4{n[0], n[1], n[2], 0.0});
+            normals.emplace_back(n[0], n[1], n[2]);
         }
     }
 
-    void setColors(const std::vector<VECTOR_3> &col)
+    void setUVs(const std::vector<std::array<Float, 2>> &arr_uvs)
+    {
+        uvs.clear();
+        uvs.reserve(arr_uvs.size());
+        for (const auto &uv : arr_uvs)
+        {
+            uvs.emplace_back(uv[0], uv[1]);
+        }
+    }
+
+    void setColors(const std::vector<std::array<Float, 4>> &arr_colors)
     {
         colors.clear();
-        for (const auto &c : col)
+        colors.reserve(arr_colors.size());
+        for (const auto &c : arr_colors)
         {
-            colors.push_back(VECTOR_4{c[0], c[1], c[2], 1.0});
+            colors.emplace_back(c[0], c[1], c[2], c[3]);
+        }
+    }
+
+    void setColors(const std::vector<std::array<Float, 3>> &arr_colors)
+    {
+        colors.clear();
+        colors.reserve(arr_colors.size());
+        for (const auto &c : arr_colors)
+        {
+            colors.emplace_back(c[0], c[1], c[2], 1.0f);
         }
     }
 

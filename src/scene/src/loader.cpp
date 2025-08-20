@@ -94,7 +94,7 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
                                             static_cast<int>(pos_accessor.type)));
                     continue;
                 }
-                std::vector<VECTOR_3> positions{};
+                std::vector<std::array<Float, 3>> positions{};
                 positions.resize(pos_accessor.count);
                 loader.loadAccessorData(pos_accessor, reinterpret_cast<uint8_t *>(positions.data()));
                 vertex_buffer.setPositions(positions);
@@ -117,7 +117,7 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
                                             static_cast<int>(normal_accessor.type)));
                     continue;
                 }
-                std::vector<VECTOR_3> normals{};
+                std::vector<std::array<Float, 3>> normals{};
                 normals.resize(normal_accessor.count);
                 loader.loadAccessorData(normal_accessor, reinterpret_cast<uint8_t *>(normals.data()));
                 vertex_buffer.setNormals(normals);
@@ -135,8 +135,10 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
                                             static_cast<int>(uv_accessor.type)));
                     continue;
                 }
-                vertex_buffer.uvs.resize(uv_accessor.count);
-                loader.loadAccessorData(uv_accessor, reinterpret_cast<uint8_t *>(vertex_buffer.uvs.data()));
+                std::vector<std::array<Float, 2>> uvs{};
+                uvs.resize(uv_accessor.count);
+                loader.loadAccessorData(uv_accessor, reinterpret_cast<uint8_t *>(uvs.data()));
+                vertex_buffer.setUVs(uvs);
             }
             // Access Colors
             // TODO: Add support for N-number of vertex colors for mesh.
@@ -153,15 +155,17 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
                 }
                 if (color_accessor.type == GLTFAccessorType::VEC_3)
                 {
-                    std::vector<VECTOR_3> colors{};
+                    std::vector<std::array<Float, 3>> colors{};
                     colors.resize(color_accessor.count);
                     loader.loadAccessorData(color_accessor, reinterpret_cast<uint8_t *>(colors.data()));
                     vertex_buffer.setColors(colors);
                 }
                 else
                 {
-                    vertex_buffer.colors.resize(color_accessor.count);
-                    loader.loadAccessorData(color_accessor, reinterpret_cast<uint8_t *>(vertex_buffer.colors.data()));
+                    std::vector<std::array<Float, 4>> colors{};
+                    colors.resize(color_accessor.count);
+                    loader.loadAccessorData(color_accessor, reinterpret_cast<uint8_t *>(colors.data()));
+                    vertex_buffer.setColors(colors);
                 }
             }
             mesh_handles.emplace_back(out_scene->addMesh(mesh_name, index_buffer, vertex_buffer));
@@ -180,6 +184,11 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         const auto &node = doc.nodes.at(node_index);
 
         std::optional<NodeHandle> current_parent = std::nullopt;
+        auto transform = node.matrix
+                             ? Transform{node.matrix.value()}
+                             : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
+                                         node.rotation.value_or({0.0f, 0.0f, 0.0f, 1.0f}),
+                                         node.scale.value_or({1.0f, 1.0f, 1.0f})};
         if (node.mesh && meshes.contains(node.mesh.value()))
         {
             const auto &mesh_handles = meshes.at(node.mesh.value());
@@ -188,15 +197,16 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             std::optional<NodeHandle> group_handle = parent_node;
             if (is_group)
             {
-                group_handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, Transform{}, std::nullopt,
+                group_handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, transform, std::nullopt,
                                                   parent_node);
-                current_parent = group_handle;
                 // The children of the current node will have this grouped node as parent.
+                current_parent = group_handle;
+                transform = Transform{};
             }
             for (const auto &mesh_handle : mesh_handles)
             {
                 const auto handle = out_scene->addNode(out_scene->getMeshName(mesh_handle), NodeFlags::NONE,
-                                                       Transform{}, mesh_handle,
+                                                       transform, mesh_handle,
                                                        group_handle);
                 if (!current_parent)
                 {
@@ -208,7 +218,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         }
         else
         {
-            const auto handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, Transform{}, std::nullopt,
+            const auto handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, transform, std::nullopt,
                                                    parent_node);
             current_parent = handle;
         }

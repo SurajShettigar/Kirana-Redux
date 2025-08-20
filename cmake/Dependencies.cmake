@@ -41,3 +41,6 @@ find_package(OpenImageIO CONFIG REQUIRED)
 # OpenUSD
 # Link: https://github.com/PixarAnimationStudios/OpenUSD
 find_package(pxr CONFIG REQUIRED)
+
+# Ganita (Vector Math Library)
+add_subdirectory(ext/ganita)

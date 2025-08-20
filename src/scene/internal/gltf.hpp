@@ -658,11 +658,11 @@ struct GLTFNode
     std::optional<uint32_t> mesh{};
 
     /// Column-Major local transformation matrix.
-    GLTF_MAT_4 matrix{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    std::optional<GLTF_MAT_4> matrix{};
     /// Unit Quaternion rotation. [x, y, z, w]
-    GLTF_VEC_4 rotation{0.0f, 0.0f, 0.0f, 1.0f};
-    GLTF_VEC_3 scale{1.0f, 1.0f, 1.0f};
-    GLTF_VEC_3 translation{0.0f, 0.0f, 0.0f};
+    std::optional<GLTF_VEC_4> rotation{};
+    std::optional<GLTF_VEC_3> scale{};
+    std::optional<GLTF_VEC_3> translation{};
     /// Per mesh instance morph-target weights.
     std::vector<float> weights{};
     std::optional<std::string> name{};
