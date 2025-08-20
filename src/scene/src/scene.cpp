@@ -52,7 +52,7 @@ NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const 
             global_transform = t_handle->world * transform;
         }
     }
-    m_node_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_NODE + std::to_string(handle.getIndex()) : name);
+    m_node_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_NODE + "_" + std::to_string(handle.getIndex()) : name);
 
     const auto transform_handle = m_transforms.add(HierarchyTransform{transform, global_transform});
     m_node_transforms.insert_or_assign(handle, transform_handle);
@@ -106,7 +106,7 @@ MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buff
         return handle;
     }
 
-    m_mesh_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_MESH + std::to_string(handle.getIndex()) : name);
+    m_mesh_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_MESH + "_" + std::to_string(handle.getIndex()) : name);
 
     return handle;
 }

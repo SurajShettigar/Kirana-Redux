@@ -184,6 +184,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         const auto &node = doc.nodes.at(node_index);
 
         std::optional<NodeHandle> current_parent = std::nullopt;
+        std::string node_name = node.name.value_or("");
         auto transform = node.matrix
                              ? Transform{node.matrix.value()}
                              : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
@@ -197,7 +198,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             std::optional<NodeHandle> group_handle = parent_node;
             if (is_group)
             {
-                group_handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, transform, std::nullopt,
+                group_handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt,
                                                   parent_node);
                 // The children of the current node will have this grouped node as parent.
                 current_parent = group_handle;
@@ -205,9 +206,9 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             }
             for (const auto &mesh_handle : mesh_handles)
             {
-                const auto handle = out_scene->addNode(out_scene->getMeshName(mesh_handle), NodeFlags::NONE,
-                                                       transform, mesh_handle,
-                                                       group_handle);
+                node_name = node_name.empty() ? out_scene->getMeshName(mesh_handle) : node_name;
+                const auto handle = out_scene->
+                    addNode(node_name, NodeFlags::NONE, transform, mesh_handle, group_handle);
                 if (!current_parent)
                 {
                     // If there's no grouped parent (which means a single mesh primitive), we use that mesh node as the
@@ -218,7 +219,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         }
         else
         {
-            const auto handle = out_scene->addNode(node.name.value_or(""), NodeFlags::NONE, transform, std::nullopt,
+            const auto handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt,
                                                    parent_node);
             current_parent = handle;
         }
@@ -238,7 +239,7 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
     }
     const auto &doc = loader.getDocument();
 
-    const auto &meshes = loadGLTFMeshes(loader, out_scene);
+,m    const auto &meshes = loadGLTFMeshes(loader, out_scene);
     if (!doc.scenes.empty())
     {
         // TODO: Add option to load multiple GLTF scenes.

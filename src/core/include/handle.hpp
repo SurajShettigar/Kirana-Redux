@@ -5,7 +5,7 @@
 #define KIRANA_CORE_HANDLE_HPP
 
 #include <cstdint>
-#include <bit>
+#include <utility>
 
 namespace kirana::core
 {
@@ -23,17 +23,20 @@ class Handle final
     friend class std::hash<Handle>;
 
 public:
-    Handle(): m_value{HANDLE_MAX_VALUE}
+    Handle() : m_value{HANDLE_MAX_VALUE}
     {
     }
 
-    virtual ~Handle() = default;
+    ~Handle() = default;
 
-    explicit Handle(const uint64_t value): m_value{value}
+    Handle(const Handle &other) = default;
+    Handle &operator=(const Handle &other) = default;
+
+    explicit Handle(const uint64_t value) : m_value{value}
     {
     }
 
-    explicit Handle(const uint64_t index, const uint16_t generation): m_index{index}, m_generation{generation}
+    explicit Handle(const uint64_t index, const uint16_t generation) : m_index{index}, m_generation{generation}
     {
     }
 

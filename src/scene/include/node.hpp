@@ -30,6 +30,46 @@ enum class NodeFlags: uint32_t
     SELECTED = 1u << 1u,
 };
 
+constexpr NodeFlags operator|(const NodeFlags lhs, const NodeFlags rhs)
+{
+    return static_cast<NodeFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr NodeFlags &operator|=(NodeFlags &lhs, const NodeFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+constexpr NodeFlags operator&(const NodeFlags lhs, const NodeFlags rhs)
+{
+    return static_cast<NodeFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr NodeFlags &operator&=(NodeFlags &lhs, const NodeFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+constexpr NodeFlags operator^(const NodeFlags lhs, const NodeFlags rhs)
+{
+    return static_cast<NodeFlags>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr NodeFlags &operator^=(NodeFlags &lhs, const NodeFlags rhs)
+{
+    return lhs = lhs ^ rhs;
+}
+
+constexpr NodeFlags operator~(const NodeFlags flag)
+{
+    return static_cast<NodeFlags>(~static_cast<uint32_t>(flag));
+}
+
+constexpr bool hasFlag(const NodeFlags flags, const NodeFlags req_flag)
+{
+    return (flags & req_flag) == req_flag;
+}
+
 /// Scene hierarchy is represented through a binary tree of nodes. We use the left-child, right sibling method to store
 /// a k-ary scene hierarchy.
 struct Node final : core::IResource
@@ -42,7 +82,7 @@ struct Node final : core::IResource
 
     std::optional<std::variant<CameraHandle, LightHandle, MeshHandle>> resource{std::nullopt};
 
-    [[nodiscard]] NodeType getNodeType() const
+    [[nodiscard]] NodeType getResourceType() const
     {
         return resource ? static_cast<NodeType>(resource.value().index() + 1) : NodeType::EMPTY;
     }

@@ -15,7 +15,7 @@ namespace kirana::scene
 const std::string LOG_CHANNEL_SCENE{"SCENE"};
 
 const std::string DEFAULT_NAME_SCENE{"Scene"};
-const std::string DEFAULT_NAME_NODE{"Scene"};
+const std::string DEFAULT_NAME_NODE{"Node"};
 const std::string DEFAULT_NAME_CAMERA{"Camera"};
 const std::string DEFAULT_NAME_MESH{"Mesh"};
 const std::string DEFAULT_NAME_MATERIAL{"Material"};

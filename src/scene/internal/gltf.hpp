@@ -879,6 +879,7 @@ public:
         return m_images.at(image_index);
     }
 
+    bool loadBufferViewData(const GLTFBufferView &view, uint8_t *out_data);
     bool loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_data);
 
 private:
@@ -895,7 +896,7 @@ private:
     GLTFBinaryDocument m_binary_doc{};
 
     bool loadBuffer(uint32_t buffer_index);
-    bool loadImage(uint32_t image_index, bool load_pixels);
+    bool loadImage(uint32_t image_index, bool read_pixels);
 };
 #pragma endregion
 }

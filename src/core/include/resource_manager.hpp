@@ -6,8 +6,9 @@
 
 #include "handle.hpp"
 
-#include <vector>
+#include <functional>
 #include <queue>
+#include <vector>
 
 namespace kirana::core
 {
@@ -106,26 +107,24 @@ public:
         return result;
     }
 
-    template <typename Func>
-    void forEach(Func &&func)
+    void forEach(const std::function<void(Handle<H>, T &)> &callback)
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
             if (auto &res = m_resources[i]; res.status)
             {
-                func(HandleType(i, res.generation), res);
+                callback(Handle<H>(i, res.generation), res);
             }
         }
     }
 
-    template <typename Func>
-    void forEach(Func &&func) const
+    void forEach(const std::function<void(Handle<H>, const T &)> &callback) const
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
             if (const auto &res = m_resources[i]; res.status)
             {
-                func(HandleType(i, res.generation), res);
+                callback(Handle<H>(i, res.generation), res);
             }
         }
     }

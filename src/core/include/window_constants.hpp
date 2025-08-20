@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-#include "handle.hpp"
+#include <handle.hpp>
 
 namespace kirana::core
 {
@@ -73,6 +73,9 @@ typedef std::function<void(WindowEventType type, const WindowEventData &data)> W
 static const std::string WINDOW_EVENT_CLASS_NAME = "WindowManager";
 static constexpr WindowSize DEFAULT_WINDOW_SIZE = {640, 360};
 static constexpr WindowPosition DEFAULT_WINDOW_POS = {0, 0};
+
+struct WindowTag {};
+using WindowHandle = Handle<WindowTag>;
 }
 
 #endif  // KIRANA_CORE_WINDOW_CONSTANTS_HPP

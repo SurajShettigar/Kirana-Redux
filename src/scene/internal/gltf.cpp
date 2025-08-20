@@ -254,6 +254,7 @@ bool GLTFLoader::loadBuffer(const uint32_t buffer_index)
         return false;
     }
 
+    core::Logger::info(LOG_CHANNEL_GLTF, "Loading buffer: " + std::to_string(buffer_index));
     // If the buffer has an undefined URI, then there must be an embedded binary chunk in the GLB file buffer.
     if (!buffer_info.uri)
     {
@@ -272,7 +273,8 @@ bool GLTFLoader::loadBuffer(const uint32_t buffer_index)
         const auto data_size = uri.data.size();
         if (data_size == 0)
         {
-            core::Logger::error(LOG_CHANNEL_GLTF, "Failed to decode data URI for buffer index: " + buffer_index);
+            core::Logger::error(LOG_CHANNEL_GLTF,
+                                "Failed to decode data URI for buffer index: " + std::to_string(buffer_index));
             return false;
         }
         const size_t offset = m_buffer.size();
@@ -321,6 +323,7 @@ bool GLTFLoader::loadImage(const uint32_t image_index, const bool read_pixels)
     {
         if (read_pixels && !m_image_buffers.contains(image_index))
         {
+            core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
             m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
             m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
         }
@@ -328,32 +331,61 @@ bool GLTFLoader::loadImage(const uint32_t image_index, const bool read_pixels)
     }
 
     const GLTFImage &image_info = m_document.images.at(image_index);
+    std::string image_name = image_info.name.value_or("Image_" + std::to_string(image_index));
     if (!image_info.uri)
     {
-        if (image_info.buffer_view)
-        {
-            // TODO: Add support for image buffers embedded in binary buffers.
-            core::Logger::error(LOG_CHANNEL_GLTF, "Image buffer embedded in binary buffers are not yet supported.");
-        }
-        else
+        // If image URI is not defined, then the image must be embedded in the GLTF binary buffer.
+        if (!image_info.buffer_view)
         {
             core::Logger::error(LOG_CHANNEL_GLTF, "Image should have a valid URI or buffer view");
+            return false;
         }
-        return false;
-    }
+        const auto &buffer_view = m_document.buffer_views.at(image_info.buffer_view.value());
+        std::vector<uint8_t> buffer_data{};
+        buffer_data.resize(buffer_view.byte_length);
+        if (!loadBufferViewData(buffer_view, buffer_data.data()))
+        {
+            core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load buffer for image: " + std::to_string(image_index));
+            return false;
+        }
 
-    const std::string image_name = image_info.name.value_or("Image_" + std::to_string(image_index));
-    std::string image_uri = image_info.uri.value();
-    // If the given image is not embedded, make the path absolute.
-    if (!core::DataURI::isValid(image_uri))
-    {
-        image_uri = (core::Filepath{m_base_path} / core::Filepath{image_info.uri.value()}).string();
+        if (const auto mime_type = image_info.mime_type.value_or(GLTFImageMimeType::PNG);
+            mime_type == GLTFImageMimeType::PNG)
+        {
+            image_name += ".png";
+        }
+        else if (mime_type == GLTFImageMimeType::JPEG)
+        {
+            image_name += ".jpg";
+        }
+        // Load the buffer and read the pixels irrespective of whether `read_pixels` is true.
+        core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
+        std::vector<uint8_t> pixel_buffer{};
+        const auto image = core::Image::loadFromRawBuffer(image_name, buffer_data, pixel_buffer);
+        if (!image.isValid())
+        {
+            core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load image from buffer: " + std::to_string(image_index));
+            return false;
+        }
+        m_images.insert(std::make_pair(image_index, image));
+        m_image_buffers.insert(std::make_pair(image_index, std::move(pixel_buffer)));
     }
-    m_images.insert(std::make_pair(image_index, core::Image{image_name, image_uri}));
-    if (read_pixels)
+    else
     {
-        m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
-        m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
+        std::string image_uri = image_info.uri.value();
+        // If the given image is not embedded as data URI, make the path absolute.
+        if (!core::DataURI::isValid(image_uri))
+        {
+            image_uri = (core::Filepath{m_base_path} / core::Filepath{image_info.uri.value()}).string();
+        }
+        m_images.insert(std::make_pair(image_index, core::Image{image_name, image_uri}));
+
+        if (read_pixels)
+        {
+            core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
+            m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
+            m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
+        }
     }
     return true;
 }
@@ -461,6 +493,25 @@ std::span<const uint8_t> GLTFLoader::getImageBuffer(const uint32_t image_index)
     return {};
 }
 
+bool GLTFLoader::loadBufferViewData(const GLTFBufferView &view, uint8_t *out_data)
+{
+    if (!view.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF, "Invalid buffer view");
+        return false;
+    }
+    const auto &buffer_data = getBuffer(view.buffer);
+    if (buffer_data.empty())
+    {
+        core::Logger::error(LOG_CHANNEL_GLTF,
+                            "Buffer with index: " + std::to_string(view.buffer) + " does not exist or is empty.");
+        return false;
+    }
+    std::memcpy(out_data, buffer_data.data() + view.byte_offset, view.byte_length);
+    return true;
+}
+
+
 bool GLTFLoader::loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_data)
 {
     if (!accessor.isValid())
@@ -509,6 +560,4 @@ bool GLTFLoader::loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_dat
     }
     return true;
 }
-
-
 }

@@ -35,7 +35,7 @@ private:
     core::WindowManager m_window_manager = {};
     renderer::Renderer m_renderer = {};
 
-    core::Handle<core::Window> m_main_window = {};
+    core::WindowHandle m_main_window = {};
 
     bool m_is_cleaned {false};
 

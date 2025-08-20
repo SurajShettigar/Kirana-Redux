@@ -12,6 +12,8 @@ namespace kirana::core
 class Image
 {
 public:
+    static Image loadFromRawBuffer(const std::string &name, const std::vector<uint8_t> &buffer, std::vector<uint8_t> &out_pixels);
+
     Image() = default;
     ~Image() = default;
 
