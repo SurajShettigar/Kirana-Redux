@@ -30,6 +30,37 @@ inline SceneFileFormat getSceneFileFormat(const core::Filepath &filepath, std::s
     return SceneFileFormat::UNKNOWN;
 }
 
+inline std::unordered_map<uint32_t, CameraHandle> loadGLTFCameras(const GLTFDocument &doc, Scene *out_scene)
+{
+    std::unordered_map<uint32_t, CameraHandle> cameras{};
+    for (uint32_t c_index = 0; c_index < doc.cameras.size(); ++c_index)
+    {
+        const auto &cam = doc.cameras[c_index];
+        std::string cam_name{cam.name.value_or("")};
+        if (!cam.isValid())
+        {
+            continue;
+        }
+        if (cam.type == GLTFCameraType::PERSPECTIVE)
+        {
+            const auto &p_cam = cam.perspective.value();
+            cameras.insert_or_assign(c_index, out_scene->addPerspectiveCamera(
+                                         cam_name,
+                                         {p_cam.z_near, p_cam.z_far.value_or(Camera::INFINITE_FAR_CLIPPING_PLANE)},
+                                         ganita::degree(p_cam.fov_y),
+                                         p_cam.aspect_ratio.value_or(1.0f)));
+        }
+        else if (cam.type == GLTFCameraType::ORTHOGRAPHIC)
+        {
+            const auto &o_cam = cam.orthographic.value();
+            cameras.insert_or_assign(c_index, out_scene->addOrthographicCamera(
+                                         cam_name, {o_cam.z_near, o_cam.z_far},
+                                         {o_cam.magnification_x, o_cam.magnification_y}));
+        }
+    }
+    return cameras;
+}
+
 inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTFLoader &loader, Scene *out_scene)
 {
     const auto &doc = loader.getDocument();
@@ -176,6 +207,7 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
 }
 
 void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_indices,
+                   const std::unordered_map<uint32_t, CameraHandle> &cameras,
                    const std::unordered_map<uint32_t, std::vector<MeshHandle>> &meshes,
                    const std::optional<NodeHandle> &parent_node, Scene *out_scene)
 {
@@ -190,7 +222,13 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
                              : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
                                          node.rotation.value_or({0.0f, 0.0f, 0.0f, 1.0f}),
                                          node.scale.value_or({1.0f, 1.0f, 1.0f})};
-        if (node.mesh && meshes.contains(node.mesh.value()))
+        if (node.camera && cameras.contains(node.camera.value()))
+        {
+            const auto &camera_handle = cameras.at(node.camera.value());
+            node_name = node_name.empty() ? out_scene->getCameraName(camera_handle) : node_name;
+            current_parent = out_scene->addNode(node_name, NodeFlags::NONE, transform, camera_handle, parent_node);
+        }
+        else if (node.mesh && meshes.contains(node.mesh.value()))
         {
             const auto &mesh_handles = meshes.at(node.mesh.value());
             // Group meshes with multiple mesh primitives under a single node.
@@ -225,7 +263,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         }
         if (!node.children.empty())
         {
-            loadGLTFNodes(doc, node.children, meshes, current_parent, out_scene);
+            loadGLTFNodes(doc, node.children, cameras, meshes, current_parent, out_scene);
         }
     }
 }
@@ -239,11 +277,12 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
     }
     const auto &doc = loader.getDocument();
 
-,m    const auto &meshes = loadGLTFMeshes(loader, out_scene);
+    const auto &cameras = loadGLTFCameras(doc, out_scene);
+    const auto &meshes = loadGLTFMeshes(loader, out_scene);
     if (!doc.scenes.empty())
     {
         // TODO: Add option to load multiple GLTF scenes.
-        loadGLTFNodes(doc, doc.scenes[0].nodes, meshes, std::nullopt, out_scene);
+        loadGLTFNodes(doc, doc.scenes[0].nodes, cameras, meshes, std::nullopt, out_scene);
     }
     return true;
 }

@@ -52,13 +52,64 @@ NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const 
             global_transform = t_handle->world * transform;
         }
     }
-    m_node_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_NODE + "_" + std::to_string(handle.getIndex()) : name);
+    m_node_names.insert_or_assign(handle, name.empty()
+                                              ? DEFAULT_NAME_NODE + "_" + std::to_string(handle.getIndex())
+                                              : name);
 
     const auto transform_handle = m_transforms.add(HierarchyTransform{transform, global_transform});
     m_node_transforms.insert_or_assign(handle, transform_handle);
 
+    if (node->getResourceType() == NodeType::CAMERA)
+    {
+        // Set the default camera node if the given resource is a default camera.
+        if (m_cameras.isValid(m_default_camera) && !m_default_camera_node.isValid())
+        {
+            m_default_camera_node = handle;
+        }
+    }
+
     return handle;
 }
+
+CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
+{
+    const auto handle = m_cameras.add(camera);
+    if (!handle.isValid())
+    {
+        return handle;
+    }
+    m_camera_names.insert_or_assign(handle, name.empty()
+                                                ? DEFAULT_NAME_CAMERA + "_" + std::to_string(handle.getIndex())
+                                                : name);
+    // Set the current camera as default if it's not set.
+    if (!m_default_camera.isValid())
+    {
+        m_default_camera = handle;
+    }
+    return handle;
+}
+
+CameraHandle Scene::addPerspectiveCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
+                                         const float fov_vertical, const float aspect_ratio)
+{
+    return addCamera(name, Camera::getPerspective(clipping_planes[0], clipping_planes[1], fov_vertical, aspect_ratio));
+}
+
+CameraHandle Scene::addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
+                                          const float size, const float aspect_ratio)
+{
+
+    return addCamera(name, Camera::getOrthographic(clipping_planes[0], clipping_planes[1], size, aspect_ratio));
+}
+
+
+CameraHandle Scene::addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
+                                          const std::array<float, 2> &size_2d)
+{
+    return addCamera(
+        name, Camera::getOrthographicFromSize2D(clipping_planes[0], clipping_planes[1], size_2d[0], size_2d[1]));
+}
+
 
 MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
                           const std::optional<MaterialHandle> &material)
@@ -106,7 +157,9 @@ MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buff
         return handle;
     }
 
-    m_mesh_names.insert_or_assign(handle, name.empty() ? DEFAULT_NAME_MESH + "_" + std::to_string(handle.getIndex()) : name);
+    m_mesh_names.insert_or_assign(handle, name.empty()
+                                              ? DEFAULT_NAME_MESH + "_" + std::to_string(handle.getIndex())
+                                              : name);
 
     return handle;
 }
