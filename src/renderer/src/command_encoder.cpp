@@ -301,6 +301,7 @@ void CommandEncoder::drawIndexed(const uint32_t index_count, const uint32_t inst
 
 void CommandEncoder::endRendering() const
 {
+    m_buffer.endRendering();
 #ifdef DEBUG
     if (m_has_render_label)
     {
@@ -308,6 +309,5 @@ void CommandEncoder::endRendering() const
         m_has_render_label = false;
     }
 #endif
-    m_buffer.endRendering();
 }
 }

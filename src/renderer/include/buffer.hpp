@@ -39,6 +39,10 @@ public:
         return m_size;
     }
 
+    [[nodiscard]] uint64_t getAddress() const;
+
+    bool update(const CommandEncoder &encoder, uint64_t size, const void *data);
+
 private:
     std::string m_name{};
     uint64_t m_size{};
@@ -51,7 +55,7 @@ private:
     AllocationID m_alloc_id{};
 
     bool init(vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
-              const std::string &name, uint64_t size, const uint8_t *data = nullptr,
+              const std::string &name, uint64_t size, const void *data = nullptr,
               BufferUsageFlags usage = BufferUsageFlags::UNKNOWN);
 };
 }

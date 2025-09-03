@@ -139,7 +139,10 @@ inline vk::PipelineRenderingCreateInfo getRenderingState(const std::vector<Color
     {
         out_depth_format = getFormat(depth_stencil_attachment.format);
         create_info.setDepthAttachmentFormat(out_depth_format);
-        create_info.setStencilAttachmentFormat(out_depth_format);
+        if (depth_stencil_attachment.state.test_stencil)
+        {
+            create_info.setStencilAttachmentFormat(out_depth_format);
+        }
     }
     return create_info;
 }

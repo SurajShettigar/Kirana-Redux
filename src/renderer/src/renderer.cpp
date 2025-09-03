@@ -8,7 +8,8 @@
 
 namespace kirana::renderer
 {
-bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data)
+bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data,
+                    const scene::Scene &scene)
 {
     bool status = m_device.init(init_data);
     if (status && init_data.surface.isValid())
@@ -16,86 +17,69 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_swapchain = m_device.createSwapchain("Swapchain", swapchain_data);
         status = m_swapchain.isValid();
     }
-    if (status)
+    if (!status)
     {
-        const bool has_swapchain = m_swapchain.isValid();
-        const auto num_ctxs = has_swapchain
-                                  ? m_swapchain.getTextureCount()
-                                  : static_cast<size_t>(swapchain_data.buffer_mode);
-        m_ctxs.reserve(num_ctxs);
-        for (size_t i = 0; i < num_ctxs; ++i)
-        {
-            const auto fence = m_device.createFence("Fence_Main_" + std::to_string(i));
-            const auto encoder = m_device.createCommandEncoder("Encoder_Render_" + std::to_string(i),
-                                                               m_device.getGraphicsQueue());
-            const auto semaphore = m_device.createSemaphore("Semaphore_Render_" + std::to_string(i));
-            m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
-        }
-
-        m_render_target = m_device.createTexture("Render_Target_Color", swapchain_data.size,
-                                                 TextureFormat::R32G32B32A32_SFLOAT,
-                                                 TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
-                                                 TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
-
-        // TODO: Example render loop. Move it to a separate class.
-        // m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
-        //                                                             {ShaderBindingTypeRatios{ShaderBindingType::STORAGE_IMAGE}});
-        // m_layout = m_device.createDescriptorLayout("Descriptor_Layout_Gradient", ShaderStageFlags::COMPUTE,
-        //                                            {ShaderBinding{0, ShaderBindingType::STORAGE_IMAGE}});
-        // m_set = m_descriptor_allocator.allocate("Descriptor_Set_Gradient", m_layout,
-        //                                         {ShaderBindingResource{0, &m_render_target}});
-        // m_pipeline_layout = m_device.createPipelineLayout("Pipeline_Layout_Gradient", {m_layout});
-        // m_shader = m_device.createShader("Shader_Gradient", "shaders/gradient.spv", ShaderStageFlags::COMPUTE);
-        // m_pipeline = m_device.createComputePipeline("Pipeline_Gradient", m_pipeline_layout, m_shader);
-
-        m_data_fence = m_device.createFence("Fence_Data");
-
-        m_data_fence.reset();
-        m_data_encoder = m_device.createCommandEncoder("Encoder_Data", m_device.getTransferQueue());
-        m_data_encoder.begin();
-
-        auto data_size = m_indices.size() * sizeof(uint32_t);
-        m_buffer_indices = m_device.createBuffer(m_data_encoder, "Buffer_Indices", data_size,
-                                                 reinterpret_cast<const uint8_t *>(m_indices.data()),
-                                                 BufferUsageFlags::INDEX_BUFFER | BufferUsageFlags::STORAGE_BUFFER);
-
-        data_size = m_positions.size() * sizeof(float) * 4;
-        m_buffer_positions = m_device.createBuffer(m_data_encoder, "Buffer_Positions", data_size,
-                                                   reinterpret_cast<const uint8_t *>(m_positions.data()),
-                                                   BufferUsageFlags::VERTEX_BUFFER | BufferUsageFlags::STORAGE_BUFFER);
-
-        data_size = m_colors.size() * sizeof(float) * 4;
-        m_buffer_colors = m_device.createBuffer(m_data_encoder, "Buffer_Colors", data_size,
-                                                reinterpret_cast<const uint8_t *>(m_colors.data()),
-                                                BufferUsageFlags::VERTEX_BUFFER | BufferUsageFlags::STORAGE_BUFFER);
-
-        m_device.getTransferQueue().submit(m_data_encoder.finish(), m_data_fence);
-        if (!m_data_fence.wait(FENCE_WAIT_TIMEOUT))
-        {
-        }
-        if (m_device.tryReleaseTemporaryResources(m_data_fence))
-        {
-            core::Logger::info(LOG_CHANNEL_VULKAN, "Released temporary resources.");
-        }
-
-        m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
-                                                                    {ShaderBindingTypeRatios{ShaderBindingType::STORAGE_BUFFER}});
-        m_layout = m_device.createDescriptorLayout("Descriptor_Layout_Basic",
-                                                   ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE,
-                                                   {ShaderBinding{0, ShaderBindingType::STORAGE_BUFFER},
-                                                    ShaderBinding{1, ShaderBindingType::STORAGE_BUFFER}});
-        m_set = m_descriptor_allocator.allocate("Descriptor_Set_Gradient", m_layout,
-                                                {ShaderBindingResource{0, &m_buffer_positions},
-                                                 ShaderBindingResource{1, &m_buffer_colors}});
-        m_pipeline_layout = m_device.createPipelineLayout("Pipeline_Layout_Basic", {m_layout});
-        m_shader = m_device.createShader("Shader_Basic_Vertex", "shaders/basic.spv",
-                                         {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT}, {"mainVS", "mainFS"});
-
-        auto render_state = RenderState{};
-        render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
-        m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader},
-                                                   render_state);
+        return false;
     }
+    const bool has_swapchain = m_swapchain.isValid();
+    const auto num_ctxs = has_swapchain
+                              ? m_swapchain.getTextureCount()
+                              : static_cast<size_t>(swapchain_data.buffer_mode);
+    m_ctxs.reserve(num_ctxs);
+    for (size_t i = 0; i < num_ctxs; ++i)
+    {
+        const auto fence = m_device.createFence("Fence_Main_" + std::to_string(i));
+        const auto encoder = m_device.createCommandEncoder("Encoder_Render_" + std::to_string(i),
+                                                           m_device.getGraphicsQueue());
+        const auto semaphore = m_device.createSemaphore("Semaphore_Render_" + std::to_string(i));
+        m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
+    }
+
+    m_render_target = m_device.createTexture("Render_Target_Color", swapchain_data.size,
+                                             TextureFormat::R32G32B32A32_SFLOAT,
+                                             TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
+                                             TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
+    m_depth_buffer = m_device.createTexture("Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
+                                            TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT |
+                                            TextureUsageFlags::TRANSFER_DST);
+
+    m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
+                                                                {
+                                                                    ShaderBindingTypeRatios{
+                                                                        ShaderBindingType::STORAGE_BUFFER, 0.75f},
+                                                                    ShaderBindingTypeRatios{
+                                                                        ShaderBindingType::UNIFORM_BUFFER, 0.25f},
+                                                                });
+    m_layout = m_device.createDescriptorLayout("Descriptor_Layout_Basic",
+                                               ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE,
+                                               {
+                                                   // Position Buffer
+                                                   ShaderBinding{0, ShaderBindingType::STORAGE_BUFFER},
+                                                   // Normal Buffer
+                                                   ShaderBinding{1, ShaderBindingType::STORAGE_BUFFER},
+                                                   // UV Buffer
+                                                   ShaderBinding{2, ShaderBindingType::STORAGE_BUFFER},
+                                                   // Mesh Buffer
+                                                   ShaderBinding{3, ShaderBindingType::STORAGE_BUFFER},
+                                                   // Transform Buffer
+                                                   ShaderBinding{4, ShaderBindingType::STORAGE_BUFFER},
+                                                   // Mesh Instance Buffer
+                                                   ShaderBinding{5, ShaderBindingType::STORAGE_BUFFER},
+                                                   // Camera Buffer
+                                                   ShaderBinding{6, ShaderBindingType::UNIFORM_BUFFER},
+                                               });
+    m_pipeline_layout = m_device.createPipelineLayout("Pipeline_Layout_Basic", {m_layout});
+    m_shader = m_device.createShader("Shader_Basic_Vertex", "shaders/basic.spv",
+                                     {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT},
+                                     {"mainVS", "mainFS"});
+
+    auto render_state = RenderState{};
+    render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
+    render_state.depth_stencil_attachment = DepthStencilAttachment{m_depth_buffer.getFormat(), DepthStencilState{}};
+    m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader},
+                                               render_state);
+    loadScene(scene);
+
     m_current_index = 0;
     return status;
 }
@@ -131,18 +115,37 @@ void Renderer::render()
     encoder.begin();
 
     encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
+    encoder.transitionTextureLayout(m_depth_buffer, TextureLayout::GENERAL);
     encoder.clearTexture(m_render_target, {0.0f, 0.0f, 0.0f, 1.0f});
-    encoder.transitionTextureLayout(m_render_target, TextureLayout::COLOR_ATTACHMENT_OPTIMAL);
-
+    encoder.clearTexture(m_depth_buffer, {1.0f, 0.0f, 0.0f, 0.0f});
+    if (m_scene_data.isValid())
     {
-        encoder.beginRendering({m_render_target}, {}, "Hello Triangle");
+        encoder.transitionTextureLayout(m_render_target, TextureLayout::COLOR_ATTACHMENT_OPTIMAL);
+        encoder.transitionTextureLayout(m_depth_buffer, TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Hello Triangle");
         encoder.bindRenderPipeline(m_pipeline);
         encoder.bindDescriptorSet(m_pipeline_layout, 0, m_set);
-        encoder.bindIndexBuffer(m_buffer_indices);
 
         encoder.setViewport(Rect2D{Offset2D{}, m_render_target.getSize()});
         encoder.setScissor(Rect2D{Offset2D{}, m_render_target.getSize()});
-        encoder.drawIndexed(3, 1);
+
+        m_scene_data.forEachRenderable([&](const MeshData &mesh, const MeshInstancesData &instances) {
+            if (mesh.index_format == scene::IndexFormat::UINT_8)
+            {
+                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer8(), 0, IndexType::UINT8);
+            }
+            else if (mesh.index_format == scene::IndexFormat::UINT_16)
+            {
+                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer16(), 0, IndexType::UINT16);
+            }
+            else
+            {
+                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer32());
+            }
+            encoder.drawIndexed(mesh.index_count, instances.instance_count, mesh.index_offset, 0,
+                                instances.instance_offset);
+        });
         encoder.endRendering();
     }
     // const auto [width, height] = m_render_target.getSize();
@@ -178,18 +181,15 @@ void Renderer::clean()
     }
     m_device.waitIdle();
 
+    m_scene_data.destroy();
+
     m_pipeline.destroy();
     m_shader.destroy();
     m_pipeline_layout.destroy();
     m_layout.destroy();
     m_descriptor_allocator.destroy();
 
-    m_buffer_colors.destroy();
-    m_buffer_positions.destroy();
-    m_buffer_indices.destroy();
-    m_data_encoder.destroy();
-    m_data_fence.destroy();
-
+    m_depth_buffer.destroy();
     m_render_target.destroy();
     if (!m_ctxs.empty())
     {
@@ -208,5 +208,30 @@ void Renderer::clean()
 void Renderer::resize(const Size2D &size)
 {
     m_swapchain.resize(size);
+}
+
+bool Renderer::loadScene(const scene::Scene &scene)
+{
+    m_scene_data.init(m_device, scene);
+    if (m_scene_data.isValid())
+    {
+        m_set = m_descriptor_allocator.allocate("Descriptor_Set_Gradient", m_layout,
+                                                {
+                                                    ShaderBindingResource{0, &m_scene_data.getPositionBuffer()},
+                                                    ShaderBindingResource{1, &m_scene_data.getNormalBuffer()},
+                                                    ShaderBindingResource{2, &m_scene_data.getUVBuffer()},
+                                                    ShaderBindingResource{3, &m_scene_data.getMeshesBuffer()},
+                                                    ShaderBindingResource{4, &m_scene_data.getTransformsBuffer()},
+                                                    ShaderBindingResource{5, &m_scene_data.getMeshInstancesBuffer()},
+                                                    ShaderBindingResource{6, &m_scene_data.getCameraBuffer()},
+                                                });
+        return true;
+    }
+    return false;
+}
+
+bool Renderer::updateCamera(const scene::Matrix4 &view_matrix, const scene::Matrix4 &projection_matrix)
+{
+    return m_scene_data.updateCamera(m_device, view_matrix, projection_matrix);
 }
 }

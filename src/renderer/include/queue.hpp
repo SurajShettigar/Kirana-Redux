@@ -52,22 +52,22 @@ public:
         return m_type;
     }
 
-    uint32_t addWaitSemaphore(const Semaphore &semaphore)
+    uint32_t addWaitSemaphore(const Semaphore &semaphore) const
     {
         const uint32_t index = m_wait_semaphores.size();
         m_wait_semaphores.emplace_back(semaphore.getSubmitInfo());
         return index;
     }
 
-    uint32_t addSignalSemaphore(const Semaphore &semaphore)
+    uint32_t addSignalSemaphore(const Semaphore &semaphore) const
     {
         const uint32_t index = m_signal_semaphores.size();
         m_signal_semaphores.emplace_back(semaphore.getSubmitInfo());
         return index;
     }
 
-    void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence);
-    bool present(Swapchain &swapchain);
+    void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence) const;
+    bool present(Swapchain &swapchain) const;
 
 private:
     std::string m_name{};
@@ -77,8 +77,8 @@ private:
 
     vk::Device m_device{nullptr};
     vk::Queue m_handle{nullptr};
-    std::vector<vk::SemaphoreSubmitInfo> m_wait_semaphores{};
-    std::vector<vk::SemaphoreSubmitInfo> m_signal_semaphores{};
+    mutable std::vector<vk::SemaphoreSubmitInfo> m_wait_semaphores{};
+    mutable std::vector<vk::SemaphoreSubmitInfo> m_signal_semaphores{};
 
     Queue(vk::Device device, const std::string &name, uint32_t index, uint32_t family_index, QueueFamilyFlags type);
 };

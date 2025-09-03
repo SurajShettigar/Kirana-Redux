@@ -84,7 +84,7 @@ public:
     }
 
     [[nodiscard]] Buffer createBuffer(const CommandEncoder &encoder, const std::string &name, uint64_t size,
-                                      const uint8_t *data = nullptr,
+                                      const void *data = nullptr,
                                       BufferUsageFlags usage = BufferUsageFlags::UNKNOWN) const;
 
     [[nodiscard]] Texture createTexture(const std::string &name, const Size2D &size, TextureFormat format,
@@ -121,7 +121,7 @@ public:
 
     [[nodiscard]] Fence createFence(const std::string &name) const;
 
-    bool tryReleaseTemporaryResources(const Fence &fence);
+    bool tryReleaseTemporaryResources(const Fence &fence) const;
 
     void waitIdle() const;
 

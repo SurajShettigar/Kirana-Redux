@@ -16,6 +16,10 @@ class AllocationID
 public:
     AllocationID() = default;
     ~AllocationID() = default;
+    AllocationID(const AllocationID &) = default;
+    AllocationID &operator=(const AllocationID &) = default;
+    AllocationID(AllocationID &&) = default;
+    AllocationID &operator=(AllocationID &&) = default;
 
     explicit AllocationID(const uint32_t id) : m_id{id}
     {
@@ -92,7 +96,9 @@ public:
     void destroyImage(AllocationID id, vk::Image image) const;
 
     AllocationID createBuffer(const CommandEncoder &encoder, const vk::BufferCreateInfo &create_info,
-                              const uint8_t *data_buffer, vk::Buffer *out_buffer) const;
+                              const void *data_buffer, vk::Buffer *out_buffer) const;
+    bool writeBuffer(const CommandEncoder &encoder, AllocationID id, vk::Buffer buffer, uint64_t size,
+                     const void *data) const;
     void destroyBuffer(AllocationID id, vk::Buffer buffer) const;
 
 

@@ -50,15 +50,15 @@ validationCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT message_severi
 
     switch (message_severity)
     {
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError: {
         core::Logger::error(LOG_CHANNEL_VULKAN, message());
     }
     break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: {
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning: {
         core::Logger::warn(LOG_CHANNEL_VULKAN, message());
     }
     break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: {
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo: {
         core::Logger::info(LOG_CHANNEL_VULKAN, message());
     }
     break;
@@ -331,8 +331,7 @@ void Device::destroy()
 }
 
 Buffer Device::createBuffer(const CommandEncoder &encoder, const std::string &name, const uint64_t size,
-                            const uint8_t *data,
-                            const BufferUsageFlags usage) const
+                            const void *data, const BufferUsageFlags usage) const
 {
     Buffer buffer;
     if (m_device)
@@ -523,7 +522,7 @@ Fence Device::createFence(const std::string &name) const
     return fence;
 }
 
-bool Device::tryReleaseTemporaryResources(const Fence &fence)
+bool Device::tryReleaseTemporaryResources(const Fence &fence) const
 {
     return m_memory_allocator.tryReleaseTemporaries(fence);
 }

@@ -10,7 +10,7 @@
 namespace kirana::renderer
 {
 bool Buffer::init(const vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
-                  const std::string &name, const uint64_t size, const uint8_t *data, const BufferUsageFlags usage)
+                  const std::string &name, const uint64_t size, const void *data, const BufferUsageFlags usage)
 {
     m_device = device;
     m_allocator = allocator;
@@ -57,5 +57,19 @@ void Buffer::destroy()
     }
 }
 
+uint64_t Buffer::getAddress() const
+{
+    return m_device.getBufferAddress(vk::BufferDeviceAddressInfo{m_handle});
+}
+
+bool Buffer::update(const CommandEncoder &encoder, const uint64_t size, const void *data)
+{
+    if (m_allocator && m_alloc_id.isValid() && m_allocator->writeBuffer(encoder, m_alloc_id, m_handle, size, data))
+    {
+        m_size = size;
+        return true;
+    }
+    return false;
+}
 
 }

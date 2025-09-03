@@ -15,10 +15,11 @@ add_library(renderer
         src/pipeline_render.cpp
         src/command_encoder.cpp
         src/queue.cpp
+        src/scene_data.cpp
         src/renderer.cpp)
 target_include_directories(renderer
         PUBLIC include)
-target_link_libraries(renderer PUBLIC core Vulkan::Vulkan)
+target_link_libraries(renderer PUBLIC core scene Vulkan::Vulkan)
 add_dependencies(renderer Shaders)
 
 # Vulkan header pre-processor directives

@@ -20,7 +20,7 @@ Queue::Queue(const vk::Device device, const std::string &name, const uint32_t in
     }
 }
 
-void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence)
+void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence) const
 {
     const auto submit_info = vk::SubmitInfo2{vk::SubmitFlags{}, m_wait_semaphores, {cmd_submit_info.info},
                                              m_signal_semaphores};
@@ -30,7 +30,7 @@ void Queue::submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence)
 }
 }
 
-bool kirana::renderer::Queue::present(Swapchain &swapchain)
+bool kirana::renderer::Queue::present(Swapchain &swapchain) const
 {
     std::vector<vk::Semaphore> wait_semaphores;
     wait_semaphores.reserve(m_wait_semaphores.size());

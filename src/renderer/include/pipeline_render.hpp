@@ -160,8 +160,8 @@ struct StencilState
 
 struct DepthStencilState
 {
-    bool test_depth{false};
-    bool write_depth{false};
+    bool test_depth{true};
+    bool write_depth{true};
     CompareOperation compare_op{CompareOperation::LESS_OR_EQUAL};
     bool test_stencil{false};
     StencilState stencil_front{};
