@@ -282,7 +282,12 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
     if (!doc.scenes.empty())
     {
         // TODO: Add option to load multiple GLTF scenes.
-        loadGLTFNodes(doc, doc.scenes[0].nodes, cameras, meshes, std::nullopt, out_scene);
+        const auto &[nodes, name] = doc.scenes.front();
+        if (const auto scene_name = name.value_or(""); !scene_name.empty())
+        {
+            out_scene->setName(scene_name);
+        }
+        loadGLTFNodes(doc, nodes, cameras, meshes, std::nullopt, out_scene);
     }
     return true;
 }

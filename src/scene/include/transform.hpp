@@ -16,13 +16,13 @@ public:
     Transform() = default;
 
     explicit Transform(const Matrix4 &matrix)
-        : m_local_to_world{matrix}
+        : m_local_to_world{matrix}, m_world_to_local{m_local_to_world.transformInverse()}
     {
         decomposeMatrix();
     }
 
     explicit Transform(const std::array<Float, 16> &matrix)
-        : m_local_to_world{matrix}
+        : m_local_to_world{matrix}, m_world_to_local{m_local_to_world.transformInverse()}
     {
         decomposeMatrix();
     }
@@ -84,6 +84,11 @@ public:
         return m_local_to_world;
     }
 
+    [[nodiscard]] const Matrix4 &getLocalMatrix() const
+    {
+        return m_world_to_local;
+    }
+
     [[nodiscard]] Vector3 getRight() const
     {
         return m_rotation.rotateVector(Vector3::RIGHT).normalize();
@@ -133,6 +138,7 @@ public:
     Transform &operator*=(const Transform &rhs)
     {
         m_local_to_world *= rhs.m_local_to_world;
+        m_world_to_local = m_local_to_world.transformInverse();
         decomposeMatrix();
         return *this;
     }
@@ -219,10 +225,12 @@ private:
     Quaternion m_rotation{};
     Vector3 m_scale{1.0f};
     Matrix4 m_local_to_world{};
+    Matrix4 m_world_to_local{};
 
     void updateMatrix()
     {
         m_local_to_world = Matrix4::translation(m_position) * m_rotation.getMatrix() * Matrix4::scale(m_scale);
+        m_world_to_local = m_local_to_world.transformInverse();
     }
 
     void decomposeMatrix()

@@ -62,9 +62,9 @@ NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const 
     if (node->getResourceType() == NodeType::CAMERA)
     {
         // Set the default camera node if the given resource is a default camera.
-        if (m_cameras.isValid(m_default_camera) && !m_default_camera_node.isValid())
+        if (m_cameras.isValid(m_active_camera) && !m_active_camera_node.isValid())
         {
-            m_default_camera_node = handle;
+            m_active_camera_node = handle;
         }
     }
 
@@ -82,9 +82,9 @@ CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
                                                 ? DEFAULT_NAME_CAMERA + "_" + std::to_string(handle.getIndex())
                                                 : name);
     // Set the current camera as default if it's not set.
-    if (!m_default_camera.isValid())
+    if (!m_active_camera.isValid())
     {
-        m_default_camera = handle;
+        m_active_camera = handle;
     }
     return handle;
 }
