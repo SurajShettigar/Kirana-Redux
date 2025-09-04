@@ -43,6 +43,14 @@ struct BufferRange
     }
 };
 
+struct ImageTag
+{
+};
+
+struct TextureTag
+{
+};
+
 struct NodeTag
 {
 };
@@ -67,6 +75,8 @@ struct MeshTag
 {
 };
 
+using ImageHandle = core::Handle<ImageTag>;
+using TextureHandle = core::Handle<TextureTag>;
 using NodeHandle = core::Handle<NodeTag>;
 using HierarchyTransformHandle = core::Handle<HierarchyTransformTag>;
 using CameraHandle = core::Handle<CameraTag>;

@@ -3,13 +3,13 @@
 
 #include "image.hpp"
 
-#include "file_manager.hpp"
-#include "type_conversions.hpp"
+#include <file_manager.hpp>
+#include <type_conversions.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/filesystem.h>
 
-namespace kirana::core
+namespace kirana::scene
 {
 
 Image Image::loadFromRawBuffer(const std::string &name, const std::vector<uint8_t> &buffer, std::vector<uint8_t> &out_pixels)
@@ -40,12 +40,12 @@ Image Image::loadFromRawBuffer(const std::string &name, const std::vector<uint8_
     return image;
 }
 
-inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::string &path, DataURI &out_uri)
+inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::string &path, core::DataURI &out_uri)
 {
     using namespace OIIO;
-    if (DataURI::isValid(path))
+    if (core::DataURI::isValid(path))
     {
-        out_uri = DataURI::parse(path);
+        out_uri = core::DataURI::parse(path);
         if (!out_uri.isValid())
         {
             return std::nullopt;
@@ -56,12 +56,12 @@ inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::stri
 }
 
 Image::Image(std::string name, std::string path)
-    : m_name{std::move(name)}, m_path{std::move(path)}
+    : IResource{}, m_name{std::move(name)}, m_path{std::move(path)}
 {
     using namespace OIIO;
 
     std::unique_ptr<ImageInput> img = nullptr;
-    DataURI data_uri{};
+    core::DataURI data_uri{};
     auto uri_reader = getUriReader(m_path, data_uri);
     if (uri_reader)
     {
@@ -94,7 +94,7 @@ bool Image::readPixels(std::vector<uint8_t> &out_buffer) const
     }
 
     std::unique_ptr<ImageInput> img = nullptr;
-    DataURI data_uri{};
+    core::DataURI data_uri{};
     auto uri_reader = getUriReader(m_path, data_uri);
     if (uri_reader)
     {

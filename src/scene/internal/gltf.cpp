@@ -51,6 +51,99 @@ void toJson(const std::string &name, const T &src, glz::json_t &dst)
     }
 }
 
+void GLTFTextureInfo::setExtensions(const std::optional<glz::json_t> &extensions)
+{
+    if (!extensions)
+    {
+        return;
+    }
+
+    if (const auto &ext = extensions.value(); ext.contains(GLTF_EXT_NAME_TEXTURE_TRANSFORM))
+    {
+        transform = GLTFTextureTransform{};
+        const auto &src = ext.at(GLTF_EXT_NAME_TEXTURE_TRANSFORM);
+        fromJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", src, transform.value());
+    }
+}
+
+std::optional<glz::json_t> GLTFTextureInfo::getExtensions() const
+{
+    glz::json_t extensions{};
+    if (transform)
+    {
+        glz::json_t transform_json{};
+        toJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", transform.value(), transform_json);
+        extensions[GLTF_EXT_NAME_TEXTURE_TRANSFORM] = transform_json;
+    }
+    if (extensions.empty())
+    {
+        return nullptr;
+    }
+    return extensions;
+}
+
+void GLTFTextureInfoNormal::setExtensions(const std::optional<glz::json_t> &extensions)
+{
+    if (!extensions)
+    {
+        return;
+    }
+
+    if (const auto &ext = extensions.value(); ext.contains(GLTF_EXT_NAME_TEXTURE_TRANSFORM))
+    {
+        transform = GLTFTextureTransform{};
+        const auto &src = ext.at(GLTF_EXT_NAME_TEXTURE_TRANSFORM);
+        fromJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", src, transform.value());
+    }
+}
+
+std::optional<glz::json_t> GLTFTextureInfoNormal::getExtensions() const
+{
+    glz::json_t extensions{};
+    if (transform)
+    {
+        glz::json_t transform_json{};
+        toJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", transform.value(), transform_json);
+        extensions[GLTF_EXT_NAME_TEXTURE_TRANSFORM] = transform_json;
+    }
+    if (extensions.empty())
+    {
+        return nullptr;
+    }
+    return extensions;
+}
+
+void GLTFTextureInfoOcclusion::setExtensions(const std::optional<glz::json_t> &extensions)
+{
+    if (!extensions)
+    {
+        return;
+    }
+
+    if (const auto &ext = extensions.value(); ext.contains(GLTF_EXT_NAME_TEXTURE_TRANSFORM))
+    {
+        transform = GLTFTextureTransform{};
+        const auto &src = ext.at(GLTF_EXT_NAME_TEXTURE_TRANSFORM);
+        fromJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", src, transform.value());
+    }
+}
+
+std::optional<glz::json_t> GLTFTextureInfoOcclusion::getExtensions() const
+{
+    glz::json_t extensions{};
+    if (transform)
+    {
+        glz::json_t transform_json{};
+        toJson<GLTFTextureTransform>("TEXTURE_TRANSFORM", transform.value(), transform_json);
+        extensions[GLTF_EXT_NAME_TEXTURE_TRANSFORM] = transform_json;
+    }
+    if (extensions.empty())
+    {
+        return nullptr;
+    }
+    return extensions;
+}
+
 void GLTFMaterial::setExtensions(const std::optional<glz::json_t> &extensions)
 {
     if (!extensions)
@@ -309,31 +402,36 @@ bool GLTFLoader::loadBuffer(const uint32_t buffer_index)
     return true;
 }
 
-bool GLTFLoader::loadImage(const uint32_t image_index, const bool read_pixels)
+bool GLTFLoader::loadImage(const uint32_t image_index)
 {
     if (m_document.images.size() <= image_index)
     {
         return false;
     }
-    if (read_pixels && m_image_buffers.contains(image_index))
-    {
-        return true;
-    }
     if (m_images.contains(image_index))
     {
-        if (read_pixels && !m_image_buffers.contains(image_index))
-        {
-            core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
-            m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
-            m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
-        }
         return true;
     }
+    // if (read_pixels && m_image_buffers.contains(image_index))
+    // {
+    //     return true;
+    // }
+    // if (m_images.contains(image_index))
+    // {
+    //     if (read_pixels && !m_image_buffers.contains(image_index))
+    //     {
+    //         core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
+    //         m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
+    //         m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
+    //     }
+    //     return true;
+    // }
 
     const GLTFImage &image_info = m_document.images.at(image_index);
     std::string image_name = image_info.name.value_or("Image_" + std::to_string(image_index));
     if (!image_info.uri)
     {
+        core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
         // If image URI is not defined, then the image must be embedded in the GLTF binary buffer.
         if (!image_info.buffer_view)
         {
@@ -349,26 +447,28 @@ bool GLTFLoader::loadImage(const uint32_t image_index, const bool read_pixels)
             return false;
         }
 
-        if (const auto mime_type = image_info.mime_type.value_or(GLTFImageMimeType::PNG);
-            mime_type == GLTFImageMimeType::PNG)
-        {
-            image_name += ".png";
-        }
-        else if (mime_type == GLTFImageMimeType::JPEG)
-        {
-            image_name += ".jpg";
-        }
-        // Load the buffer and read the pixels irrespective of whether `read_pixels` is true.
-        core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
-        std::vector<uint8_t> pixel_buffer{};
-        const auto image = core::Image::loadFromRawBuffer(image_name, buffer_data, pixel_buffer);
-        if (!image.isValid())
-        {
-            core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load image from buffer: " + std::to_string(image_index));
-            return false;
-        }
-        m_images.insert(std::make_pair(image_index, image));
-        m_image_buffers.insert(std::make_pair(image_index, std::move(pixel_buffer)));
+        m_images.insert(std::make_pair(image_index, std::move(buffer_data)));
+
+        // if (const auto mime_type = image_info.mime_type.value_or(GLTFImageMimeType::PNG);
+        //     mime_type == GLTFImageMimeType::PNG)
+        // {
+        //     image_name += ".png";
+        // }
+        // else if (mime_type == GLTFImageMimeType::JPEG)
+        // {
+        //     image_name += ".jpg";
+        // }
+        // // Load the buffer and read the pixels irrespective of whether `read_pixels` is true.
+        // core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
+        // std::vector<uint8_t> pixel_buffer{};
+        // const auto image = core::Image::loadFromRawBuffer(image_name, buffer_data, pixel_buffer);
+        // if (!image.isValid())
+        // {
+        //     core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load image from buffer: " + std::to_string(image_index));
+        //     return false;
+        // }
+        // m_images.insert(std::make_pair(image_index, image));
+        // m_image_buffers.insert(std::make_pair(image_index, std::move(pixel_buffer)));
     }
     else
     {
@@ -378,19 +478,21 @@ bool GLTFLoader::loadImage(const uint32_t image_index, const bool read_pixels)
         {
             image_uri = (core::Filepath{m_base_path} / core::Filepath{image_info.uri.value()}).string();
         }
-        m_images.insert(std::make_pair(image_index, core::Image{image_name, image_uri}));
+        m_images.insert(std::make_pair(image_index, image_uri));
 
-        if (read_pixels)
-        {
-            core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
-            m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
-            m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
-        }
+        // m_images.insert(std::make_pair(image_index, core::Image{image_name, image_uri}));
+
+        // if (read_pixels)
+        // {
+        //     core::Logger::info(LOG_CHANNEL_GLTF, "Loading image buffer: " + std::to_string(image_index));
+        //     m_image_buffers.insert(std::make_pair(image_index, std::vector<uint8_t>{}));
+        //     m_images.at(image_index).readPixels(m_image_buffers.at(image_index));
+        // }
     }
     return true;
 }
 
-GLTFLoader::GLTFLoader(std::string path, const bool load_buffers, const bool load_images)
+GLTFLoader::GLTFLoader(std::string path, const bool load_buffers)
     : m_path{std::move(path)}, m_base_path{core::Filepath{m_path}.parent_path().string()}
 {
     using namespace core;
@@ -441,7 +543,7 @@ GLTFLoader::GLTFLoader(std::string path, const bool load_buffers, const bool loa
 
     for (uint32_t i = 0; i < m_document.images.size(); ++i)
     {
-        loadImage(i, load_images);
+        loadImage(i);
     }
 }
 
@@ -469,29 +571,29 @@ std::span<const uint8_t> GLTFLoader::getBuffer(const uint32_t buffer_index)
     return {};
 }
 
-std::span<const uint8_t> GLTFLoader::getImageBuffer(const uint32_t image_index)
-{
-    if (m_document.images.empty())
-    {
-        core::Logger::error(LOG_CHANNEL_GLTF, "No images found in the GLTF document");
-        return {};
-    }
-
-    // If the image buffer is preloaded, return it as is.
-    if (m_image_buffers.contains(image_index))
-    {
-        return m_image_buffers.at(image_index);
-    }
-
-    // If the image buffer exists in the document, load it and then return it.
-    if (loadImage(image_index, true))
-    {
-        return m_image_buffers.at(image_index);
-    }
-
-    // No such image exists.
-    return {};
-}
+// std::span<const uint8_t> GLTFLoader::getImageBuffer(const uint32_t image_index)
+// {
+//     if (m_document.images.empty())
+//     {
+//         core::Logger::error(LOG_CHANNEL_GLTF, "No images found in the GLTF document");
+//         return {};
+//     }
+//
+//     // If the image buffer is preloaded, return it as is.
+//     if (m_image_buffers.contains(image_index))
+//     {
+//         return m_image_buffers.at(image_index);
+//     }
+//
+//     // If the image buffer exists in the document, load it and then return it.
+//     if (loadImage(image_index, true))
+//     {
+//         return m_image_buffers.at(image_index);
+//     }
+//
+//     // No such image exists.
+//     return {};
+// }
 
 bool GLTFLoader::loadBufferViewData(const GLTFBufferView &view, uint8_t *out_data)
 {

@@ -4,7 +4,9 @@
 #ifndef KIRANA_SCENE_SCENE_HPP
 #define KIRANA_SCENE_SCENE_HPP
 
-
+#include "image.hpp"
+#include "texture.hpp"
+#include "material.hpp"
 #include "node.hpp"
 #include "camera.hpp"
 #include "mesh.hpp"
@@ -27,11 +29,11 @@ public:
     Scene() = default;
     ~Scene() = default;
 
-    explicit Scene(const std::string &name) : m_name{name}
+    explicit Scene(std::string name) : m_name{std::move(name)}
     {
     }
 
-    const std::string &getName() const
+    [[nodiscard]] const std::string &getName() const
     {
         return m_name;
     }
@@ -256,6 +258,10 @@ private:
 
     IndexBuffer m_index_buffer{};
     VertexBuffer m_vertex_buffer{};
+
+    core::ResourceManager<Image, ImageTag> m_images;
+    core::ResourceManager<Texture, TextureTag> m_textures;
+    core::ResourceManager<MaterialPBR, MaterialTag> m_materials;
 
     core::ResourceManager<Node, NodeTag> m_nodes;
     core::ResourceManager<HierarchyTransform, HierarchyTransformTag> m_transforms;

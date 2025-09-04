@@ -270,7 +270,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
 
 inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
 {
-    auto loader = GLTFLoader(info.path, true, false);
+    auto loader = GLTFLoader(info.path, true);
     if (!loader.isValid())
     {
         return false;

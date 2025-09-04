@@ -4,8 +4,6 @@
 #ifndef KIRANA_SCENE_GLTF_HPP
 #define KIRANA_SCENE_GLTF_HPP
 
-#include <image.hpp>
-
 #include <glaze/glaze.hpp>
 
 #include <span>
@@ -369,12 +367,24 @@ struct GLTFTexture
     std::optional<std::string> name{};
 };
 
+struct GLTFTextureTransform
+{
+    std::array<float, 2> offset{0.0f, 0.0f};
+    std::array<float, 2> scale{1.0f, 1.0f};
+    float rotation{0.0f};
+    std::optional<uint8_t> tex_coord{};
+};
+
 struct GLTFTextureInfo
 {
     /// Index into the texture array.
     uint32_t index{}; // required
     /// Index of Texture (UV) coordinates. (TEX_COORD0, TEX_COORD1, etc.)
     uint8_t tex_coord{0};
+    std::optional<GLTFTextureTransform> transform{};
+
+    void setExtensions(const std::optional<glz::json_t> &extensions);
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 };
 
 struct GLTFTextureInfoNormal
@@ -382,6 +392,10 @@ struct GLTFTextureInfoNormal
     uint32_t index{}; // required
     uint8_t tex_coord{0};
     float scale{1.0f};
+    std::optional<GLTFTextureTransform> transform{};
+
+    void setExtensions(const std::optional<glz::json_t> &extensions);
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 };
 
 struct GLTFTextureInfoOcclusion
@@ -389,6 +403,10 @@ struct GLTFTextureInfoOcclusion
     uint32_t index{}; // required
     uint8_t tex_coord{0};
     float strength{1.0f};
+    std::optional<GLTFTextureTransform> transform{};
+
+    void setExtensions(const std::optional<glz::json_t> &extensions);
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 };
 
 struct GLTFMaterialPBRMetallicRoughness
@@ -853,7 +871,7 @@ public:
      * @param path Path to the GLTF / GLB file.
      * @param load_buffers If true, the external binary buffers (.bin) files are loaded into the memory.
      */
-    explicit GLTFLoader(std::string path, bool load_buffers = false, bool load_images = false);
+    explicit GLTFLoader(std::string path, bool load_buffers = false);
 
     [[nodiscard]] bool isValid() const
     {
@@ -872,9 +890,7 @@ public:
 
     [[nodiscard]] std::span<const uint8_t> getBuffer(uint32_t buffer_index = 0);
 
-    [[nodiscard]] std::span<const uint8_t> getImageBuffer(uint32_t image_index);
-
-    [[nodiscard]] const core::Image &getImage(const uint32_t image_index) const
+    [[nodiscard]] const std::variant<std::string, std::vector<uint8_t>> &getImage(const uint32_t image_index) const
     {
         return m_images.at(image_index);
     }
@@ -889,14 +905,13 @@ private:
     std::vector<uint8_t> m_buffer{};
     std::unordered_map<uint32_t, std::span<const uint8_t>> m_buffer_views{};
 
-    std::unordered_map<uint32_t, std::vector<uint8_t>> m_image_buffers{};
-    std::unordered_map<uint32_t, core::Image> m_images{};
+    std::unordered_map<uint32_t, std::variant<std::string, std::vector<uint8_t>>> m_images{};
 
     GLTFDocument m_document{};
     GLTFBinaryDocument m_binary_doc{};
 
     bool loadBuffer(uint32_t buffer_index);
-    bool loadImage(uint32_t image_index, bool read_pixels);
+    bool loadImage(uint32_t image_index);
 };
 #pragma endregion
 }
@@ -1095,12 +1110,25 @@ struct glz::meta<kirana::scene::GLTFTexture>
 };
 
 template <>
+struct glz::meta<kirana::scene::GLTFTextureTransform>
+{
+    using T = kirana::scene::GLTFTextureTransform;
+    static constexpr auto value = object(
+        "offset", &T::offset,
+        "rotation", &T::rotation,
+        "scale", &T::scale,
+        "texCoord", &T::tex_coord
+        );
+};
+
+template <>
 struct glz::meta<kirana::scene::GLTFTextureInfo>
 {
     using T = kirana::scene::GLTFTextureInfo;
     static constexpr auto value = object(
         "index", &T::index,
-        "texCoord", &T::tex_coord
+        "texCoord", &T::tex_coord,
+        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
         );
 };
 
@@ -1111,7 +1139,8 @@ struct glz::meta<kirana::scene::GLTFTextureInfoNormal>
     static constexpr auto value = object(
         "index", &T::index,
         "texCoord", &T::tex_coord,
-        "scale", &T::scale
+        "scale", &T::scale,
+        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
         );
 };
 
@@ -1122,7 +1151,8 @@ struct glz::meta<kirana::scene::GLTFTextureInfoOcclusion>
     static constexpr auto value = object(
         "index", &T::index,
         "texCoord", &T::tex_coord,
-        "strength", &T::strength
+        "strength", &T::strength,
+        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
         );
 };
 

@@ -1,22 +1,22 @@
 // Copyright 2025 Suraj Shettigar
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KIRANA_CORE_IMAGE_HPP
-#define KIRANA_CORE_IMAGE_HPP
+#ifndef KIRANA_SCENE_IMAGE_HPP
+#define KIRANA_SCENE_IMAGE_HPP
 
 #include <string>
 #include <vector>
 
-namespace kirana::core
+#include <resource_manager.hpp>
+
+namespace kirana::scene
 {
-class Image
+class Image final: public core::IResource
 {
 public:
     static Image loadFromRawBuffer(const std::string &name, const std::vector<uint8_t> &buffer, std::vector<uint8_t> &out_pixels);
 
     Image() = default;
-    ~Image() = default;
-
     /**
      * Loads image information. In the case of data uri, pixel buffer will be populated and `read_buffer` is ignored.
      * @param name Name of the image file.
@@ -65,4 +65,4 @@ private:
 };
 }
 
-#endif //KIRANA_CORE_IMAGE_HPP
+#endif //KIRANA_SCENE_IMAGE_HPP
