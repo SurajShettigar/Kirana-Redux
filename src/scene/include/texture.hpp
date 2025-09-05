@@ -47,6 +47,21 @@ struct Texture final : core::IResource
     ImageHandle image{};
     TextureSampler sampler{};
     TextureTransform transform{};
+    uint32_t tex_coord{0u};
+
+    Texture() = default;
+
+    explicit Texture(const ImageHandle image, const TextureSampler &sampler, const TextureTransform &transform,
+                     const uint32_t tex_coord)
+        : IResource{}, image{image}, sampler{sampler}, transform{transform}, tex_coord{tex_coord}
+    {
+
+    }
+
+    [[nodiscard]] bool isValid() const
+    {
+        return image.isValid();
+    }
 };
 }
 

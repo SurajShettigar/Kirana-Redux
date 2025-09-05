@@ -30,17 +30,405 @@ inline SceneFileFormat getSceneFileFormat(const core::Filepath &filepath, std::s
     return SceneFileFormat::UNKNOWN;
 }
 
+inline std::unordered_map<uint32_t, ImageHandle> loadGLTFImages(const GLTFLoader &loader, Scene *out_scene)
+{
+    const auto &doc = loader.getDocument();
+
+    std::unordered_map<uint32_t, ImageHandle> images{};
+    for (uint32_t i_index = 0; i_index < doc.images.size(); ++i_index)
+    {
+        const auto &gltf_image = doc.images[i_index];
+        if (!gltf_image.isValid())
+        {
+            continue;
+        }
+
+        std::string image_name{gltf_image.name.value_or("")};
+        ImageHandle img_handle{};
+        // Image can either be a path, data uri or an embedded buffer. We call the appropriate function to add the
+        // image based on what's returned by the GLTF loader.
+        if (const auto &img_path_buffer = loader.getImage(i_index); img_path_buffer.index() == 0)
+        {
+            img_handle = out_scene->addImage(image_name, std::get<std::string>(img_path_buffer));
+        }
+        else
+        {
+            image_name = image_name.empty() ? "Image_Embedded_" + std::to_string(i_index) : image_name;
+            if (const auto mime_type = gltf_image.mime_type.value_or(GLTFImageMimeType::PNG);
+                mime_type == GLTFImageMimeType::PNG)
+            {
+                image_name += ".png";
+            }
+            else if (mime_type == GLTFImageMimeType::JPEG)
+            {
+                image_name += ".jpg";
+            }
+            img_handle = out_scene->addImage(image_name, std::get<std::vector<uint8_t>>(img_path_buffer));
+        }
+        images.insert_or_assign(i_index, img_handle);
+    }
+    return images;
+}
+
+inline std::vector<TextureSampler> loadGLTFTextureSamplers(const GLTFDocument &doc)
+{
+    std::vector<TextureSampler> samplers{};
+    samplers.reserve(doc.samplers.size());
+    const auto get_filter_mode = [](const GLTFFilter &filter) {
+        switch (filter)
+        {
+        case GLTFFilter::NEAREST:
+        case GLTFFilter::NEAREST_MIPMAP_LINEAR:
+        case GLTFFilter::NEAREST_MIPMAP_NEAREST:
+            return TextureFilterMode::NEAREST;
+        case GLTFFilter::LINEAR:
+        case GLTFFilter::LINEAR_MIPMAP_LINEAR:
+        case GLTFFilter::LINEAR_MIPMAP_NEAREST:
+            return TextureFilterMode::LINEAR;
+        default:
+            return TextureFilterMode::NEAREST;
+        }
+    };
+    const auto get_mip_map_mode = [](const GLTFFilter &filter) {
+        switch (filter)
+        {
+        case GLTFFilter::NEAREST_MIPMAP_NEAREST:
+        case GLTFFilter::LINEAR_MIPMAP_NEAREST:
+            return TextureFilterMode::NEAREST;
+        case GLTFFilter::NEAREST_MIPMAP_LINEAR:
+        case GLTFFilter::LINEAR_MIPMAP_LINEAR:
+            return TextureFilterMode::LINEAR;
+        default:
+            return TextureFilterMode::NEAREST;
+        }
+    };
+    const auto get_wrap_mode = [](const GLTFWrapMode &wrap) {
+        switch (wrap)
+        {
+        case GLTFWrapMode::REPEAT:
+            return TextureWrapMode::REPEAT;
+        case GLTFWrapMode::CLAMP_TO_EDGE:
+            return TextureWrapMode::CLAMP_TO_EDGE;
+        case GLTFWrapMode::MIRRORED_REPEAT:
+            return TextureWrapMode::MIRRORED_REPEAT;
+        default:
+            return TextureWrapMode::REPEAT;
+        }
+    };
+    for (const auto &gltf_sampler : doc.samplers)
+    {
+        samplers.emplace_back(get_filter_mode(gltf_sampler.mag_filter.value_or(GLTFFilter::NEAREST)),
+                              get_filter_mode(gltf_sampler.min_filter.value_or(GLTFFilter::NEAREST)),
+                              get_mip_map_mode(gltf_sampler.min_filter.value_or(GLTFFilter::NEAREST)),
+                              get_wrap_mode(gltf_sampler.wrap_s),
+                              get_wrap_mode(gltf_sampler.wrap_t));
+    }
+    return samplers;
+}
+
+inline std::unordered_map<uint32_t, TextureHandle> loadGLTFTextures(const GLTFDocument &doc,
+                                                                    const std::unordered_map<uint32_t, ImageHandle> &
+                                                                    images,
+                                                                    const std::vector<TextureSampler> &samplers,
+                                                                    Scene *out_scene)
+{
+    std::unordered_map<uint32_t, TextureHandle> textures{};
+    for (uint32_t t_index = 0; t_index < doc.textures.size(); ++t_index)
+    {
+        const auto &gltf_texture = doc.textures[t_index];
+        std::string tex_name{gltf_texture.name.value_or("")};
+
+        const auto image = gltf_texture.source ? images.at(gltf_texture.source.value()) : ImageHandle{};
+        const auto sampler = gltf_texture.sampler ? samplers.at(gltf_texture.sampler.value()) : TextureSampler{};
+
+        textures.insert_or_assign(t_index, out_scene->addTexture(tex_name, image, sampler));
+    }
+    return textures;
+}
+
+inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTFDocument &doc,
+                                                                      const std::unordered_map<uint32_t, TextureHandle>
+                                                                      &textures, Scene *out_scene)
+{
+    std::unordered_map<uint32_t, MaterialHandle> materials{};
+
+    const auto getAlphaMode = [](const GLTFAlphaMode &alpha_mode) {
+        switch (alpha_mode)
+        {
+        case GLTFAlphaMode::OPAQUE:
+            return AlphaMode::OPAQUE;
+        case GLTFAlphaMode::MASK:
+            return AlphaMode::MASK;
+        case GLTFAlphaMode::BLEND:
+            return AlphaMode::BLEND;
+        default:
+            return AlphaMode::OPAQUE;
+        }
+    };
+    const auto getTextureHandle = [&](const std::variant<std::optional<GLTFTextureInfo>,
+                                                         std::optional<GLTFTextureInfoNormal>,
+                                                         std::optional<GLTFTextureInfoOcclusion>> &tex_info) {
+        if (tex_info.index() == 0)
+        {
+            const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info);
+            return info ? textures.at(info.value().index) : TextureHandle{};
+        }
+        if (tex_info.index() == 1)
+        {
+            const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info);
+            return info ? textures.at(info.value().index) : TextureHandle{};
+        }
+        const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info);
+        return info ? textures.at(info.value().index) : TextureHandle{};
+    };
+    const auto updateTexture = [&](const std::variant<std::optional<GLTFTextureInfo>,
+                                                      std::optional<GLTFTextureInfoNormal>,
+                                                      std::optional<GLTFTextureInfoOcclusion>> &tex_info,
+                                   const TextureHandle &handle) {
+        uint32_t tex_coord = 0u;
+        GLTFTextureTransform transform{};
+        if (tex_info.index() == 0)
+        {
+            if (const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info); info)
+            {
+                tex_coord = info.value().tex_coord;
+                if (info.value().transform)
+                {
+                    transform = info.value().transform.value();
+                }
+            }
+        }
+        else if (tex_info.index() == 1)
+        {
+            if (const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info); info)
+            {
+                tex_coord = info.value().tex_coord;
+                if (info.value().transform)
+                {
+                    transform = info.value().transform.value();
+                }
+            }
+        }
+        else
+        {
+            if (const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info); info)
+            {
+                tex_coord = info.value().tex_coord;
+                if (info.value().transform)
+                {
+                    transform = info.value().transform.value();
+                }
+            }
+        }
+        if (const auto texture = out_scene->getTexture(handle); texture)
+        {
+            texture->tex_coord = tex_coord;
+            texture->transform = TextureTransform{transform.offset, transform.scale, transform.rotation};
+        }
+    };
+
+    for (uint32_t m_index = 0; m_index < doc.materials.size(); ++m_index)
+    {
+        const auto &gltf_material = doc.materials[m_index];
+        std::string mat_name{gltf_material.name.value_or("")};
+
+        MaterialPBR material{};
+        material.alpha_mode = getAlphaMode(gltf_material.alpha_mode);
+        material.alpha_cutoff = gltf_material.alpha_cutoff;
+        material.double_sided = gltf_material.double_sided;
+
+        if (gltf_material.pbr_metallic_roughness)
+        {
+            const auto &pbr = gltf_material.pbr_metallic_roughness.value();
+            material.base_color = pbr.base_color_factor;
+            material.metallic_factor = pbr.metallic_factor;
+            material.roughness_factor = pbr.roughness_factor;
+            if (const auto tex_handle = getTextureHandle(pbr.base_color_texture); tex_handle.isValid())
+            {
+                material.texture_base_color = tex_handle;
+                updateTexture(pbr.base_color_texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(pbr.metallic_roughness_texture); tex_handle.isValid())
+            {
+                material.texture_metallic_roughness = tex_handle;
+                updateTexture(pbr.metallic_roughness_texture, tex_handle);
+            }
+        }
+
+        if (const auto tex_handle = getTextureHandle(gltf_material.normal_texture); tex_handle.isValid())
+        {
+            material.normal_scale = gltf_material.normal_texture.value().scale;
+            material.texture_normal = tex_handle;
+            updateTexture(gltf_material.normal_texture, tex_handle);
+        }
+        if (const auto tex_handle = getTextureHandle(gltf_material.occlusion_texture); tex_handle.isValid())
+        {
+            material.occlusion_strength = gltf_material.occlusion_texture.value().strength;
+            material.texture_occlusion = tex_handle;
+            updateTexture(gltf_material.occlusion_texture, tex_handle);
+        }
+
+        material.emissive_color = gltf_material.emissive_factor;
+        if (gltf_material.emissive_strength)
+        {
+            material.emissive_strength = gltf_material.emissive_strength.value().strength;
+        }
+        if (const auto tex_handle = getTextureHandle(gltf_material.emissive_texture); tex_handle.isValid())
+        {
+            material.texture_emissive = tex_handle;
+            updateTexture(gltf_material.emissive_texture, tex_handle);
+        }
+
+        if (gltf_material.specular)
+        {
+            const auto &spec = gltf_material.specular.value();
+            material.specular_color = spec.color_factor;
+            material.specular_factor = spec.factor;
+            if (const auto tex_handle = getTextureHandle(spec.texture); tex_handle.isValid())
+            {
+                material.texture_specular = tex_handle;
+                updateTexture(spec.texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(spec.color_texture); tex_handle.isValid())
+            {
+                material.texture_specular_color = tex_handle;
+                updateTexture(spec.color_texture, tex_handle);
+            }
+        }
+
+        if (gltf_material.anisotropy)
+        {
+            const auto &aniso = gltf_material.anisotropy.value();
+            material.anisotropy_strength = aniso.strength;
+            material.anisotropy_rotation = aniso.rotation;
+            if (const auto tex_handle = getTextureHandle(aniso.texture); tex_handle.isValid())
+            {
+                material.texture_anisotropy = tex_handle;
+                updateTexture(aniso.texture, tex_handle);
+            }
+        }
+
+        if (gltf_material.diffuse_transmission)
+        {
+            const auto &diff = gltf_material.diffuse_transmission.value();
+            material.diffuse_transmission_color = diff.color_factor;
+            material.diffuse_transmission_factor = diff.factor;
+            if (const auto tex_handle = getTextureHandle(diff.texture); tex_handle.isValid())
+            {
+                material.texture_diffuse_transmission = tex_handle;
+                updateTexture(diff.texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(diff.color_texture); tex_handle.isValid())
+            {
+                material.texture_diffuse_transmission_color = tex_handle;
+                updateTexture(diff.color_texture, tex_handle);
+            }
+        }
+        if (gltf_material.transmission)
+        {
+            const auto &trans = gltf_material.transmission.value();
+            material.transmission_factor = trans.factor;
+            if (const auto tex_handle = getTextureHandle(trans.texture); tex_handle.isValid())
+            {
+                material.texture_transmission = tex_handle;
+                updateTexture(trans.texture, tex_handle);
+            }
+        }
+        if (gltf_material.ior)
+        {
+            material.ior = gltf_material.ior.value().ior;
+        }
+        if (gltf_material.dispersion)
+        {
+            material.dispersion_factor = gltf_material.dispersion.value().dispersion;
+        }
+        if (gltf_material.volume)
+        {
+            const auto &vol = gltf_material.volume.value();
+            material.volume_attenuation_color = vol.attenuation_color;
+            material.volume_thickness_factor = vol.thickness_factor;
+            material.volume_attenuation_distance = vol.attenuation_distance;
+            if (const auto tex_handle = getTextureHandle(vol.thickness_texture); tex_handle.isValid())
+            {
+                material.texture_volume_thickness = tex_handle;
+                updateTexture(vol.thickness_texture, tex_handle);
+            }
+        }
+
+        if (gltf_material.iridescence)
+        {
+            const auto &ir = gltf_material.iridescence.value();
+            material.iridescence_factor = ir.factor;
+            material.ior = ir.ior;
+            material.iridescence_thickness_min = ir.thickness_min;
+            material.iridescence_thickness_max = ir.thickness_max;
+            if (const auto tex_handle = getTextureHandle(ir.texture); tex_handle.isValid())
+            {
+                material.texture_iridescence = tex_handle;
+                updateTexture(ir.texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(ir.thickness_texture); tex_handle.isValid())
+            {
+                material.texture_iridescence_thickness = tex_handle;
+                updateTexture(ir.thickness_texture, tex_handle);
+            }
+        }
+
+        if (gltf_material.clearcoat)
+        {
+            const auto &cc = gltf_material.clearcoat.value();
+            material.clearcoat_factor = cc.factor;
+            material.clearcoat_roughness_factor = cc.roughness_factor;
+            if (const auto tex_handle = getTextureHandle(cc.texture); tex_handle.isValid())
+            {
+                material.texture_clearcoat = tex_handle;
+                updateTexture(cc.texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(cc.roughness_texture); tex_handle.isValid())
+            {
+                material.texture_clearcoat_roughness = tex_handle;
+                updateTexture(cc.roughness_texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(cc.normal_texture); tex_handle.isValid())
+            {
+                material.texture_clearcoat_normal = tex_handle;
+                updateTexture(cc.normal_texture, tex_handle);
+            }
+        }
+
+        if (gltf_material.sheen)
+        {
+            const auto &sheen = gltf_material.sheen.value();
+            material.sheen_color = sheen.color_factor;
+            material.sheen_roughness_factor = sheen.roughness_factor;
+            if (const auto tex_handle = getTextureHandle(sheen.color_texture); tex_handle.isValid())
+            {
+                material.texture_sheen_color = tex_handle;
+                updateTexture(sheen.color_texture, tex_handle);
+            }
+            if (const auto tex_handle = getTextureHandle(sheen.roughness_texture); tex_handle.isValid())
+            {
+                material.texture_sheen_roughness = tex_handle;
+                updateTexture(sheen.roughness_texture, tex_handle);
+            }
+        }
+
+        materials.insert_or_assign(m_index, out_scene->addMaterial(mat_name, material));
+    }
+    return materials;
+}
+
 inline std::unordered_map<uint32_t, CameraHandle> loadGLTFCameras(const GLTFDocument &doc, Scene *out_scene)
 {
     std::unordered_map<uint32_t, CameraHandle> cameras{};
     for (uint32_t c_index = 0; c_index < doc.cameras.size(); ++c_index)
     {
         const auto &cam = doc.cameras[c_index];
-        std::string cam_name{cam.name.value_or("")};
         if (!cam.isValid())
         {
             continue;
         }
+        std::string cam_name{cam.name.value_or("")};
         if (cam.type == GLTFCameraType::PERSPECTIVE)
         {
             const auto &p_cam = cam.perspective.value();
@@ -61,7 +449,8 @@ inline std::unordered_map<uint32_t, CameraHandle> loadGLTFCameras(const GLTFDocu
     return cameras;
 }
 
-inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTFLoader &loader, Scene *out_scene)
+inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
+    GLTFLoader &loader, const std::unordered_map<uint32_t, MaterialHandle> &materials, Scene *out_scene)
 {
     const auto &doc = loader.getDocument();
 
@@ -199,7 +588,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(GLTF
                     vertex_buffer.setColors(colors);
                 }
             }
-            mesh_handles.emplace_back(out_scene->addMesh(mesh_name, index_buffer, vertex_buffer));
+            const auto material = prim.material ? materials.at(prim.material.value()) : MaterialHandle{};
+            mesh_handles.emplace_back(out_scene->addMesh(mesh_name, index_buffer, vertex_buffer, material));
         }
         meshes.insert_or_assign(m_index, std::move(mesh_handles));
     }
@@ -277,8 +667,12 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
     }
     const auto &doc = loader.getDocument();
 
+    const auto &images = loadGLTFImages(loader, out_scene);
+    const auto &samplers = loadGLTFTextureSamplers(doc);
+    const auto &textures = loadGLTFTextures(doc, images, samplers, out_scene);
+    const auto &materials = loadGLTFMaterials(doc, textures, out_scene);
     const auto &cameras = loadGLTFCameras(doc, out_scene);
-    const auto &meshes = loadGLTFMeshes(loader, out_scene);
+    const auto &meshes = loadGLTFMeshes(loader, materials, out_scene);
     if (!doc.scenes.empty())
     {
         // TODO: Add option to load multiple GLTF scenes.

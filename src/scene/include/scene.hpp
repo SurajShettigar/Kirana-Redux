@@ -43,6 +43,14 @@ public:
         m_name = name;
     }
 
+    ImageHandle addImage(const std::string &name, const std::string &path);
+    ImageHandle addImage(const std::string &name, const std::vector<uint8_t> &raw_buffer);
+
+    TextureHandle addTexture(const std::string &name, ImageHandle image, const TextureSampler &sampler = {},
+                             const TextureTransform &transform = {}, uint32_t tex_coord = 0u);
+
+    MaterialHandle addMaterial(const std::string &name, const MaterialPBR &material);
+
     CameraHandle addPerspectiveCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                       float fov_vertical, float aspect_ratio = 1.0f);
     CameraHandle addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes, float size,
@@ -51,7 +59,7 @@ public:
                                        const std::array<float, 2> &size_2d);
 
     MeshHandle addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
-                       const std::optional<MaterialHandle> &material = std::nullopt);
+                       MaterialHandle material);
 
     NodeHandle addNode(const std::string &name, NodeFlags flags, const Transform &transform,
                        const std::optional<std::variant<CameraHandle, LightHandle, MeshHandle>> &resource =
@@ -99,8 +107,8 @@ public:
     }
 
     NodeHandle addMeshNode(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
-                           const std::optional<MaterialHandle> &material = std::nullopt,
-                           const NodeFlags flags = NodeFlags::NONE, const Transform &transform = Transform{},
+                           const MaterialHandle material, const NodeFlags flags = NodeFlags::NONE,
+                           const Transform &transform = Transform{},
                            const std::optional<NodeHandle> &parent = std::nullopt)
     {
         if (const auto mesh_handle = addMesh(name, index_buffer, vertex_buffer, material); mesh_handle.isValid())
@@ -108,6 +116,16 @@ public:
             return addNode(name, flags, transform, mesh_handle, parent);
         }
         return NodeHandle{};
+    }
+
+    [[nodiscard]] const Texture *getTexture(const TextureHandle handle) const
+    {
+        return m_textures.get(handle);
+    }
+
+    [[nodiscard]] Texture *getTexture(const TextureHandle handle)
+    {
+        return m_textures.get(handle);
     }
 
     [[nodiscard]] std::string getCameraName(const CameraHandle handle) const
@@ -260,8 +278,11 @@ private:
     VertexBuffer m_vertex_buffer{};
 
     core::ResourceManager<Image, ImageTag> m_images;
+    std::unordered_map<ImageHandle, std::string> m_image_names;
     core::ResourceManager<Texture, TextureTag> m_textures;
+    std::unordered_map<TextureHandle, std::string> m_texture_names;
     core::ResourceManager<MaterialPBR, MaterialTag> m_materials;
+    std::unordered_map<MaterialHandle, std::string> m_material_names;
 
     core::ResourceManager<Node, NodeTag> m_nodes;
     core::ResourceManager<HierarchyTransform, HierarchyTransformTag> m_transforms;
@@ -277,6 +298,7 @@ private:
     CameraHandle m_active_camera{};
     NodeHandle m_active_camera_node{};
 
+    ImageHandle addImage(const std::string &name, const Image &image);
     CameraHandle addCamera(const std::string &name, const Camera &camera);
 };
 }

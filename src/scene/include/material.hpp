@@ -84,6 +84,8 @@ struct MaterialPBR: core::IResource
     TextureHandle texture_transmission{};
     /// G - Volume thickness factor.
     TextureHandle texture_volume_thickness{};
+
+    MaterialPBR() = default;
 };
 }
 

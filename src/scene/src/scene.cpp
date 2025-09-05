@@ -9,6 +9,56 @@
 
 namespace kirana::scene
 {
+ImageHandle Scene::addImage(const std::string &name, const Image &image)
+{
+    const auto handle = m_images.add(image);
+    if (!handle.isValid())
+    {
+        return handle;
+    }
+    m_image_names.insert_or_assign(handle, name.empty()
+                                               ? DEFAULT_NAME_IMAGE + "_" + std::to_string(handle.getIndex())
+                                               : name);
+    return handle;
+}
+
+ImageHandle Scene::addImage(const std::string &name, const std::string &path)
+{
+    return addImage(name, Image{path});
+}
+
+ImageHandle Scene::addImage(const std::string &name, const std::vector<uint8_t> &raw_buffer)
+{
+    return addImage(name, Image::loadFromRawBuffer(name, raw_buffer));
+}
+
+TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image, const TextureSampler &sampler,
+                                const TextureTransform &transform, const uint32_t tex_coord)
+{
+    const auto handle = m_textures.add(Texture{image, sampler, transform, tex_coord});
+    if (!handle.isValid())
+    {
+        return handle;
+    }
+    m_texture_names.insert_or_assign(handle, name.empty()
+                                                 ? DEFAULT_NAME_TEXTURE + "_" + std::to_string(handle.getIndex())
+                                                 : name);
+    return handle;
+}
+
+MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &material)
+{
+    const auto handle = m_materials.add(material);
+    if (!handle.isValid())
+    {
+        return handle;
+    }
+    m_material_names.insert_or_assign(handle, name.empty()
+                                                  ? DEFAULT_NAME_MATERIAL + "_" + std::to_string(handle.getIndex())
+                                                  : name);
+    return handle;
+}
+
 NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const Transform &transform,
                           const std::optional<std::variant<CameraHandle, LightHandle, MeshHandle>> &resource,
                           const std::optional<NodeHandle> &parent)
@@ -112,7 +162,7 @@ CameraHandle Scene::addOrthographicCamera(const std::string &name, const std::ar
 
 
 MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
-                          const std::optional<MaterialHandle> &material)
+                          const MaterialHandle material)
 {
     if (vertex_buffer.isEmpty())
     {
@@ -148,10 +198,7 @@ MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buff
 
     const VertexBufferRange vertices = m_vertex_buffer.extend(vertex_buffer);
 
-    // TODO: Add default material support.
-    const MaterialHandle mat_handle = material ? material.value() : MaterialHandle{};
-
-    const MeshHandle handle = m_meshes.add(Mesh{indices, vertices, mat_handle});
+    const MeshHandle handle = m_meshes.add(Mesh{indices, vertices, material});
     if (!handle.isValid())
     {
         return handle;
