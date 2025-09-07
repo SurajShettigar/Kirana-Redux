@@ -19,6 +19,7 @@ const std::string DEFAULT_NAME_IMAGE{"Image"};
 const std::string DEFAULT_NAME_TEXTURE{"Texture"};
 const std::string DEFAULT_NAME_NODE{"Node"};
 const std::string DEFAULT_NAME_CAMERA{"Camera"};
+const std::string DEFAULT_NAME_LIGHT{"Light"};
 const std::string DEFAULT_NAME_MESH{"Mesh"};
 const std::string DEFAULT_NAME_MATERIAL{"Material"};
 
@@ -65,7 +66,7 @@ struct CameraTag
 {
 };
 
-struct LightTag
+struct PunctualLightTag
 {
 };
 
@@ -82,7 +83,7 @@ using TextureHandle = core::Handle<TextureTag>;
 using NodeHandle = core::Handle<NodeTag>;
 using HierarchyTransformHandle = core::Handle<HierarchyTransformTag>;
 using CameraHandle = core::Handle<CameraTag>;
-using LightHandle = core::Handle<LightTag>;
+using PunctualLightHandle = core::Handle<PunctualLightTag>;
 using MaterialHandle = core::Handle<MaterialTag>;
 using MeshHandle = core::Handle<MeshTag>;
 }

@@ -158,7 +158,7 @@ enum class GLTFWrapMode : uint32_t
     REPEAT = 10497
 };
 
-enum class GLTFCameraType
+enum class GLTFCameraType: uint32_t
 {
     PERSPECTIVE = 0u,
     ORTHOGRAPHIC = 1u
@@ -171,6 +171,12 @@ enum class GLTFAlphaMode: uint32_t
     BLEND = 2u,
 };
 
+enum class GLTFPunctualLightType: uint32_t
+{
+    DIRECTIONAL = 0u,
+    POINT = 1u,
+    SPOT = 2u,
+};
 
 enum class GLTFAnimationPath: uint32_t
 {
@@ -668,12 +674,29 @@ struct GLTFCamera
     }
 };
 
+struct GLTFSpotLight
+{
+    GLTF_FLOAT cone_angle_inner{0.0f};
+    GLTF_FLOAT cone_angle_outer{0.78539816339f};
+};
+
+struct GLTFPunctualLight
+{
+    GLTFPunctualLightType type{}; // required
+    GLTF_VEC_3 color{1.0f, 1.0f, 1.0f};
+    float intensity{1.0f};
+    std::optional<float> range{};
+    std::optional<GLTFSpotLight> spot{};
+    std::optional<std::string> name{};
+};
+
 struct GLTFNode
 {
     std::optional<uint32_t> camera{};
     std::vector<uint32_t> children{};
     std::optional<uint32_t> skin{};
     std::optional<uint32_t> mesh{};
+    std::optional<uint32_t> light{};
 
     /// Column-Major local transformation matrix.
     std::optional<GLTF_MAT_4> matrix{};
@@ -684,6 +707,9 @@ struct GLTFNode
     /// Per mesh instance morph-target weights.
     std::vector<float> weights{};
     std::optional<std::string> name{};
+
+    void setExtensions(const std::optional<glz::json_t> &extensions);
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 
     [[nodiscard]] bool isValid() const
     {
@@ -775,6 +801,10 @@ struct GLTFDocument
     std::vector<GLTFScene> scenes{};
     std::vector<GLTFSkin> skins{};
     std::vector<GLTFTexture> textures{};
+    std::vector<GLTFPunctualLight> lights{};
+
+    void setExtensions(const std::optional<glz::json_t> &extensions);
+    [[nodiscard]] std::optional<glz::json_t> getExtensions() const;
 
     [[nodiscard]] bool isValid() const
     {
@@ -948,6 +978,17 @@ struct glz::meta<kirana::scene::GLTFCameraType>
     static constexpr auto value = glz::enumerate(
         "perspective", PERSPECTIVE,
         "orthographic", ORTHOGRAPHIC
+        );
+};
+
+template <>
+struct glz::meta<kirana::scene::GLTFPunctualLightType>
+{
+    using enum kirana::scene::GLTFPunctualLightType;
+    static constexpr auto value = glz::enumerate(
+        "directional", DIRECTIONAL,
+        "point", POINT,
+        "spot", SPOT
         );
 };
 
@@ -1372,6 +1413,30 @@ struct glz::meta<kirana::scene::GLTFCamera>
 };
 
 template <>
+struct glz::meta<kirana::scene::GLTFSpotLight>
+{
+    using T = kirana::scene::GLTFSpotLight;
+    static constexpr auto value = object(
+        "innerConeAngle", &T::cone_angle_inner,
+        "outerConeAngle", &T::cone_angle_outer
+        );
+};
+
+template <>
+struct glz::meta<kirana::scene::GLTFPunctualLight>
+{
+    using T = kirana::scene::GLTFPunctualLight;
+    static constexpr auto value = object(
+        "type", &T::type,
+        "color", &T::color,
+        "intensity", &T::intensity,
+        "range", &T::range,
+        "spot", &T::spot,
+        "name", &T::name
+        );
+};
+
+template <>
 struct glz::meta<kirana::scene::GLTFNode>
 {
     using T = kirana::scene::GLTFNode;
@@ -1385,7 +1450,8 @@ struct glz::meta<kirana::scene::GLTFNode>
         "scale", &T::scale,
         "translation", &T::translation,
         "weights", &T::weights,
-        "name", &T::name
+        "name", &T::name,
+        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
         );
 };
 
@@ -1474,7 +1540,8 @@ struct glz::meta<kirana::scene::GLTFDocument>
         "scene", &T::scene,
         "scenes", &T::scenes,
         "skins", &T::skins,
-        "textures", &T::textures
+        "textures", &T::textures,
+        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
         );
 };
 #pragma endregion

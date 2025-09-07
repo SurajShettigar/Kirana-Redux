@@ -449,6 +449,45 @@ inline std::unordered_map<uint32_t, CameraHandle> loadGLTFCameras(const GLTFDocu
     return cameras;
 }
 
+inline std::unordered_map<uint32_t, PunctualLightHandle> loadGLTFLights(const GLTFDocument &doc, Scene *out_scene)
+{
+    std::unordered_map<uint32_t, PunctualLightHandle> lights{};
+    for (uint32_t l_index = 0; l_index < doc.lights.size(); ++l_index)
+    {
+        const auto &gltf_light = doc.lights[l_index];
+        std::string light_name{gltf_light.name.value_or("")};
+        if (gltf_light.type == GLTFPunctualLightType::DIRECTIONAL)
+        {
+            lights.insert_or_assign(
+                l_index, out_scene->addDirectionalLight(light_name, gltf_light.color, gltf_light.intensity));
+        }
+        else if (gltf_light.type == GLTFPunctualLightType::POINT)
+        {
+            lights.insert_or_assign(
+                l_index, out_scene->addPointLight(light_name, gltf_light.color, gltf_light.intensity,
+                                                  gltf_light.range.value_or(-1.0f)));
+        }
+        else if (gltf_light.type == GLTFPunctualLightType::SPOT)
+        {
+            if (const auto &spot = gltf_light.spot; spot)
+            {
+
+                lights.insert_or_assign(
+                    l_index, out_scene->addSpotLight(light_name, gltf_light.color, gltf_light.intensity,
+                                                     gltf_light.range.value_or(-1.0f), spot.value().cone_angle_inner,
+                                                     spot.value().cone_angle_outer));
+            }
+            else
+            {
+                lights.insert_or_assign(
+                    l_index, out_scene->addSpotLight(light_name, gltf_light.color, gltf_light.intensity,
+                                                     gltf_light.range.value_or(-1.0f)));
+            }
+        }
+    }
+    return lights;
+}
+
 inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
     GLTFLoader &loader, const std::unordered_map<uint32_t, MaterialHandle> &materials, Scene *out_scene)
 {
@@ -598,6 +637,7 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
 
 void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_indices,
                    const std::unordered_map<uint32_t, CameraHandle> &cameras,
+                   const std::unordered_map<uint32_t, PunctualLightHandle> &lights,
                    const std::unordered_map<uint32_t, std::vector<MeshHandle>> &meshes,
                    const std::optional<NodeHandle> &parent_node, Scene *out_scene)
 {
@@ -608,7 +648,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         std::optional<NodeHandle> current_parent = std::nullopt;
         std::string node_name = node.name.value_or("");
         auto transform = node.matrix
-                             ? Transform{node.matrix.value()}
+                             ? Transform{Matrix4{node.matrix.value()}.transpose()}
                              : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
                                          node.rotation.value_or({0.0f, 0.0f, 0.0f, 1.0f}),
                                          node.scale.value_or({1.0f, 1.0f, 1.0f})};
@@ -617,6 +657,12 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             const auto &camera_handle = cameras.at(node.camera.value());
             node_name = node_name.empty() ? out_scene->getCameraName(camera_handle) : node_name;
             current_parent = out_scene->addNode(node_name, NodeFlags::NONE, transform, camera_handle, parent_node);
+        }
+        else if (node.light && lights.contains(node.light.value()))
+        {
+            const auto &light_handle = lights.at(node.light.value());
+            node_name = node_name.empty() ? out_scene->getPunctualLightName(light_handle) : node_name;
+            current_parent = out_scene->addNode(node_name, NodeFlags::NONE, transform, light_handle, parent_node);
         }
         else if (node.mesh && meshes.contains(node.mesh.value()))
         {
@@ -653,7 +699,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         }
         if (!node.children.empty())
         {
-            loadGLTFNodes(doc, node.children, cameras, meshes, current_parent, out_scene);
+            loadGLTFNodes(doc, node.children, cameras, lights, meshes, current_parent, out_scene);
         }
     }
 }
@@ -672,6 +718,7 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
     const auto &textures = loadGLTFTextures(doc, images, samplers, out_scene);
     const auto &materials = loadGLTFMaterials(doc, textures, out_scene);
     const auto &cameras = loadGLTFCameras(doc, out_scene);
+    const auto &lights = loadGLTFLights(doc, out_scene);
     const auto &meshes = loadGLTFMeshes(loader, materials, out_scene);
     if (!doc.scenes.empty())
     {
@@ -681,7 +728,7 @@ inline bool loadGLTF(const SceneFileInfo &info, Scene *out_scene)
         {
             out_scene->setName(scene_name);
         }
-        loadGLTFNodes(doc, nodes, cameras, meshes, std::nullopt, out_scene);
+        loadGLTFNodes(doc, nodes, cameras, lights, meshes, std::nullopt, out_scene);
     }
     return true;
 }

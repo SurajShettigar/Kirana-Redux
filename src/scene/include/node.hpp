@@ -80,7 +80,7 @@ struct Node final : core::IResource
     std::optional<NodeHandle> next_sibling{std::nullopt};
     uint32_t level{0};
 
-    std::optional<std::variant<CameraHandle, LightHandle, MeshHandle>> resource{std::nullopt};
+    std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> resource{std::nullopt};
 
     [[nodiscard]] NodeType getResourceType() const
     {
@@ -92,7 +92,7 @@ struct Node final : core::IResource
     explicit Node(const NodeFlags flags, const std::optional<NodeHandle> &parent = std::nullopt,
                   const std::optional<NodeHandle> &first_child = std::nullopt,
                   const std::optional<NodeHandle> &next_sibling = std::nullopt, const uint32_t level = 0,
-                  const std::optional<std::variant<CameraHandle, LightHandle, MeshHandle>> &resource = std::nullopt)
+                  const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource = std::nullopt)
         : IResource{}, flags{flags}, parent{parent}, first_child{first_child}, next_sibling{next_sibling}, level{level},
           resource{resource}
     {

@@ -304,6 +304,62 @@ std::optional<glz::json_t> GLTFMaterial::getExtensions() const
     return extensions;
 }
 
+void GLTFNode::setExtensions(const std::optional<glz::json_t> &extensions)
+{
+    if (!extensions)
+    {
+        return;
+    }
+
+    if (const auto &ext = extensions.value(); ext.contains(GLTF_EXT_NAME_LIGHTS_PUNCTUAL))
+    {
+        light = static_cast<uint32_t>(ext.at(GLTF_EXT_NAME_LIGHTS_PUNCTUAL).at("light").get_number());
+    }
+}
+
+std::optional<glz::json_t> GLTFNode::getExtensions() const
+{
+    glz::json_t extensions{};
+    if (light)
+    {
+        extensions[GLTF_EXT_NAME_LIGHTS_PUNCTUAL] = glz::json_t{"light", light.value()};
+    }
+    if (extensions.empty())
+    {
+        return nullptr;
+    }
+    return extensions;
+}
+
+void GLTFDocument::setExtensions(const std::optional<glz::json_t> &extensions)
+{
+    if (!extensions)
+    {
+        return;
+    }
+
+    if (const auto &ext = extensions.value(); ext.contains(GLTF_EXT_NAME_LIGHTS_PUNCTUAL))
+    {
+        const auto &src = ext.at(GLTF_EXT_NAME_LIGHTS_PUNCTUAL).at("lights");
+        fromJson<std::vector<GLTFPunctualLight>>("PUNCTUAL_LIGHTS", src, lights);
+    }
+}
+
+std::optional<glz::json_t> GLTFDocument::getExtensions() const
+{
+    glz::json_t extensions{};
+    if (!lights.empty())
+    {
+        glz::json_t lights_json{};
+        toJson<std::vector<GLTFPunctualLight>>("PUNCTUAL_LIGHTS", lights, lights_json);
+        extensions[GLTF_EXT_NAME_LIGHTS_PUNCTUAL] = glz::json_t{"lights", lights_json};
+    }
+    if (extensions.empty())
+    {
+        return nullptr;
+    }
+    return extensions;
+}
 
 GLTFBinaryDocument::GLTFBinaryDocument(const std::span<uint8_t> file_buffer)
 {
