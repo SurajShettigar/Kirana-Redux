@@ -1,0 +1,127 @@
+// Copyright 2025 Suraj Shettigar
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef KIRANA_RENDERER_COMMAND_ENCODER_HPP
+#define KIRANA_RENDERER_COMMAND_ENCODER_HPP
+
+#include <vulkan/vulkan.hpp>
+
+#include "common.hpp"
+
+#include <array>
+
+namespace kirana::renderer
+{
+class Buffer;
+class Texture;
+class PipelineLayout;
+class PipelineCompute;
+class PipelineRender;
+class DescriptorSet;
+
+struct CommandSubmitInfo
+{
+    vk::CommandBufferSubmitInfo info{};
+};
+
+class CommandEncoder
+{
+    friend class Device;
+
+public:
+    CommandEncoder() = default;
+    ~CommandEncoder() = default;
+
+    void destroy();
+
+    [[nodiscard]] bool isValid() const
+    {
+        return m_pool != nullptr && m_buffer != nullptr;
+    }
+
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
+    [[nodiscard]] vk::CommandBuffer getNativeHandle() const
+    {
+        return m_buffer;
+    }
+
+    void begin() const;
+    [[nodiscard]] CommandSubmitInfo finish() const;
+
+    void addBufferBarrier(const Buffer &buffer, MemoryAccessFlags src_access, MemoryAccessFlags dst_access,
+                          PipelineStageFlags src_stage, PipelineStageFlags dst_stage) const;
+
+    void copyBuffer(const Buffer &src, const Buffer &dst, const std::vector<BufferCopyRegion> &regions = {}) const;
+
+    void addTextureBarrier(Texture &texture, TextureLayout new_layout, MemoryAccessFlags src_access,
+                           MemoryAccessFlags dst_access, PipelineStageFlags src_stage,
+                           PipelineStageFlags dst_stage) const;
+
+    /**
+     * Transitions the texture layout from current to the given one. The texture is updated with the new value, but it
+     * does not take effect until the command encoder is submitted to the queue.
+     * @param texture Texture whose layout needs to be transitioned. Texture will be updated with the new layout value.
+     * @param new_layout Target layout of the texture.
+     */
+    void transitionTextureLayout(Texture &texture, TextureLayout new_layout) const;
+    /**
+     * Clears the texture with the given color / depth / stencil values.
+     * @param texture The texture to be cleared.
+     * @param color [r, g, b, a] color value in case of color texture and [depth, -, -, -] value in case of depth
+     * texture. Values should be in the range of 0.0-1.0.
+     * @param stencil Optional stencil value in case of depth-stencil texture.
+     */
+    void clearTexture(const Texture &texture, const std::array<float, 4> &color, uint32_t stencil = 0) const;
+
+    void copyTexture(const Texture &src, const Texture &dst, const std::vector<TextureCopyRegion> &regions = {}) const;
+    /**
+     * Copies texture content from one texture to another.
+     * @param src The source texture from which the content will be copied from.
+     * @param dst The destination texture onto which the contents will be copied to.
+     * @param src_region The region of source texture to copy from. If empty, the entire region is copied.
+     * @param dst_region The region of destination texture to copy to. If empty, the entire region is copied.
+     */
+    void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
+
+    void beginRendering(const std::vector<Texture> &color_attachments, const Texture &depth_attachment,
+                        const std::string &name = "",
+                        const std::array<float, 4> &debug_color = {0.0f, 1.0f, 0.0, 1.0f}) const;
+
+    void bindComputePipeline(const PipelineCompute &pipeline) const;
+    void bindRenderPipeline(const PipelineRender &pipeline) const;
+
+    void bindDescriptorSet(const PipelineLayout &layout, uint32_t index, const DescriptorSet &set,
+                           const std::vector<uint32_t> &dynamic_offsets = {}) const;
+
+    void bindIndexBuffer(const Buffer &buffer, uint64_t offset = 0, IndexType index_type = IndexType::UINT32) const;
+
+    void setViewport(const Rect2D &area, float min_depth = 0.0f, float max_depth = 1.0f) const;
+    void setScissor(const Rect2D &area) const;
+
+    void dispatch(const std::array<uint32_t, 3> &group_count) const;
+    void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex = 0,
+              uint32_t first_instance = 0) const;
+    void drawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index = 0, int32_t vertex_offset = 0,
+                     uint32_t first_instance = 0) const;
+
+    void endRendering() const;
+
+private:
+    std::string m_name{};
+
+    vk::Device m_device{nullptr};
+    vk::CommandPool m_pool{nullptr};
+    vk::CommandBuffer m_buffer{nullptr};
+
+    mutable bool m_has_render_label {false};
+    mutable vk::PipelineBindPoint m_current_pipeline_bind_point{vk::PipelineBindPoint::eGraphics};
+
+    bool init(vk::Device device, const std::string &name, uint32_t queue_family);
+};
+}
+
+#endif //KIRANA_RENDERER_COMMAND_ENCODER_HPP

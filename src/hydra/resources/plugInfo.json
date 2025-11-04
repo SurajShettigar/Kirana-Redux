@@ -1,0 +1,22 @@
+{
+    "Plugins": [
+        {
+            "Info": {
+                "Types": {
+                    "HdKiranaRendererPlugin": {
+                        "bases": [
+                            "HdRendererPlugin"
+                        ],
+                        "displayName": "Kirana",
+                        "priority": 99
+                    }
+                }
+            },
+            "LibraryPath": "../../HdKirana.dll",
+            "Name": "HdKirana",
+            "ResourcePath": "resources",
+            "Root": "..",
+            "Type": "library"
+        }
+    ]
+}

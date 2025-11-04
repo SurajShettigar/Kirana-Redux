@@ -11,7 +11,7 @@
 
 namespace kirana::core
 {
-void WindowManager::onWindowEvent(const Handle<Window> &handle, const WindowEventType type, const WindowEventData &data)
+void WindowManager::onWindowEvent(const WindowHandle handle, const WindowEventType type, const WindowEventData &data)
 {
     switch (type)
     {
@@ -56,19 +56,19 @@ void WindowManager::quit()
 #endif
 }
 
-Handle<Window> WindowManager::createWindow(const std::string &name, WindowSize size, WindowPosition position,
-                                           const Handle<Window> parent)
+WindowHandle WindowManager::createWindow(const std::string &name, WindowSize size, WindowPosition position,
+                                         const WindowHandle parent)
 {
     const Window *p_parent = parent.isValid() ? m_windows.at(parent).get() : nullptr;
 
-    auto handle = Handle<Window>(m_window_count++);
+    auto handle = WindowHandle{m_window_count++, 0};
     m_windows.insert({handle, std::make_unique<Window>(name, size, position, p_parent)
     });
     const auto &p_window = m_windows.at(handle);
     if (p_window->create())
     {
         p_window->addOnWindowEventListener([&, handle](const WindowEventType type,
-                                               const WindowEventData &data) {
+                                                       const WindowEventData &data) {
             onWindowEvent(handle, type, data);
         });
     }
@@ -76,8 +76,8 @@ Handle<Window> WindowManager::createWindow(const std::string &name, WindowSize s
     {
         Logger::get().error("Failed to create window \"" + name + "\"");
         m_windows.erase(handle);
-        return Handle<Window>();
+        return {};
     }
     return handle;
 }
-} // namespace kirana
+}

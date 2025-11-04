@@ -3,78 +3,170 @@
 
 #ifndef KIRANA_CORE_RESOURCE_MANAGER_HPP
 #define KIRANA_CORE_RESOURCE_MANAGER_HPP
-#include <unordered_map>
 
 #include "handle.hpp"
 
+#include <functional>
+#include <queue>
+#include <vector>
+
 namespace kirana::core
 {
-/**
- * Stores and provide a way to access a vector of uniquely identified resources.
- * @tparam T Resource type.
- */
-template <class T>
+/// Resource interface with generation and alive tracking
+struct IResource
+{
+    uint32_t generation : 16 {HANDLE_MAX_GENERATION};
+    uint32_t status : 16 {0u};
+
+    virtual ~IResource() = default;
+};
+
+/// Manages resources derived from type IResource. Uses generational indices to keep track of resource lifetime.
+/// @tparam T type of the resource.
+/// @tparam H type of the resource handle.
+template <typename T, typename H>
 class ResourceManager
 {
+    static_assert(std::is_base_of_v<IResource, T>, "T must derive from IResource");
+
 public:
     ResourceManager() = default;
     ~ResourceManager() = default;
 
-    [[nodiscard]] Handle<T> add(T value)
+    [[nodiscard]] Handle<H> add(const T &resource)
     {
-        size_t index = 0;
-        if (m_deleted_indices.empty())
+        uint64_t index;
+
+        if (!m_free_indices.empty())
         {
-            index = m_values.size();
-            m_values.emplace_back(std::move(value));
+            index = m_free_indices.front();
+            m_free_indices.pop();
+            m_resources[index] = resource;
         }
         else
         {
-            index = m_deleted_indices.back();
-            m_values[index] = std::move(value);
-            m_deleted_indices.pop_back();
+            index = m_resources.size();
+            if (index > HANDLE_MAX_INDEX)
+            {
+                return Handle<H>();
+            }
+            m_resources.push_back(resource);
         }
 
-        Handle<T> handle(m_counter++);
-        m_handles.insert(std::make_pair(handle, index));
-        return handle;
+        auto &res = m_resources[index];
+        res.status = 1u;
+        res.generation = res.generation == HANDLE_MAX_GENERATION ? 0 : res.generation + 1;
+
+        return Handle<H>(index, res.generation);
     }
 
-    void remove(const Handle<T> handle)
+    [[nodiscard]] bool isValid(const Handle<H> handle) const
     {
-        if (m_handles.find(handle) == m_handles.end())
+        if (!handle.isValid() || handle.getIndex() >= m_resources.size())
+            return false;
+        const auto &res = m_resources[handle.getIndex()];
+        return res.status && res.generation == handle.getGeneration();
+    }
+
+    T *get(const Handle<H> handle)
+    {
+        if (!isValid(handle))
+            return nullptr;
+        return &m_resources[handle.getIndex()];
+    }
+
+    const T *get(const Handle<H> handle) const
+    {
+        if (!isValid(handle))
+            return nullptr;
+        return &m_resources[handle.getIndex()];
+    }
+
+    bool remove(const Handle<H> handle)
+    {
+        if (!isValid(handle))
+            return false;
+
+        auto &res = m_resources[handle.getIndex()];
+        res = T();
+        res.status = 0u;
+        m_free_indices.push(handle.getIndex());
+        return true;
+    }
+
+    std::vector<Handle<H>> getAllHandles() const
+    {
+        std::vector<Handle<H>> result;
+        for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            return;
+            if (const auto &res = m_resources[i]; res.status)
+            {
+                result.emplace_back(i, res.generation);
+            }
         }
-        m_deleted_indices.push_back(m_handles.at(handle));
-        m_handles.erase(handle);
+        return result;
     }
 
-    [[nodiscard]] size_t get_index(const Handle<T> handle) const
+    void forEach(const std::function<void(Handle<H>, T &)> &callback)
     {
-        return m_handles.at(handle);
+        for (uint64_t i = 0; i < m_resources.size(); ++i)
+        {
+            if (auto &res = m_resources[i]; res.status)
+            {
+                callback(Handle<H>(i, res.generation), res);
+            }
+        }
     }
 
-    [[nodiscard]] const T &get(const Handle<T> handle) const
+    void forEach(const std::function<void(Handle<H>, const T &)> &callback) const
     {
-        return m_values.at(get_index(handle));
+        for (uint64_t i = 0; i < m_resources.size(); ++i)
+        {
+            if (const auto &res = m_resources[i]; res.status)
+            {
+                callback(Handle<H>(i, res.generation), res);
+            }
+        }
     }
 
-    [[nodiscard]] T &get(const Handle<T> handle)
+    std::vector<T> &getResources()
     {
-        return m_values.at(get_index(handle));
+        return m_resources;
     }
 
-    [[nodiscard]] const std::vector<T> &get_all() const
+    const std::vector<T> &getResources() const
     {
-        return m_values;
+        return m_resources;
+    }
+
+    [[nodiscard]] size_t getSize() const
+    {
+        size_t count = 0;
+        for (const auto &res : m_resources)
+        {
+            if (res.status)
+                count++;
+        }
+        return count;
+    }
+
+    [[nodiscard]] size_t getFreeSlotCount() const
+    {
+        return m_free_indices.size();
+    }
+
+    void clear()
+    {
+        m_resources.clear();
+        while (!m_free_indices.empty())
+        {
+            m_free_indices.pop();
+        }
     }
 
 private:
-    size_t m_counter = 0;
-    std::vector<T> m_values = {};
-    std::vector<size_t> m_deleted_indices = {};
-    std::unordered_map<Handle<T>, size_t> m_handles = {};
+    std::vector<T> m_resources;
+    std::queue<uint64_t> m_free_indices;
 };
 }
 

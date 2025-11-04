@@ -4,6 +4,7 @@
 #ifndef KIRANA_CORE_WINDOW_MANAGER_HPP
 #define KIRANA_CORE_WINDOW_MANAGER_HPP
 
+#include <iostream>
 #include <memory>
 
 #include "no_copy.hpp"
@@ -25,7 +26,7 @@ public:
     WindowManager &operator=(const WindowManager &manager) = delete;
 
     /**
-     * Calls native window initialization functions, before we can proceed with
+     * Calls native window initialization functions before we can proceed with
      * window creation.
      * @return true if successful.
      */
@@ -44,17 +45,28 @@ public:
     /// Returns true if at least one window is visible on the screen.
     [[nodiscard]] bool isAnyWindowActive() const
     {
-        return !m_windows.empty();
+        if (m_windows.empty())
+        {
+            return false;
+        }
+        for (const auto &[_, window] : m_windows)
+        {
+            if (!window->isClosed())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// Returns the Window object with the given handle.
-    [[nodiscard]] const Window &getWindow(const Handle<Window> &handle) const
+    [[nodiscard]] const Window &getWindow(const WindowHandle handle) const
     {
         return *m_windows.at(handle).get();
     }
 
     /// Returns the Window object with the given handle.
-    [[nodiscard]] Window &getWindow(const Handle<Window> &handle)
+    [[nodiscard]] Window &getWindow(const WindowHandle handle)
     {
         return *m_windows.at(handle).get();
     }
@@ -81,13 +93,13 @@ public:
      * @return Handle to the created window. Handle will be -1 if it fails to
      * create the window.
      */
-    Handle<Window> createWindow(const std::string &name, WindowSize size, WindowPosition position = DEFAULT_WINDOW_POS,
-                                Handle<Window> parent = {});
+    WindowHandle createWindow(const std::string &name, WindowSize size, WindowPosition position = DEFAULT_WINDOW_POS,
+                              WindowHandle parent = {});
 
-    /// Displays the window with given handle on the screen.
-    void showWindow(const Handle<Window> &handle) const
+    /// Displays the window with the given handle on the screen.
+    void showWindow(const WindowHandle handle) const
     {
-        if (m_windows.find(handle) == m_windows.end())
+        if (!m_windows.contains(handle))
         {
             return;
         }
@@ -95,22 +107,22 @@ public:
     }
 
     /// Closes the window with the given handle.
-    void closeWindow(const Handle<Window> &handle)
+    void closeWindow(const WindowHandle handle)
     {
-        if (m_windows.find(handle) == m_windows.end())
+        if (!m_windows.contains(handle))
         {
             return;
         }
         getWindow(handle).close();
-        m_windows.erase(handle);
+        // TODO: Add a proper way to clean-up windows handles and event listeners.
     }
 
 private:
     uint32_t m_window_count = 0;
-    std::unordered_map<Handle<Window>, std::unique_ptr<Window>> m_windows = {};
-    Handle<Window> m_focusedWindow = {};
+    std::unordered_map<WindowHandle, std::unique_ptr<Window>> m_windows = {};
+    WindowHandle m_focusedWindow = {};
 
-    void onWindowEvent(const Handle<Window> &handle, WindowEventType type, const WindowEventData &data);
+    void onWindowEvent(WindowHandle handle, WindowEventType type, const WindowEventData &data);
 };
 }
 

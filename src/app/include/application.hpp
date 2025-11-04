@@ -18,8 +18,12 @@ class Application : core::NoCopy
 public:
     Application() = default;
 
-    explicit Application(int argc, char **argv)
+    explicit Application(const int argc, char **argv)
     {
+        if (argc > 1)
+        {
+            m_launch_scene_file = argv[1];
+        }
     }
 
     ~Application()
@@ -30,12 +34,19 @@ public:
     int run();
 
 private:
-    core::TimeManager m_time_manager = {};
-    core::InputManager m_input_manager = {};
-    core::WindowManager m_window_manager = {};
-    renderer::Renderer m_renderer = {};
+    std::string m_launch_scene_file{};
 
-    core::Handle<core::Window> m_main_window = {};
+    core::TimeManager m_time_manager{};
+    core::InputManager m_input_manager{};
+    core::WindowManager m_window_manager{};
+    renderer::Renderer m_renderer{};
+
+    core::WindowHandle m_main_window{};
+    scene::Scene m_scene{};
+
+    bool m_is_cleaned{false};
+
+    void onWindowEvent(core::WindowEventType type, const core::WindowEventData &data);
 
     int init();
     void update();

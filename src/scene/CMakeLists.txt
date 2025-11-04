@@ -1,0 +1,7 @@
+message("Adding Library: scene")
+add_library(scene internal/gltf.cpp src/image.cpp src/scene.cpp src/loader.cpp)
+target_include_directories(scene PUBLIC include PRIVATE internal)
+target_link_libraries(scene PUBLIC ganita PRIVATE core glaze::glaze OpenImageIO::OpenImageIO)
+
+add_executable(sceneTest test/main.cpp)
+target_link_libraries(sceneTest PRIVATE core scene)
