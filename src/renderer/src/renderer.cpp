@@ -35,13 +35,16 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
     }
 
-    m_render_target = m_device.createTexture("Render_Target_Color", swapchain_data.size,
+    m_ctxs[0].fence.reset();
+    m_ctxs[0].encoder.begin();
+    m_render_target = m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Color", swapchain_data.size,
                                              TextureFormat::R32G32B32A32_SFLOAT,
                                              TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
                                              TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
-    m_depth_buffer = m_device.createTexture("Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
+    m_depth_buffer = m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
                                             TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT |
                                             TextureUsageFlags::TRANSFER_DST);
+    m_device.getGraphicsQueue().submit(m_ctxs[0].encoder.finish(), m_ctxs[0].fence);
 
     m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
                                                                 {

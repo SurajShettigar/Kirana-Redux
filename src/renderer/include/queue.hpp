@@ -52,18 +52,14 @@ public:
         return m_type;
     }
 
-    uint32_t addWaitSemaphore(const Semaphore &semaphore) const
+    void addWaitSemaphore(const Semaphore &semaphore) const
     {
-        const uint32_t index = m_wait_semaphores.size();
         m_wait_semaphores.emplace_back(semaphore.getSubmitInfo());
-        return index;
     }
 
-    uint32_t addSignalSemaphore(const Semaphore &semaphore) const
+    void addSignalSemaphore(const Semaphore &semaphore) const
     {
-        const uint32_t index = m_signal_semaphores.size();
         m_signal_semaphores.emplace_back(semaphore.getSubmitInfo());
-        return index;
     }
 
     void submit(const CommandSubmitInfo &cmd_submit_info, const Fence &fence) const;

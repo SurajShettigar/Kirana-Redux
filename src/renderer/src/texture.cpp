@@ -7,9 +7,11 @@
 
 namespace kirana::renderer
 {
-Texture::Texture(const vk::Device device, const std::string &name, const vk::Image image, const vk::ImageView view, const Size2D &size, const TextureFormat format, const TextureUsageFlags usage, const TextureLayout layout)
-: m_name{name}, m_size{size}, m_format{format}, m_usage{usage}, m_layout{layout}, m_device{device}, m_handle{image},
-  m_view{view}
+Texture::Texture(const vk::Device device, const std::string &name, const vk::Image image, const vk::ImageView view,
+                 const Size2D &size, const TextureFormat format, const TextureUsageFlags usage,
+                 const TextureLayout layout)
+    : m_name{name}, m_size{size}, m_format{format}, m_usage{usage}, m_layout{layout}, m_device{device}, m_handle{image},
+      m_view{view}
 {
     if (!m_name.empty())
     {
@@ -22,8 +24,9 @@ Texture::Texture(const vk::Device device, const std::string &name, const vk::Ima
     }
 }
 
-bool Texture::init(const vk::Device device, const std::string &name, const Size2D &size, const TextureFormat format,
-                   const TextureUsageFlags usage, const TextureLayout layout, const MemoryAllocator *allocator)
+bool Texture::init(const vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
+                   const std::string &name, const Size2D &size, const TextureFormat format,
+                   const TextureUsageFlags usage, const TextureLayout layout, const void *data)
 {
     m_device = device;
     m_name = name;
@@ -44,7 +47,7 @@ bool Texture::init(const vk::Device device, const std::string &name, const Size2
 
     if (m_allocator)
     {
-        m_alloc_id = m_allocator->createImage(create_info, &m_handle);
+        m_alloc_id = m_allocator->createImage(encoder, create_info, &m_handle, data);
         if (!m_alloc_id.isValid())
         {
             return false;

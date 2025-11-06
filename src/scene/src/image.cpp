@@ -122,6 +122,11 @@ Image Image::loadFromRawBuffer(const std::string &path, const std::vector<uint8_
         return image;
     }
     const auto &img_spec = img->spec();
+    if (const auto color_space_val = img_spec.find_attribute("oiio:ColorSpace", TypeDesc::STRING); color_space_val)
+    {
+        const auto color_space = color_space_val->get_string();
+        image.m_is_srgb = color_space == "sRGB";
+    }
     image.m_width = img_spec.width;
     image.m_height = img_spec.height;
     image.m_channels = img_spec.nchannels;
@@ -175,6 +180,11 @@ Image::Image(std::string path, const bool read_pixels) : IResource{}, m_path{std
         return;
     }
     const auto &img_spec = img->spec();
+    if (const auto color_space_val = img_spec.find_attribute("oiio:ColorSpace", TypeDesc::STRING); color_space_val)
+    {
+        const auto color_space = color_space_val->get_string();
+        m_is_srgb = color_space == "sRGB";
+    }
     m_width = img_spec.width;
     m_height = img_spec.height;
     m_channels = img_spec.nchannels;
@@ -192,30 +202,34 @@ Image::Image(std::string path, const bool read_pixels) : IResource{}, m_path{std
     img->close();
 }
 
-const std::vector<uint8_t> &Image::readPixelBuffer(const ImageChannelFormat convert_format)
+bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelFormat format, uint32_t num_channels) const
 {
     using namespace OIIO;
     if (!isValid())
     {
         core::Logger::error(LOG_CHANNEL_IMAGE, "Image has not been initialized correctly: " + m_path);
-        return m_pixels;
+        return false;
     }
     // TODO: Add option to convert images which were constructed through raw image buffer.
     if (m_is_raw_buffer)
     {
-        return m_pixels;
+        pixel_buffer.resize(m_pixels.size());
+        std::memcpy(pixel_buffer.data(), m_pixels.data(), m_pixels.size());
+        return true;
     }
-    bool convert = convert_format != ImageChannelFormat::UNKNOWN && m_format != convert_format;
-    if (!m_pixels.empty() && !convert)
-    {
-        return m_pixels;
-    }
-    m_format = convert ? convert_format : m_format;
+    bool convert = format != ImageChannelFormat::UNKNOWN && format != m_format;
+    format = convert ? format : m_format;
+
+    num_channels = std::min(num_channels, 4u);
+    const bool convert_channels = num_channels > 0 && num_channels != m_channels;
+    num_channels = convert_channels ? num_channels : m_channels;
+
+    convert |= convert_channels;
 
     // In case the image needs to be converted, we need to pass OIIO's ImageSpec when opening the image.
-    const TypeDesc native_format = getTypeDesc(m_format);
+    const TypeDesc native_format = getTypeDesc(format);
     const ImageSpec img_spec{static_cast<int>(m_width), static_cast<int>(m_height),
-                             static_cast<int>(m_channels), native_format};
+                             static_cast<int>(num_channels), native_format};
 
     std::unique_ptr<ImageInput> img = nullptr;
     core::DataURI data_uri{};
@@ -234,19 +248,23 @@ const std::vector<uint8_t> &Image::readPixelBuffer(const ImageChannelFormat conv
     if (!img)
     {
         core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to open image: " + m_path);
-        return m_pixels;
+        return false;
     }
 
-    const size_t num_bytes = getBufferSize(m_width, m_height, m_channels, m_format);
-    m_pixels.clear();
-    m_pixels.resize(num_bytes);
+    const size_t num_bytes = getBufferSize(m_width, m_height, num_channels, format);
+    pixel_buffer.resize(num_bytes);
 
-    const bool status = img->read_image(0, 0, 0, static_cast<int32_t>(m_channels), native_format, m_pixels.data());
+    stride_t x_stride = img->spec().nchannels < num_channels
+                            ? num_channels * static_cast<stride_t>(getChannelFormatSize(format))
+                            : AutoStride;
+    const bool status = img->read_image(0, 0, 0, static_cast<int32_t>(num_channels), native_format, pixel_buffer.data(),
+                                        x_stride);
     img->close();
     if (!status)
     {
         core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to read image buffer: " + m_path);
+        return false;
     }
-    return m_pixels;
+    return true;
 }
 }

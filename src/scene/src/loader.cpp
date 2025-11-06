@@ -184,7 +184,8 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
     const auto updateTexture = [&](const std::variant<std::optional<GLTFTextureInfo>,
                                                       std::optional<GLTFTextureInfoNormal>,
                                                       std::optional<GLTFTextureInfoOcclusion>> &tex_info,
-                                   const TextureHandle &handle) {
+                                   const TextureHandle &handle,
+                                   const bool is_srgb = false) {
         uint32_t tex_coord = 0u;
         GLTFTextureTransform transform{};
         if (tex_info.index() == 0)
@@ -222,6 +223,10 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
         }
         if (const auto texture = out_scene->getTexture(handle); texture)
         {
+            if (const auto image = out_scene->getImage(texture->image))
+            {
+                image->setColorSpace(is_srgb);
+            }
             texture->tex_coord = tex_coord;
             texture->transform = TextureTransform{transform.offset, transform.scale, transform.rotation};
         }
@@ -246,7 +251,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
             if (const auto tex_handle = getTextureHandle(pbr.base_color_texture); tex_handle.isValid())
             {
                 material.texture_base_color = tex_handle;
-                updateTexture(pbr.base_color_texture, tex_handle);
+                updateTexture(pbr.base_color_texture, tex_handle, true);
             }
             if (const auto tex_handle = getTextureHandle(pbr.metallic_roughness_texture); tex_handle.isValid())
             {
@@ -276,7 +281,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
         if (const auto tex_handle = getTextureHandle(gltf_material.emissive_texture); tex_handle.isValid())
         {
             material.texture_emissive = tex_handle;
-            updateTexture(gltf_material.emissive_texture, tex_handle);
+            updateTexture(gltf_material.emissive_texture, tex_handle, true);
         }
 
         if (gltf_material.specular)
@@ -292,7 +297,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
             if (const auto tex_handle = getTextureHandle(spec.color_texture); tex_handle.isValid())
             {
                 material.texture_specular_color = tex_handle;
-                updateTexture(spec.color_texture, tex_handle);
+                updateTexture(spec.color_texture, tex_handle, true);
             }
         }
 
@@ -321,7 +326,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
             if (const auto tex_handle = getTextureHandle(diff.color_texture); tex_handle.isValid())
             {
                 material.texture_diffuse_transmission_color = tex_handle;
-                updateTexture(diff.color_texture, tex_handle);
+                updateTexture(diff.color_texture, tex_handle, true);
             }
         }
         if (gltf_material.transmission)
@@ -404,7 +409,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
             if (const auto tex_handle = getTextureHandle(sheen.color_texture); tex_handle.isValid())
             {
                 material.texture_sheen_color = tex_handle;
-                updateTexture(sheen.color_texture, tex_handle);
+                updateTexture(sheen.color_texture, tex_handle, true);
             }
             if (const auto tex_handle = getTextureHandle(sheen.roughness_texture); tex_handle.isValid())
             {

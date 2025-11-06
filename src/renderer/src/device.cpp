@@ -347,14 +347,14 @@ Buffer Device::createBuffer(const CommandEncoder &encoder, const std::string &na
 }
 
 
-Texture Device::createTexture(const std::string &name, const Size2D &size, const TextureFormat format,
-                              const TextureUsageFlags usage,
-                              const TextureLayout layout) const
+Texture Device::createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
+                              const TextureFormat format, const TextureUsageFlags usage,
+                              const TextureLayout layout, const void *data) const
 {
     Texture texture;
     if (m_device)
     {
-        texture.init(m_device, name, size, format, usage, layout, &m_memory_allocator);
+        texture.init(m_device, &m_memory_allocator, encoder, name, size, format, usage, layout, data);
     }
     else
     {

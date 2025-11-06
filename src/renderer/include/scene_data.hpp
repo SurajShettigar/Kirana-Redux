@@ -17,10 +17,125 @@ const scene::Matrix4 VULKAN_PROJECTION_INVERT_Y{1.0f, 0.0f, 0.0f, 0.0f,
                                                 0.0f, 0.0f, 0.5f, 0.5f,
                                                 0.0f, 0.0f, 0.0f, 1.0f};
 
+struct TextureData
+{
+    std::array<float, 2> offset{};
+    std::array<float, 2> scale{};
+
+    float rotation{};
+    uint32_t texture_index{};
+    uint32_t sampler_index{};
+    uint32_t uv_index{};
+};
+
 struct TransformData
 {
     std::array<float, 16> world{};
     std::array<float, 16> local{};
+};
+
+struct PunctualLightData
+{
+    std::array<float, 3> color{};
+    scene::PunctualLightType type{};
+
+    float intensity{};
+    float range{};
+    float spot_cone_angle_inner{};
+    float spot_cone_angle_outer{};
+
+    std::array<uint32_t, 3> _padding{};
+    scene::LightUnit unit{};
+};
+
+struct EnvironmentLightData
+{
+    std::array<float, 3> color{};
+    float intensity{};
+
+    scene::LightUnit unit{};
+    uint32_t texture_index{};
+    uint32_t transform_index{};
+    uint32_t _padding{};
+};
+
+struct MaterialPBRData
+{
+    std::array<float, 4> base_color{};
+
+    std::array<float, 3> specular_color{};
+    float specular_factor{};
+
+    std::array<float, 3> emissive_color{};
+    float emissive_strength{};
+
+    std::array<float, 3> sheen_color{};
+    float sheen_roughness_factor{};
+
+    float metallic_factor{};
+    float roughness_factor{};
+    float anisotropy_strength{};
+    float anisotropy_rotation{};
+
+    float iridescence_factor{};
+    float iridescence_ior{};
+    float iridescence_thickness_min{};
+    float iridescence_thickness_max{};
+
+    std::array<float, 3> diffuse_transmission_color{};
+    float diffuse_transmission_factor{};
+
+    std::array<float, 3> volume_attenuation_color{};
+    float volume_thickness_factor{};
+
+    float volume_attenuation_distance{};
+    float dispersion_factor{};
+    float transmission_factor{};
+    float ior{};
+
+    float clearcoat_factor{};
+    float clearcoat_roughness_factor{};
+    float normal_scale{};
+    float occlusion_strength{};
+
+    uint32_t texture_base_color_index{};
+    uint32_t texture_specular_color_index{};
+    /// A - Specular factor.
+    uint32_t texture_specular_index{};
+    uint32_t texture_emissive_color_index{};
+
+    uint32_t texture_sheen_color_index{};
+    /// A - Sheen roughness factor.
+    uint32_t texture_sheen_roughness_index{};
+    /// R - Undefined, G - Roughness, B - Metallic
+    uint32_t texture_metallic_roughness_index{};
+    /// RG - Tangent, Bitangent rotation direction (Convert [0, 1] to -[1, 1] range). B - Anisotropy strength.
+    uint32_t texture_anisotropy_index{};
+
+    /// R - Iridescence factor.
+    uint32_t texture_iridescence_index{};
+    /// G - Iridescence thickness. Value is used to lerp from min-max thickness values.
+    uint32_t texture_iridescence_thickness_index{};
+    uint32_t texture_diffuse_transmission_color_index{};
+    /// A - Diffuse transmission factor.
+    uint32_t texture_diffuse_transmission_index{};
+
+    /// G - Volume thickness factor.
+    uint32_t texture_volume_thickness_index{};
+    uint32_t texture_transmission_index{};
+    /// R - Clearcoat strength.
+    uint32_t texture_clearcoat_index{};
+    /// G - Clearcoat roughness.
+    uint32_t texture_clearcoat_roughness_index{};
+
+    uint32_t texture_clearcoat_normal_index{};
+    uint32_t texture_normal_index{};
+    uint32_t texture_occlusion_index{};
+    scene::AlphaMode alpha_mode{};
+
+    float alpha_cutoff{};
+    bool double_sided{};
+    std::array<uint32_t, 2> _padding{};
 };
 
 struct MeshData
@@ -39,9 +154,9 @@ struct MeshData
     uint32_t material_index{};
 };
 
-struct MeshInstanceData
+struct InstanceData
 {
-    uint32_t mesh_index{};
+    uint32_t data_index{};
     uint32_t transform_index{};
 };
 
@@ -151,6 +266,24 @@ public:
 private:
     Fence m_fence{};
     CommandEncoder m_encoder{};
+
+    std::vector<Texture> m_textures{};
+    std::vector<TextureData> m_texture_data{};
+    Buffer m_buffer_texture_data{};
+
+    std::vector<TransformData> m_transforms{};
+    Buffer m_buffer_transforms{};
+
+    EnvironmentLightData m_environment_light{};
+
+    std::vector<PunctualLightData> m_punctual_lights{};
+    Buffer m_buffer_punctual_lights{};
+    std::vector<InstanceData> m_punctual_light_instances{};
+    Buffer m_buffer_punctual_light_instances{};
+
+    std::vector<MaterialPBRData> m_materials{};
+    Buffer m_buffer_materials{};
+
     // Index buffers
     Buffer m_buffer_index_8{};
     Buffer m_buffer_index_16{};
@@ -161,13 +294,12 @@ private:
     Buffer m_buffer_uv{};
     Buffer m_buffer_color{};
     // Mesh Data buffers
-    std::vector<TransformData> m_transforms{};
     std::vector<MeshData> m_meshes{};
-    std::vector<MeshInstanceData> m_mesh_instances{};
-    std::map<uint32_t, MeshInstancesData> m_mesh_instance_map{};
-    Buffer m_buffer_transforms{};
     Buffer m_buffer_meshes{};
+    std::vector<InstanceData> m_mesh_instances{};
+    std::map<uint32_t, MeshInstancesData> m_mesh_instance_map{}; // (mesh index, mesh instances)
     Buffer m_buffer_mesh_instances{};
+
     // Camera buffer
     CameraData m_camera{};
     Buffer m_buffer_camera{};

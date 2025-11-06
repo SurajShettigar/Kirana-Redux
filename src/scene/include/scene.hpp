@@ -21,6 +21,11 @@
 
 namespace kirana::scene
 {
+using ImageCallback = std::function<void(ImageHandle handle, const Image &image)>;
+using TextureCallback = std::function<void(TextureHandle handle, const Texture &texture)>;
+using PunctualLightCallback = std::function<void(NodeHandle node_handle, PunctualLightHandle light_handle,
+                                                 const HierarchyTransform &transform, const PunctualLight &light)>;
+using MaterialCallback = std::function<void(MaterialHandle handle, const MaterialPBR &material)>;
 using RenderableCallback = std::function<void(NodeHandle node_handle, MeshHandle mesh_handle,
                                               const HierarchyTransform &transform, const Mesh &mesh)>;
 
@@ -257,6 +262,26 @@ public:
         return NodeHandle{};
     }
 
+    [[nodiscard]] std::string getImageName(const ImageHandle handle) const
+    {
+        return m_image_names.contains(handle) ? m_image_names.at(handle) : "";
+    }
+
+    [[nodiscard]] const Image *getImage(const ImageHandle handle) const
+    {
+        return m_images.get(handle);
+    }
+
+    [[nodiscard]] Image *getImage(const ImageHandle handle)
+    {
+        return m_images.get(handle);
+    }
+
+    [[nodiscard]] std::string getTextureName(const TextureHandle handle) const
+    {
+        return m_texture_names.contains(handle) ? m_texture_names.at(handle) : "";
+    }
+
     [[nodiscard]] const Texture *getTexture(const TextureHandle handle) const
     {
         return m_textures.get(handle);
@@ -265,6 +290,21 @@ public:
     [[nodiscard]] Texture *getTexture(const TextureHandle handle)
     {
         return m_textures.get(handle);
+    }
+
+    [[nodiscard]] std::string getMaterialName(const MaterialHandle handle) const
+    {
+        return m_material_names.contains(handle) ? m_material_names.at(handle) : "";
+    }
+
+    [[nodiscard]] const MaterialPBR *getMaterial(const MaterialHandle handle) const
+    {
+        return m_materials.get(handle);
+    }
+
+    [[nodiscard]] MaterialPBR *getMaterial(const MaterialHandle handle)
+    {
+        return m_materials.get(handle);
     }
 
     [[nodiscard]] std::string getCameraName(const CameraHandle handle) const
@@ -402,10 +442,40 @@ public:
         return nullptr;
     }
 
-    void forEachRenderables(const RenderableCallback &callback) const
+    void forEachImage(const ImageCallback &callback) const
+    {
+        m_images.forEach(callback);
+    }
+
+    void forEachTexture(const TextureCallback &callback) const
+    {
+        m_textures.forEach(callback);
+    }
+
+    void forEachPunctualLight(const PunctualLightCallback &callback, const bool skip_hidden = true) const
     {
         m_nodes.forEach([&](const NodeHandle handle, const Node &node) {
-            if (!hasFlag(node.flags, NodeFlags::HIDDEN) && node.getResourceType() == NodeType::MESH)
+            const bool skip_node = skip_hidden && hasFlag(node.flags, NodeFlags::HIDDEN);
+            if (!skip_node && node.getResourceType() == NodeType::LIGHT)
+            {
+                const HierarchyTransform &transform = *m_transforms.get(m_node_transforms.at(handle));
+                const PunctualLightHandle light_handle = std::get<PunctualLightHandle>(node.resource.value());
+                const PunctualLight &light = *m_punctual_lights.get(light_handle);
+                callback(handle, light_handle, transform, light);
+            }
+        });
+    }
+
+    void forEachMaterial(const MaterialCallback &callback) const
+    {
+        m_materials.forEach(callback);
+    }
+
+    void forEachRenderable(const RenderableCallback &callback, const bool skip_hidden = true) const
+    {
+        m_nodes.forEach([&](const NodeHandle handle, const Node &node) {
+            const bool skip_node = skip_hidden && hasFlag(node.flags, NodeFlags::HIDDEN);
+            if (!skip_node && node.getResourceType() == NodeType::MESH)
             {
                 const HierarchyTransform &transform = *m_transforms.get(m_node_transforms.at(handle));
                 const MeshHandle mesh_handle = std::get<MeshHandle>(node.resource.value());

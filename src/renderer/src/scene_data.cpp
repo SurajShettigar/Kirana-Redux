@@ -9,6 +9,161 @@
 
 namespace kirana::renderer
 {
+
+inline TextureFormat getTextureFormatForImage(const scene::ImageChannelFormat channel_format,
+                                              const uint32_t num_channels,
+                                              const bool is_srgb)
+{
+    switch (channel_format)
+    {
+    case scene::ImageChannelFormat::UINT_8: {
+        switch (num_channels)
+        {
+        case 1:
+            return is_srgb ? TextureFormat::R8_SRGB : TextureFormat::R8_UNORM;
+        case 2:
+            return is_srgb ? TextureFormat::R8G8_SRGB : TextureFormat::R8G8_UNORM;
+        case 3:
+            return is_srgb ? TextureFormat::R8G8B8_SRGB : TextureFormat::R8G8B8_UNORM;
+        default:
+            return is_srgb ? TextureFormat::R8G8B8A8_SRGB : TextureFormat::R8G8B8A8_UNORM;
+        }
+    }
+    case scene::ImageChannelFormat::INT_8: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R8_SNORM;
+        case 2:
+            return TextureFormat::R8G8_SNORM;
+        case 3:
+            return TextureFormat::R8G8B8_SNORM;
+        default:
+            return TextureFormat::R8G8B8A8_SNORM;
+        }
+    }
+    case scene::ImageChannelFormat::UINT_16: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R16_UNORM;
+        case 2:
+            return TextureFormat::R16G16_UNORM;
+        case 3:
+            return TextureFormat::R16G16B16_UNORM;
+        default:
+            return TextureFormat::R16G16B16A16_UNORM;
+        }
+    }
+    case scene::ImageChannelFormat::INT_16: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R16_SNORM;
+        case 2:
+            return TextureFormat::R16G16_SNORM;
+        case 3:
+            return TextureFormat::R16G16B16_SNORM;
+        default:
+            return TextureFormat::R16G16B16A16_SNORM;
+        }
+    }
+    case scene::ImageChannelFormat::UINT_32: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R32_UINT;
+        case 2:
+            return TextureFormat::R32G32_UINT;
+        case 3:
+            return TextureFormat::R32G32B32_UINT;
+        default:
+            return TextureFormat::R32G32B32A32_UINT;
+        }
+    }
+    case scene::ImageChannelFormat::INT_32: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R32_SINT;
+        case 2:
+            return TextureFormat::R32G32_SINT;
+        case 3:
+            return TextureFormat::R32G32B32_SINT;
+        default:
+            return TextureFormat::R32G32B32A32_SINT;
+        }
+    }
+    case scene::ImageChannelFormat::UINT_64: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R64_UINT;
+        case 2:
+            return TextureFormat::R64G64_UINT;
+        case 3:
+            return TextureFormat::R64G64B64_UINT;
+        default:
+            return TextureFormat::R64G64B64A64_UINT;
+        }
+    }
+    case scene::ImageChannelFormat::INT_64: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R64_SINT;
+        case 2:
+            return TextureFormat::R64G64_SINT;
+        case 3:
+            return TextureFormat::R64G64B64_SINT;
+        default:
+            return TextureFormat::R64G64B64A64_SINT;
+        }
+    }
+    case scene::ImageChannelFormat::HALF: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R16_SFLOAT;
+        case 2:
+            return TextureFormat::R16G16_SFLOAT;
+        case 3:
+            return TextureFormat::R16G16B16_SFLOAT;
+        default:
+            return TextureFormat::R16G16B16A16_SFLOAT;
+        }
+    }
+    case scene::ImageChannelFormat::FLOAT: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R32_SFLOAT;
+        case 2:
+            return TextureFormat::R32G32_SFLOAT;
+        case 3:
+            return TextureFormat::R32G32B32_SFLOAT;
+        default:
+            return TextureFormat::R32G32B32A32_SFLOAT;
+        }
+    }
+    case scene::ImageChannelFormat::DOUBLE: {
+        switch (num_channels)
+        {
+        case 1:
+            return TextureFormat::R64_SFLOAT;
+        case 2:
+            return TextureFormat::R64G64_SFLOAT;
+        case 3:
+            return TextureFormat::R64G64B64_SFLOAT;
+        default:
+            return TextureFormat::R64G64B64A64_SFLOAT;
+        }
+    }
+    default:
+        return TextureFormat::UNKNOWN;
+    }
+}
+
 bool SceneData::init(const Device &device, const scene::Scene &scene)
 {
     core::Logger::info(LOG_CHANNEL_VULKAN, "Transferring scene: " + scene.getName() + " resources to GPU.");
@@ -18,6 +173,33 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     m_fence.reset();
 
     m_encoder.begin();
+
+    std::unordered_map<scene::ImageHandle, uint32_t> texture_indices{};
+    std::vector<uint8_t> pixel_buffer{};
+    scene.forEachImage([&](const scene::ImageHandle handle, const scene::Image &image) {
+        const auto tex_index = static_cast<uint32_t>(texture_indices.size());
+        const auto tex_name = scene.getImageName(handle);
+        uint32_t num_channels = image.getNumChannels();
+        // Most GPUs do not support 3-channel sampled textures. So we use 4-channel pixel buffers.
+        num_channels = num_channels == 3 ? 4 : num_channels;
+        if (image.readPixelBuffer(pixel_buffer, scene::ImageChannelFormat::UNKNOWN, num_channels))
+        {
+            const auto texture = device.createTexture(m_encoder, tex_name, Size2D{image.getWidth(), image.getHeight()},
+                                                      getTextureFormatForImage(image.getChannelFormat(), num_channels,
+                                                                               image.isColorSpaceSRGB()),
+                                                      TextureUsageFlags::SAMPLED | TextureUsageFlags::TRANSFER_DST,
+                                                      TextureLayout::SHADER_READ_ONLY_OPTIMAL,
+                                                      pixel_buffer.data());
+            m_textures.emplace_back(texture);
+            texture_indices.insert(std::make_pair(handle, tex_index));
+        }
+        else
+        {
+            core::Logger::warn(LOG_CHANNEL_VULKAN, "Skipping texture creation for image: " + tex_name);
+        }
+    });
+
+
     const auto &i_buffers = scene.getIndexBuffer();
     if (!i_buffers.indices_8.empty())
     {
@@ -71,14 +253,14 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     m_mesh_instance_map.clear();
 
     std::unordered_map<scene::MeshHandle, uint32_t> mesh_indices;
-    std::map<uint32_t, std::vector<MeshInstanceData>> mesh_instances;
-    scene.forEachRenderables([&](const scene::NodeHandle node_handle, const scene::MeshHandle mesh_handle,
-                                 const scene::HierarchyTransform &transform, const scene::Mesh &mesh) {
+    std::map<uint32_t, std::vector<InstanceData>> mesh_instances;
+    scene.forEachRenderable([&](const scene::NodeHandle node_handle, const scene::MeshHandle mesh_handle,
+                                const scene::HierarchyTransform &transform, const scene::Mesh &mesh) {
         if (!mesh_indices.contains(mesh_handle))
         {
             const auto mesh_index = static_cast<uint32_t>(m_meshes.size());
             mesh_indices.insert(std::make_pair(mesh_handle, mesh_index));
-            mesh_instances.insert(std::make_pair(mesh_index, std::vector<MeshInstanceData>{}));
+            mesh_instances.insert(std::make_pair(mesh_index, std::vector<InstanceData>{}));
             m_meshes.emplace_back(MeshData{mesh.indices.format, static_cast<uint32_t>(mesh.indices.range.offset),
                                            static_cast<uint32_t>(mesh.indices.range.size),
                                            static_cast<uint32_t>(mesh.vertices.positions.offset),
@@ -97,7 +279,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         m_transforms.emplace_back(TransformData{transform.world.getWorldMatrix().getAsArray(),
                                                 transform.world.getLocalMatrix().getAsArray()});
 
-        instances.emplace_back(MeshInstanceData{mesh_index, transform_index});
+        instances.emplace_back(InstanceData{mesh_index, transform_index});
     });
     // Append each meshes' instances to the global instance list and keep track of its offset into the list.
     for (const auto &[mesh_index, instances] : mesh_instances)
@@ -122,7 +304,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     if (!m_mesh_instances.empty())
     {
         m_buffer_mesh_instances = device.createBuffer(m_encoder, "Buffer_Mesh_Instances",
-                                                      m_mesh_instances.size() * sizeof(MeshInstanceData),
+                                                      m_mesh_instances.size() * sizeof(InstanceData),
                                                       m_mesh_instances.data(), BufferUsageFlags::STORAGE_BUFFER);
     }
 
@@ -163,6 +345,12 @@ void SceneData::destroy()
     m_buffer_index_32.destroy();
     m_buffer_index_16.destroy();
     m_buffer_index_8.destroy();
+
+    for (auto &t : m_textures)
+    {
+        t.destroy();
+    }
+    m_textures.clear();
 
     m_encoder.destroy();
     m_fence.destroy();

@@ -331,6 +331,151 @@ constexpr vk::Format getFormat(const TextureFormat format)
     }
 }
 
+constexpr bool isDepthTextureFormat(const vk::Format format)
+{
+    if (format == vk::Format::eD16Unorm
+        || format == vk::Format::eD32Sfloat
+        || format == vk::Format::eD16UnormS8Uint
+        || format == vk::Format::eD24UnormS8Uint
+        || format == vk::Format::eD32SfloatS8Uint)
+    {
+        return true;
+    }
+    return false;
+}
+
+constexpr uint8_t getPixelSize(const vk::Format format)
+{
+    switch (format)
+    {
+    case vk::Format::eR8Unorm:
+    case vk::Format::eR8Snorm:
+    case vk::Format::eR8Uscaled:
+    case vk::Format::eR8Sscaled:
+    case vk::Format::eR8Uint:
+    case vk::Format::eR8Sint:
+    case vk::Format::eR8Srgb:
+        return 1;
+    case vk::Format::eR8G8Unorm:
+    case vk::Format::eR8G8Snorm:
+    case vk::Format::eR8G8Uscaled:
+    case vk::Format::eR8G8Sscaled:
+    case vk::Format::eR8G8Uint:
+    case vk::Format::eR8G8Sint:
+    case vk::Format::eR8G8Srgb:
+        return 2;
+    case vk::Format::eR8G8B8Unorm:
+    case vk::Format::eR8G8B8Snorm:
+    case vk::Format::eR8G8B8Uscaled:
+    case vk::Format::eR8G8B8Sscaled:
+    case vk::Format::eR8G8B8Uint:
+    case vk::Format::eR8G8B8Sint:
+    case vk::Format::eR8G8B8Srgb:
+    case vk::Format::eB8G8R8Unorm:
+    case vk::Format::eB8G8R8Snorm:
+    case vk::Format::eB8G8R8Uscaled:
+    case vk::Format::eB8G8R8Sscaled:
+    case vk::Format::eB8G8R8Uint:
+    case vk::Format::eB8G8R8Sint:
+    case vk::Format::eB8G8R8Srgb:
+        return 3;
+    case vk::Format::eR8G8B8A8Unorm:
+    case vk::Format::eR8G8B8A8Snorm:
+    case vk::Format::eR8G8B8A8Uscaled:
+    case vk::Format::eR8G8B8A8Sscaled:
+    case vk::Format::eR8G8B8A8Uint:
+    case vk::Format::eR8G8B8A8Sint:
+    case vk::Format::eR8G8B8A8Srgb:
+    case vk::Format::eB8G8R8A8Unorm:
+    case vk::Format::eB8G8R8A8Snorm:
+    case vk::Format::eB8G8R8A8Uscaled:
+    case vk::Format::eB8G8R8A8Sscaled:
+    case vk::Format::eB8G8R8A8Uint:
+    case vk::Format::eB8G8R8A8Sint:
+    case vk::Format::eB8G8R8A8Srgb:
+        return 4;
+    case vk::Format::eR16Unorm:
+    case vk::Format::eR16Snorm:
+    case vk::Format::eR16Uscaled:
+    case vk::Format::eR16Sscaled:
+    case vk::Format::eR16Uint:
+    case vk::Format::eR16Sint:
+    case vk::Format::eR16Sfloat:
+        return 2;
+    case vk::Format::eR16G16Unorm:
+    case vk::Format::eR16G16Snorm:
+    case vk::Format::eR16G16Uscaled:
+    case vk::Format::eR16G16Sscaled:
+    case vk::Format::eR16G16Uint:
+    case vk::Format::eR16G16Sint:
+    case vk::Format::eR16G16Sfloat:
+        return 4;
+    case vk::Format::eR16G16B16Unorm:
+    case vk::Format::eR16G16B16Snorm:
+    case vk::Format::eR16G16B16Uscaled:
+    case vk::Format::eR16G16B16Sscaled:
+    case vk::Format::eR16G16B16Uint:
+    case vk::Format::eR16G16B16Sint:
+    case vk::Format::eR16G16B16Sfloat:
+        return 6;
+    case vk::Format::eR16G16B16A16Unorm:
+    case vk::Format::eR16G16B16A16Snorm:
+    case vk::Format::eR16G16B16A16Uscaled:
+    case vk::Format::eR16G16B16A16Sscaled:
+    case vk::Format::eR16G16B16A16Uint:
+    case vk::Format::eR16G16B16A16Sint:
+    case vk::Format::eR16G16B16A16Sfloat:
+        return 8;
+    case vk::Format::eR32Uint:
+    case vk::Format::eR32Sint:
+    case vk::Format::eR32Sfloat:
+        return 4;
+    case vk::Format::eR32G32Uint:
+    case vk::Format::eR32G32Sint:
+    case vk::Format::eR32G32Sfloat:
+        return 8;
+    case vk::Format::eR32G32B32Uint:
+    case vk::Format::eR32G32B32Sint:
+    case vk::Format::eR32G32B32Sfloat:
+        return 12;
+    case vk::Format::eR32G32B32A32Uint:
+    case vk::Format::eR32G32B32A32Sint:
+    case vk::Format::eR32G32B32A32Sfloat:
+        return 16;
+    case vk::Format::eR64Uint:
+    case vk::Format::eR64Sint:
+    case vk::Format::eR64Sfloat:
+        return 8;
+    case vk::Format::eR64G64Uint:
+    case vk::Format::eR64G64Sint:
+    case vk::Format::eR64G64Sfloat:
+        return 16;
+    case vk::Format::eR64G64B64Uint:
+    case vk::Format::eR64G64B64Sint:
+    case vk::Format::eR64G64B64Sfloat:
+        return 24;
+    case vk::Format::eR64G64B64A64Uint:
+    case vk::Format::eR64G64B64A64Sint:
+    case vk::Format::eR64G64B64A64Sfloat:
+        return 32;
+    case vk::Format::eD16Unorm:
+        return 2;
+    case vk::Format::eD32Sfloat:
+        return 4;
+    case vk::Format::eS8Uint:
+        return 1;
+    case vk::Format::eD16UnormS8Uint:
+        return 3;
+    case vk::Format::eD24UnormS8Uint:
+        return 4;
+    case vk::Format::eD32SfloatS8Uint:
+        return 5;
+    case vk::Format::eUndefined:
+    default:
+        return 0;
+    }
+}
+
 constexpr vk::ImageLayout getImageLayout(const TextureLayout layout)
 {
     switch (layout)
@@ -2902,6 +3047,26 @@ inline std::vector<const char *> getEnabledDeviceExtensions(const GPUFeatures &f
         extensions.push_back(vk::KHRRayTracingPipelineExtensionName);
     }
     return extensions;
+}
+
+inline void transitionImageLayout(const vk::CommandBuffer &cmd_buffer, const vk::Image image, const vk::Format format,
+                                  const vk::ImageLayout old_layout, const vk::ImageLayout new_layout)
+{
+    const vk::ImageAspectFlags image_aspect = isDepthTextureFormat(format)
+                                                  ? vk::ImageAspectFlagBits::eDepth
+                                                  : vk::ImageAspectFlagBits::eColor;
+    const auto subresource = vk::ImageSubresourceRange{image_aspect, 0, vk::RemainingMipLevels, 0,
+                                                       vk::RemainingArrayLayers};
+    const auto barrier = vk::ImageMemoryBarrier2{vk::PipelineStageFlagBits2::eAllCommands,
+                                                 vk::AccessFlagBits2::eMemoryWrite,
+                                                 vk::PipelineStageFlagBits2::eAllCommands,
+                                                 vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+                                                 old_layout, new_layout,
+                                                 vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                                                 image, subresource};
+    vk::DependencyInfo dep_info = {};
+    dep_info.setImageMemoryBarriers({barrier});
+    cmd_buffer.pipelineBarrier2(dep_info);
 }
 }
 #endif // KIRANA_RENDERER_HELPERS_VULKAN_HPP

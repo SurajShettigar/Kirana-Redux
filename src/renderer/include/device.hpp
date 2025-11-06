@@ -87,9 +87,10 @@ public:
                                       const void *data = nullptr,
                                       BufferUsageFlags usage = BufferUsageFlags::UNKNOWN) const;
 
-    [[nodiscard]] Texture createTexture(const std::string &name, const Size2D &size, TextureFormat format,
-                                        TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
-                                        TextureLayout layout = TextureLayout::UNKNOWN) const;
+    [[nodiscard]] Texture createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
+                                        TextureFormat format, TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
+                                        TextureLayout layout = TextureLayout::GENERAL,
+                                        const void *data = nullptr) const;
 
     [[nodiscard]] DescriptorAllocator createDescriptorAllocator(
         const std::string &name, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,

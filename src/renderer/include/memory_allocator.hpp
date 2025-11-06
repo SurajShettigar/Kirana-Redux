@@ -92,7 +92,7 @@ public:
         return m_handle != nullptr;
     }
 
-    AllocationID createImage(const vk::ImageCreateInfo &create_info, vk::Image *out_image) const;
+    AllocationID createImage(const CommandEncoder &encoder, const vk::ImageCreateInfo &create_info, vk::Image *out_image, const void *data) const;
     void destroyImage(AllocationID id, vk::Image image) const;
 
     AllocationID createBuffer(const CommandEncoder &encoder, const vk::BufferCreateInfo &create_info,
@@ -112,6 +112,8 @@ private:
     mutable std::unordered_map<AllocationID, vk::Buffer> m_staging_buffers{};
 
     bool init(vk::Instance instance, vk::PhysicalDevice gpu, vk::Device device);
+
+    AllocationID createStagingBuffer(uint64_t size, const void *data) const;
 };
 }
 

@@ -149,9 +149,9 @@ void CommandEncoder::addTextureBarrier(Texture &texture, const TextureLayout new
 
 void CommandEncoder::transitionTextureLayout(Texture &texture, const TextureLayout new_layout) const
 {
-    addTextureBarrier(texture, new_layout, MemoryAccessFlags::MEMORY_WRITE,
-                      MemoryAccessFlags::MEMORY_WRITE | MemoryAccessFlags::MEMORY_READ,
-                      PipelineStageFlags::ALL_COMMANDS, PipelineStageFlags::ALL_COMMANDS);
+    transitionImageLayout(m_buffer, texture.getNativeHandle(), getFormat(texture.getFormat()),
+                          getImageLayout(texture.getLayout()), getImageLayout(new_layout));
+    texture.m_layout = new_layout;
 }
 
 void CommandEncoder::clearTexture(const Texture &texture, const std::array<float, 4> &color,
@@ -219,9 +219,7 @@ void CommandEncoder::beginRendering(const std::vector<Texture> &color_attachment
     {
         return;
     }
-    const auto extent = color_attachments.size() > 0
-                            ? color_attachments[0].getSize()
-                            : depth_attachment.getSize();
+    const auto extent = !color_attachments.empty() ? color_attachments[0].getSize() : depth_attachment.getSize();
     const auto render_area = vk::Rect2D{vk::Offset2D{0, 0}, getExtent2D(extent)};
 
     std::vector<vk::RenderingAttachmentInfo> color_attachments_info = {};

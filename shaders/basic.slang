@@ -1,3 +1,5 @@
+import common;
+
 struct VertexInput
 {
     uint index : SV_VertexID;
@@ -16,42 +18,6 @@ struct VertexOutput
 struct FragmentOutput
 {
     float4 color : SV_Target;
-}
-
-enum IndexFormat : uint {
-    UINT = 0u,
-    UINT_16 = 1u,
-    UINT_8 = 2u,
-}
-
-struct Transform {
-    float4x4 world;
-    float4x4 local;
-}
-
-struct Mesh {
-    IndexFormat index_format;
-    uint index_offset;
-    uint index_count;
-    uint pos_offset;
-    uint pos_count;
-    uint normal_offset;
-    uint normal_count;
-    uint uv_offset;
-    uint uv_count;
-    uint color_offset;
-    uint color_count;
-    uint material_index;
-}
-
-struct MeshInstance {
-    uint mesh;
-    uint transform;
-}
-
-struct Camera {
-    float4x4 view_matrix;
-    float4x4 proj_matrix;
 }
 
 StructuredBuffer<float4> positions;

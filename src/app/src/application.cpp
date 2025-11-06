@@ -63,9 +63,10 @@ int Application::init()
                                       height);
         if (!m_scene.getActiveCamera())
         {
-            const auto cam_transform = scene::Transform{scene::Vector3{0.0f, 0.0f, 5.0f},
-                                                        scene::Vector3{0.0f, 0.0f, 0.0f}, scene::Vector3{1.0f}};
-            const auto handle = m_scene.addPerspectiveCameraNode("Main_Camera", {0.01f, 1000.0f}, 50.0f, aspect_ratio,
+            const auto cam_transform = scene::Transform{scene::Matrix4::lookAt(scene::Vector3{0.0f, 0.75f, 2.0f},
+                                                                               scene::Vector3{0.0f, 0.0f, 0.0f},
+                                                                               scene::Vector3::UP).transformInverse()};
+            const auto handle = m_scene.addPerspectiveCameraNode("Main_Camera", {0.01f, 1000.0f}, 30.0f, aspect_ratio,
                                                                  scene::NodeFlags::NONE,
                                                                  cam_transform);
             m_scene.setActiveCamera(handle);

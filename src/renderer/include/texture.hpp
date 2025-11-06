@@ -74,9 +74,10 @@ private:
 
     AllocationID m_alloc_id{};
 
-    bool init(vk::Device device, const std::string &name, const Size2D &size, TextureFormat format,
-              TextureUsageFlags usage = TextureUsageFlags::UNKNOWN, TextureLayout layout = TextureLayout::UNKNOWN,
-              const MemoryAllocator *allocator = nullptr);
+    bool init(vk::Device device, const MemoryAllocator *allocator, const CommandEncoder &encoder,
+              const std::string &name, const Size2D &size, TextureFormat format,
+              TextureUsageFlags usage = TextureUsageFlags::UNKNOWN, TextureLayout layout = TextureLayout::GENERAL,
+              const void *data = nullptr);
 
     explicit Texture(vk::Device device, const std::string &name, vk::Image image, vk::ImageView view,
                      const Size2D &size, TextureFormat format, TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,

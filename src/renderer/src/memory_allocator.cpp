@@ -36,24 +36,99 @@ void MemoryAllocator::destroy()
     }
 }
 
-
-AllocationID MemoryAllocator::createImage(const vk::ImageCreateInfo &create_info, vk::Image *out_image) const
+AllocationID MemoryAllocator::createStagingBuffer(const uint64_t size, const void *data) const
 {
+    vk::Buffer buffer = {};
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+    alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                              | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    const auto create_info = vk::BufferCreateInfo{vk::BufferCreateFlags{}, size, vk::BufferUsageFlagBits::eTransferSrc};
+    Allocation alloc = {};
+    auto result = vmaCreateBuffer(m_handle, reinterpret_cast<const VkBufferCreateInfo *>(&create_info),
+                                  &alloc_create_info, reinterpret_cast<VkBuffer *>(&buffer), &alloc.handle,
+                                  &alloc.info);
+    if (result != VK_SUCCESS)
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to allocate staging buffer: " + vk::to_string(static_cast<vk::Result>(result)));
+        return {};
+    }
+
+    if (data)
+    {
+        result = vmaCopyMemoryToAllocation(m_handle, data, alloc.handle, 0, size);
+        if (result != VK_SUCCESS)
+        {
+            core::Logger::error(LOG_CHANNEL_VULKAN,
+                                "Failed to copy data to staging buffer: " + vk::to_string(
+                                    static_cast<vk::Result>(result)));
+            return {};
+        }
+    }
+    AllocationID id{m_allocation_count++};
+    m_allocations.insert(std::make_pair(id, alloc));
+    m_staging_buffers.insert(std::make_pair(id, buffer));
+    return id;
+}
+
+AllocationID MemoryAllocator::createImage(const CommandEncoder &encoder, const vk::ImageCreateInfo &create_info,
+                                          vk::Image *out_image,
+                                          const void *data) const
+{
+    VmaAllocationCreateInfo alloc_create_info = {};
+    alloc_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    // TODO: Make dedicated memory bit optional. (for input / output attachments)
     alloc_create_info.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
+    vk::ImageLayout init_layout = vk::ImageLayout::eUndefined;
+    const vk::ImageLayout final_layout = create_info.initialLayout;
+
+    auto main_create_info = create_info;
+    main_create_info.initialLayout = init_layout;
+    if (data)
+    {
+        main_create_info.usage |= vk::ImageUsageFlagBits::eTransferDst;
+    }
+
     Allocation allocation = {};
-    const auto result = vmaCreateImage(m_handle, reinterpret_cast<const VkImageCreateInfo *>(&create_info),
+    const auto result = vmaCreateImage(m_handle, reinterpret_cast<const VkImageCreateInfo *>(&main_create_info),
                                        &alloc_create_info,
                                        reinterpret_cast<VkImage *>(out_image), &allocation.handle, &allocation.info);
-
     if (result != VK_SUCCESS)
     {
         core::Logger::error(LOG_CHANNEL_VULKAN,
                             "Failed to allocate image in memory: " + vk::to_string(static_cast<vk::Result>(result)));
         return {};
     }
+
+    if (data)
+    {
+        const auto size = create_info.extent.width * create_info.extent.height * create_info.extent.depth *
+                          getPixelSize(create_info.format);
+        const auto s_alloc_id = createStagingBuffer(size, data);
+        if (!s_alloc_id.isValid())
+        {
+            return {};
+        }
+        const auto s_buffer = m_staging_buffers.at(s_alloc_id);
+
+        transitionImageLayout(encoder.getNativeHandle(), *out_image, create_info.format, init_layout,
+                              vk::ImageLayout::eTransferDstOptimal);
+
+        const auto img_aspect = isDepthTextureFormat(create_info.format)
+                                    ? vk::ImageAspectFlagBits::eDepth
+                                    : vk::ImageAspectFlagBits::eColor;
+        const auto copy_region = vk::BufferImageCopy2{
+            0, 0, 0, vk::ImageSubresourceLayers{img_aspect, 0, 0, create_info.arrayLayers}, vk::Offset3D{0, 0, 0},
+            create_info.extent};
+        encoder.getNativeHandle().copyBufferToImage2(
+            vk::CopyBufferToImageInfo2{s_buffer, *out_image, vk::ImageLayout::eTransferDstOptimal, {copy_region}});
+
+        init_layout = vk::ImageLayout::eTransferDstOptimal;
+    }
+    transitionImageLayout(encoder.getNativeHandle(), *out_image, create_info.format, init_layout, final_layout);
 
     AllocationID id{m_allocation_count++};
     m_allocations.insert(std::make_pair(id, allocation));
@@ -63,7 +138,7 @@ AllocationID MemoryAllocator::createImage(const vk::ImageCreateInfo &create_info
 
 void MemoryAllocator::destroyImage(const AllocationID id, const vk::Image image) const
 {
-    if (m_allocations.find(id) == m_allocations.end())
+    if (!m_allocations.contains(id))
     {
         core::Logger::warn(LOG_CHANNEL_VULKAN, "Failed to find image allocation with given id");
         return;
@@ -146,32 +221,12 @@ bool MemoryAllocator::writeBuffer(const CommandEncoder &encoder, const Allocatio
     {
         // If memory is allocated in device space, create a host-visible staging buffer and then copy it to the
         // device buffer.
-        vk::Buffer s_buffer = {};
-        VmaAllocationCreateInfo s_alloc_create_info = {};
-        s_alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
-        s_alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-                                    | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        auto s_create_info = vk::BufferCreateInfo{vk::BufferCreateFlags{}, size, vk::BufferUsageFlagBits::eTransferSrc};
-        Allocation s_alloc = {};
-        auto result = vmaCreateBuffer(m_handle, reinterpret_cast<const VkBufferCreateInfo *>(&s_create_info),
-                                      &s_alloc_create_info, reinterpret_cast<VkBuffer *>(&s_buffer),
-                                      &s_alloc.handle, &s_alloc.info);
-        if (result != VK_SUCCESS)
+        const auto s_alloc_id = createStagingBuffer(size, data);
+        if (!s_alloc_id.isValid())
         {
-            core::Logger::error(LOG_CHANNEL_VULKAN,
-                                "Failed to allocate staging buffer for copy: " + vk::to_string(
-                                    static_cast<vk::Result>(result)));
             return false;
         }
-
-        result = vmaCopyMemoryToAllocation(m_handle, data, s_alloc.handle, 0, size);
-        if (result != VK_SUCCESS)
-        {
-            core::Logger::error(LOG_CHANNEL_VULKAN,
-                                "Failed to copy data to buffer: " + vk::to_string(
-                                    static_cast<vk::Result>(result)));
-            return false;
-        }
+        const vk::Buffer s_buffer = m_staging_buffers.at(s_alloc_id);
 
         // Copy from staging buffer to output buffer.
         auto barrier = vk::BufferMemoryBarrier2{vk::PipelineStageFlagBits2::eHost,
@@ -189,13 +244,9 @@ bool MemoryAllocator::writeBuffer(const CommandEncoder &encoder, const Allocatio
                                            vk::AccessFlagBits2::eTransferWrite,
                                            vk::PipelineStageFlagBits2::eAllCommands,
                                            vk::AccessFlagBits2::eMemoryRead, vk::QueueFamilyIgnored,
-                                           vk::QueueFamilyIgnored, buffer, 0, s_create_info.size};
+                                           vk::QueueFamilyIgnored, buffer, 0, size};
         encoder.getNativeHandle().
                 pipelineBarrier2(vk::DependencyInfo{vk::DependencyFlags{}, {}, {barrier}});
-
-        AllocationID s_id{m_allocation_count++};
-        m_allocations.insert(std::make_pair(s_id, s_alloc));
-        m_staging_buffers.insert(std::make_pair(s_id, s_buffer));
     }
     return true;
 }
@@ -219,6 +270,7 @@ bool MemoryAllocator::tryReleaseTemporaries(const Fence &fence) const
         for (const auto &[id, buffer] : m_staging_buffers)
         {
             vmaDestroyBuffer(m_handle, buffer, m_allocations.at(id).handle);
+            m_allocations.erase(id);
         }
         m_staging_buffers.clear();
         return true;
