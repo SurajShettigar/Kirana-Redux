@@ -33,6 +33,12 @@ struct TextureSampler
     TextureWrapMode wrap_mode_u{TextureWrapMode::REPEAT};
     TextureWrapMode wrap_mode_v{TextureWrapMode::REPEAT};
     uint8_t max_anisotropy{0u};
+
+    bool operator==(const TextureSampler &rhs) const
+    {
+        return mag_filter == rhs.mag_filter && min_filter == rhs.min_filter && mip_map_mode == rhs.mip_map_mode &&
+               wrap_mode_u == rhs.wrap_mode_u && wrap_mode_v == rhs.wrap_mode_v && max_anisotropy == rhs.max_anisotropy;
+    }
 };
 
 struct TextureTransform

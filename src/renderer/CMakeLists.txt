@@ -5,6 +5,7 @@ add_library(renderer
         src/synchronization.cpp
         src/buffer.cpp
         src/texture.cpp
+        src/texture_sampler.cpp
         src/swapchain.cpp
         src/descriptor_layout.cpp
         src/descriptor_set.cpp
@@ -16,13 +17,15 @@ add_library(renderer
         src/command_encoder.cpp
         src/queue.cpp
         src/scene_data.cpp
-        src/renderer.cpp)
+        src/renderer.cpp
+)
 target_include_directories(renderer
         PUBLIC include)
 target_link_libraries(renderer PUBLIC core scene Vulkan::Vulkan)
 add_dependencies(renderer Shaders)
 
 # Vulkan header pre-processor directives
+target_compile_definitions(renderer PRIVATE NOMINMAX)
 target_compile_definitions(renderer PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 target_compile_definitions(renderer PRIVATE PLATFORM=${CURRENT_PLATFORM})
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -25,24 +25,24 @@ StructuredBuffer<float4> normals;
 StructuredBuffer<float2> uvs;
 StructuredBuffer<Mesh> meshes;
 StructuredBuffer<Transform> transforms;
-StructuredBuffer<MeshInstance> mesh_instances;
+StructuredBuffer<Instance> mesh_instances;
 ConstantBuffer<Camera> camera;
 
 [shader("vertex")]
 VertexOutput mainVS(VertexInput input)
 {
     const uint instance_index = input.instance_base_offset + input.instance_index;
-    const MeshInstance instance = mesh_instances[instance_index];
-    const Mesh mesh = meshes[instance.mesh];
+    const Instance instance = mesh_instances[instance_index];
+    const Mesh mesh = meshes[instance.d_index];
 
     const float4 pos = float4(positions[mesh.pos_offset + input.index].xyz, 1.0);
     const float4 norm = float4(normals[mesh.normal_offset + input.index].xyz, 0.0);
     const float2 uv = uvs[mesh.uv_offset + input.index];
 
-    const float4 world_position = mul(pos, transforms[instance.transform].world);
+    const float4 world_position = mul(pos, transforms[instance.t_index].world);
     const float4 clip_pos = mul(world_position, mul(camera.view_matrix, camera.proj_matrix));
 
-    const float3 world_normal = mul(norm, transpose(transforms[instance.transform].local)).xyz;
+    const float3 world_normal = mul(norm, transpose(transforms[instance.t_index].local)).xyz;
 
     return VertexOutput(clip_pos, world_position.xyz, uv, world_normal);
 }

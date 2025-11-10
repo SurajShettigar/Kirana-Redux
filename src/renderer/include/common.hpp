@@ -470,6 +470,21 @@ constexpr bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_
     return (flags & req_flag) == req_flag;
 }
 
+enum class SamplerFilterMode: uint8_t
+{
+    NEAREST = 0u,
+    LINEAR = 1u,
+};
+
+enum class SamplerWrapMode: uint8_t
+{
+    REPEAT = 0u,
+    MIRRORED_REPEAT = 1u,
+    CLAMP_TO_EDGE = 2u,
+    CLAMP_TO_BORDER = 3u,
+    MIRROR_CLAMP_TO_EDGE = 4u,
+};
+
 enum class ShaderStageFlags: uint32_t
 {
     NONE = 0x0u,

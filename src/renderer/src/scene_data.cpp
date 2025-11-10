@@ -164,6 +164,87 @@ inline TextureFormat getTextureFormatForImage(const scene::ImageChannelFormat ch
     }
 }
 
+uint32_t SceneData::addTextureSampler(const Device &device, const scene::TextureSampler &sampler)
+{
+    const auto getFilterMode = [](const scene::TextureFilterMode mode) -> SamplerFilterMode {
+        switch (mode)
+        {
+        case scene::TextureFilterMode::LINEAR:
+            return SamplerFilterMode::LINEAR;
+        case scene::TextureFilterMode::NEAREST:
+        default:
+            return SamplerFilterMode::NEAREST;
+
+        }
+    };
+    const auto getWrapMode = [](const scene::TextureWrapMode mode) -> SamplerWrapMode {
+        switch (mode)
+        {
+        case scene::TextureWrapMode::MIRRORED_REPEAT:
+            return SamplerWrapMode::MIRRORED_REPEAT;
+        case scene::TextureWrapMode::CLAMP_TO_EDGE:
+            return SamplerWrapMode::CLAMP_TO_EDGE;
+        case scene::TextureWrapMode::CLAMP_TO_BORDER:
+            return SamplerWrapMode::CLAMP_TO_BORDER;
+        case scene::TextureWrapMode::MIRRORED_CLAMP_TO_EDGE:
+            return SamplerWrapMode::MIRROR_CLAMP_TO_EDGE;
+        case scene::TextureWrapMode::REPEAT:
+        default:
+            return SamplerWrapMode::REPEAT;
+        }
+    };
+    const SamplerData data{getFilterMode(sampler.mag_filter), getFilterMode(sampler.min_filter),
+                           getFilterMode(sampler.mip_map_mode), getWrapMode(sampler.wrap_mode_u),
+                           getWrapMode(sampler.wrap_mode_v), sampler.max_anisotropy};
+
+    // Avoid duplicating samplers with same properties.
+    const auto it = std::ranges::find_if(m_texture_samplers, [&data](const auto &tex_sampler) {
+        return tex_sampler.isValid() && tex_sampler.getData() == data;
+    });
+    if (it == m_texture_samplers.end())
+    {
+        const auto index = static_cast<uint32_t>(m_texture_samplers.size());
+        const std::string name = "Sampler_" + std::to_string(index);
+        m_texture_samplers.emplace_back(device.createTextureSampler(name, data));
+        return index;
+    }
+
+    return static_cast<uint32_t>(std::distance(m_texture_samplers.begin(), it));
+}
+
+uint32_t SceneData::addMesh(const scene::MeshHandle &handle, const scene::Mesh &mesh,
+                            const std::unordered_map<scene::MaterialHandle, uint32_t> &material_indices,
+                            std::unordered_map<scene::MeshHandle, uint32_t> &out_mesh_indices)
+{
+    if (out_mesh_indices.contains(handle))
+    {
+        return out_mesh_indices.at(handle);
+    }
+
+    const auto mesh_index = static_cast<uint32_t>(m_meshes.size());
+    uint32_t material_index = 0;
+    if (material_indices.contains(mesh.material))
+    {
+        material_index = material_indices.at(mesh.material);
+    }
+    m_meshes.emplace_back(MeshData{mesh.indices.format, static_cast<uint32_t>(mesh.indices.range.offset),
+                                   static_cast<uint32_t>(mesh.indices.range.size),
+                                   static_cast<uint32_t>(mesh.vertices.positions.offset),
+                                   static_cast<uint32_t>(mesh.vertices.positions.size),
+                                   static_cast<uint32_t>(mesh.vertices.normals.offset),
+                                   static_cast<uint32_t>(mesh.vertices.normals.size),
+                                   static_cast<uint32_t>(mesh.vertices.uvs.offset),
+                                   static_cast<uint32_t>(mesh.vertices.uvs.size),
+                                   static_cast<uint32_t>(mesh.vertices.colors.offset),
+                                   static_cast<uint32_t>(mesh.vertices.colors.size),
+                                   material_index
+    });
+
+    out_mesh_indices.insert(std::make_pair(handle, mesh_index));
+    return mesh_index;
+}
+
+
 bool SceneData::init(const Device &device, const scene::Scene &scene)
 {
     core::Logger::info(LOG_CHANNEL_VULKAN, "Transferring scene: " + scene.getName() + " resources to GPU.");
@@ -177,7 +258,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     std::unordered_map<scene::ImageHandle, uint32_t> texture_indices{};
     std::vector<uint8_t> pixel_buffer{};
     scene.forEachImage([&](const scene::ImageHandle handle, const scene::Image &image) {
-        const auto tex_index = static_cast<uint32_t>(texture_indices.size());
+        const auto tex_index = static_cast<uint32_t>(m_textures.size());
         const auto tex_name = scene.getImageName(handle);
         uint32_t num_channels = image.getNumChannels();
         // Most GPUs do not support 3-channel sampled textures. So we use 4-channel pixel buffers.
@@ -199,6 +280,102 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         }
     });
 
+    std::unordered_map<scene::TextureHandle, uint32_t> texture_data_indices{};
+    scene.forEachTexture([&](const scene::TextureHandle handle, const scene::Texture &texture) {
+        if (texture_indices.contains(texture.image))
+        {
+            const auto tex_data_index = static_cast<uint32_t>(m_texture_data.size());
+
+            const uint32_t tex_index = texture_indices.at(texture.image);
+            const uint32_t sampler_index = addTextureSampler(device, texture.sampler);
+            m_texture_data.emplace_back(TextureData{texture.transform.offset, texture.transform.scale,
+                                                    texture.transform.rotation, texture.tex_coord, tex_index,
+                                                    sampler_index});
+
+            texture_data_indices.insert(std::make_pair(handle, tex_data_index));
+        }
+    });
+
+    if (!m_texture_data.empty())
+    {
+        const uint64_t size = m_texture_data.size() * sizeof(TextureData);
+        m_buffer_texture_data = device.createBuffer(m_encoder, "Buffer_Texture_Data", size, m_texture_data.data(),
+                                                    BufferUsageFlags::STORAGE_BUFFER);
+    }
+
+    const auto getTextureDataIndex = [&texture_data_indices](const scene::TextureHandle handle) -> uint32_t {
+        if (texture_data_indices.contains(handle))
+        {
+            return texture_data_indices.at(handle);
+        }
+        return std::numeric_limits<uint32_t>::max();
+    };
+
+    std::unordered_map<scene::MaterialHandle, uint32_t> material_indices{};
+    scene.forEachMaterial([&](const scene::MaterialHandle handle, const scene::MaterialPBR &material) {
+        const auto mat_index = static_cast<uint32_t>(m_materials.size());
+
+        MaterialPBRData data{material.base_color,
+                             material.specular_color,
+                             material.specular_factor,
+                             material.emissive_color,
+                             material.emissive_strength,
+                             material.sheen_color,
+                             material.sheen_roughness_factor,
+                             material.metallic_factor,
+                             material.roughness_factor,
+                             material.anisotropy_strength,
+                             material.anisotropy_rotation,
+                             material.iridescence_factor,
+                             material.iridescence_ior,
+                             material.iridescence_thickness_min,
+                             material.iridescence_thickness_max,
+                             material.diffuse_transmission_color,
+                             material.diffuse_transmission_factor,
+                             material.volume_attenuation_color,
+                             material.volume_thickness_factor,
+                             material.volume_attenuation_distance,
+                             material.dispersion_factor,
+                             material.transmission_factor,
+                             material.ior,
+                             material.clearcoat_factor,
+                             material.clearcoat_roughness_factor,
+                             material.normal_scale,
+                             material.occlusion_strength,
+                             getTextureDataIndex(material.texture_base_color),
+                             getTextureDataIndex(material.texture_specular_color),
+                             getTextureDataIndex(material.texture_specular),
+                             getTextureDataIndex(material.texture_emissive),
+                             getTextureDataIndex(material.texture_sheen_color),
+                             getTextureDataIndex(material.texture_sheen_roughness),
+                             getTextureDataIndex(material.texture_metallic_roughness),
+                             getTextureDataIndex(material.texture_anisotropy),
+                             getTextureDataIndex(material.texture_iridescence),
+                             getTextureDataIndex(material.texture_iridescence_thickness),
+                             getTextureDataIndex(material.texture_diffuse_transmission_color),
+                             getTextureDataIndex(material.texture_diffuse_transmission),
+                             getTextureDataIndex(material.texture_volume_thickness),
+                             getTextureDataIndex(material.texture_transmission),
+                             getTextureDataIndex(material.texture_clearcoat),
+                             getTextureDataIndex(material.texture_clearcoat_roughness),
+                             getTextureDataIndex(material.texture_clearcoat_normal),
+                             getTextureDataIndex(material.texture_normal),
+                             getTextureDataIndex(material.texture_occlusion),
+                             material.alpha_mode,
+                             material.alpha_cutoff,
+                             material.double_sided,
+        };
+
+        m_materials.emplace_back(data);
+        material_indices.insert(std::make_pair(handle, mat_index));
+    });
+
+    if (!m_materials.empty())
+    {
+        const uint64_t size = m_materials.size() * sizeof(MaterialPBRData);
+        m_buffer_materials = device.createBuffer(m_encoder, "Buffer_Materials", size, m_materials.data(),
+                                                 BufferUsageFlags::STORAGE_BUFFER);
+    }
 
     const auto &i_buffers = scene.getIndexBuffer();
     if (!i_buffers.indices_8.empty())
@@ -247,38 +424,21 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
             );
     }
 
-    m_meshes.clear();
-    m_transforms.clear();
-    m_mesh_instances.clear();
-    m_mesh_instance_map.clear();
-
     std::unordered_map<scene::MeshHandle, uint32_t> mesh_indices;
     std::map<uint32_t, std::vector<InstanceData>> mesh_instances;
     scene.forEachRenderable([&](const scene::NodeHandle node_handle, const scene::MeshHandle mesh_handle,
                                 const scene::HierarchyTransform &transform, const scene::Mesh &mesh) {
-        if (!mesh_indices.contains(mesh_handle))
+        const uint32_t mesh_index = addMesh(mesh_handle, mesh, material_indices, mesh_indices);
+        if (!mesh_instances.contains(mesh_index))
         {
-            const auto mesh_index = static_cast<uint32_t>(m_meshes.size());
-            mesh_indices.insert(std::make_pair(mesh_handle, mesh_index));
             mesh_instances.insert(std::make_pair(mesh_index, std::vector<InstanceData>{}));
-            m_meshes.emplace_back(MeshData{mesh.indices.format, static_cast<uint32_t>(mesh.indices.range.offset),
-                                           static_cast<uint32_t>(mesh.indices.range.size),
-                                           static_cast<uint32_t>(mesh.vertices.positions.offset),
-                                           static_cast<uint32_t>(mesh.vertices.positions.size),
-                                           static_cast<uint32_t>(mesh.vertices.normals.offset),
-                                           static_cast<uint32_t>(mesh.vertices.normals.size),
-                                           static_cast<uint32_t>(mesh.vertices.uvs.offset),
-                                           static_cast<uint32_t>(mesh.vertices.uvs.size),
-                                           0
-            });
         }
-        const uint32_t mesh_index = mesh_indices[mesh_handle];
+        auto &instances = mesh_instances.at(mesh_index);
+
         const auto transform_index = static_cast<uint32_t>(m_transforms.size());
-        auto &instances = mesh_instances[mesh_index];
 
         m_transforms.emplace_back(TransformData{transform.world.getWorldMatrix().getAsArray(),
                                                 transform.world.getLocalMatrix().getAsArray()});
-
         instances.emplace_back(InstanceData{mesh_index, transform_index});
     });
     // Append each meshes' instances to the global instance list and keep track of its offset into the list.
@@ -295,17 +455,20 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         m_buffer_meshes = device.createBuffer(m_encoder, "Buffer_Meshes", m_meshes.size() * sizeof(MeshData),
                                               m_meshes.data(), BufferUsageFlags::STORAGE_BUFFER);
     }
-    if (!m_transforms.empty())
-    {
-        m_buffer_transforms = device.createBuffer(m_encoder, "Buffer_Transforms",
-                                                  m_transforms.size() * sizeof(TransformData),
-                                                  m_transforms.data(), BufferUsageFlags::STORAGE_BUFFER);
-    }
     if (!m_mesh_instances.empty())
     {
         m_buffer_mesh_instances = device.createBuffer(m_encoder, "Buffer_Mesh_Instances",
                                                       m_mesh_instances.size() * sizeof(InstanceData),
                                                       m_mesh_instances.data(), BufferUsageFlags::STORAGE_BUFFER);
+    }
+
+    // TODO: Upload light data to GPU.
+
+    if (!m_transforms.empty())
+    {
+        m_buffer_transforms = device.createBuffer(m_encoder, "Buffer_Transforms",
+                                                  m_transforms.size() * sizeof(TransformData),
+                                                  m_transforms.data(), BufferUsageFlags::STORAGE_BUFFER);
     }
 
     m_camera = CameraData{scene.getViewMatrix().getAsArray(),
@@ -330,13 +493,15 @@ void SceneData::destroy()
 {
     m_buffer_camera.destroy();
 
+    m_buffer_transforms.destroy();
+    m_transforms.clear();
+
+    m_buffer_mesh_instances.destroy();
     m_mesh_instance_map.clear();
     m_mesh_instances.clear();
-    m_meshes.clear();
-    m_transforms.clear();
-    m_buffer_mesh_instances.destroy();
+
     m_buffer_meshes.destroy();
-    m_buffer_transforms.destroy();
+    m_meshes.clear();
 
     m_buffer_color.destroy();
     m_buffer_uv.destroy();
@@ -346,6 +511,17 @@ void SceneData::destroy()
     m_buffer_index_16.destroy();
     m_buffer_index_8.destroy();
 
+    m_buffer_materials.destroy();
+    m_materials.clear();
+
+    for (auto &s : m_texture_samplers)
+    {
+        s.destroy();
+    }
+    m_texture_samplers.clear();
+
+    m_buffer_texture_data.destroy();
+    m_texture_data.clear();
     for (auto &t : m_textures)
     {
         t.destroy();
@@ -379,6 +555,4 @@ bool SceneData::updateCamera(const Device &device, const scene::Matrix4 &view_ma
     }
     return true;
 }
-
-
 }

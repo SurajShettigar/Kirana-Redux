@@ -4,11 +4,13 @@
 #ifndef KIRANA_RENDERER_PIPELINE_COMPUTE_HPP
 #define KIRANA_RENDERER_PIPELINE_COMPUTE_HPP
 
-#include "pipeline_layout.hpp"
 #include "shader.hpp"
 
 namespace kirana::renderer
 {
+
+class PipelineLayout;
+
 class PipelineCompute
 {
     friend class Device;

@@ -23,9 +23,9 @@ struct TextureData
     std::array<float, 2> scale{};
 
     float rotation{};
+    uint32_t uv_index{};
     uint32_t texture_index{};
     uint32_t sampler_index{};
-    uint32_t uv_index{};
 };
 
 struct TransformData
@@ -181,6 +181,62 @@ public:
     bool init(const Device &device, const scene::Scene &scene);
     void destroy();
 
+    [[nodiscard]] bool hasTextures() const
+    {
+        return m_textures.size() > 0 && m_buffer_texture_data.isValid() && m_texture_data.size() > 0;
+    }
+
+    [[nodiscard]] const std::vector<Texture> &getTextures() const
+    {
+        return m_textures;
+    }
+
+    [[nodiscard]] const Buffer &getTextureDataBuffer() const
+    {
+        return m_buffer_texture_data;
+    }
+
+    [[nodiscard]] const Buffer &getTransformsBuffer() const
+    {
+        return m_buffer_transforms;
+    }
+
+    [[nodiscard]] bool hasEnvironmentLight() const
+    {
+        return m_buffer_environment_light.isValid();
+    }
+
+    [[nodiscard]] const Buffer &getEnvironmentLightBuffer() const
+    {
+        return m_buffer_environment_light;
+    }
+
+    [[nodiscard]] bool hasPunctualLights() const
+    {
+        return m_buffer_punctual_lights.isValid() && m_buffer_punctual_light_instances.isValid() && m_punctual_lights.
+               size() > 0 && m_punctual_light_instances.size() > 0;
+    }
+
+    [[nodiscard]] const Buffer &getPunctualLightsBuffer() const
+    {
+        return m_buffer_punctual_lights;
+    }
+
+    [[nodiscard]] const Buffer &getPunctualLightInstancesBuffer() const
+    {
+        return m_buffer_punctual_light_instances;
+    }
+
+    [[nodiscard]] bool hasMaterials() const
+    {
+        return m_buffer_materials.isValid() && m_materials.size() > 0;
+    }
+
+    [[nodiscard]] const Buffer &getMaterialsBuffer() const
+    {
+        return m_buffer_materials;
+    }
+
     [[nodiscard]] bool hasIndexBuffer() const
     {
         return (m_buffer_index_8.isValid() && m_buffer_index_8.getSize() > 0)
@@ -195,7 +251,8 @@ public:
 
     [[nodiscard]] bool isValid() const
     {
-        return m_fence.isValid() && m_encoder.isValid() && hasIndexBuffer() && hasVertexBuffer();
+        const bool has_mesh_data = hasIndexBuffer() && hasVertexBuffer();
+        return m_fence.isValid() && m_encoder.isValid() && has_mesh_data;
     }
 
     [[nodiscard]] const Buffer &getIndexBuffer8() const
@@ -233,11 +290,6 @@ public:
         return m_buffer_color;
     }
 
-    [[nodiscard]] const Buffer &getTransformsBuffer() const
-    {
-        return m_buffer_transforms;
-    }
-
     [[nodiscard]] const Buffer &getMeshesBuffer() const
     {
         return m_buffer_meshes;
@@ -268,6 +320,7 @@ private:
     CommandEncoder m_encoder{};
 
     std::vector<Texture> m_textures{};
+    std::vector<TextureSampler> m_texture_samplers{};
     std::vector<TextureData> m_texture_data{};
     Buffer m_buffer_texture_data{};
 
@@ -275,6 +328,7 @@ private:
     Buffer m_buffer_transforms{};
 
     EnvironmentLightData m_environment_light{};
+    Buffer m_buffer_environment_light{};
 
     std::vector<PunctualLightData> m_punctual_lights{};
     Buffer m_buffer_punctual_lights{};
@@ -303,6 +357,11 @@ private:
     // Camera buffer
     CameraData m_camera{};
     Buffer m_buffer_camera{};
+
+    uint32_t addTextureSampler(const Device &device, const scene::TextureSampler &sampler);
+    uint32_t addMesh(const scene::MeshHandle &handle, const scene::Mesh &mesh,
+                     const std::unordered_map<scene::MaterialHandle, uint32_t> &material_indices,
+                     std::unordered_map<scene::MeshHandle, uint32_t> &out_mesh_indices);
 };
 }
 

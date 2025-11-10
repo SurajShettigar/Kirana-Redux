@@ -622,6 +622,21 @@ constexpr SampleCountFlags getSampleCountFlags(const vk::SampleCountFlags flags)
     return static_cast<SampleCountFlags>(static_cast<uint32_t>(flags));
 }
 
+constexpr vk::Filter getFilter(const SamplerFilterMode filter_mode)
+{
+    return static_cast<vk::Filter>(static_cast<uint8_t>(filter_mode));
+}
+
+constexpr vk::SamplerMipmapMode getSamplerMipmapMode(const SamplerFilterMode filter_mode)
+{
+    return static_cast<vk::SamplerMipmapMode>(static_cast<uint8_t>(filter_mode));
+}
+
+constexpr vk::SamplerAddressMode getSamplerAddressMode(const SamplerWrapMode wrap_mode)
+{
+    return static_cast<vk::SamplerAddressMode>(static_cast<uint8_t>(wrap_mode));
+}
+
 constexpr GPUType getGPUType(const vk::PhysicalDeviceType type)
 {
     switch (type)

@@ -4,6 +4,7 @@
 #include "pipeline_compute.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "pipeline_layout.hpp"
 
 #include <logger.hpp>
 

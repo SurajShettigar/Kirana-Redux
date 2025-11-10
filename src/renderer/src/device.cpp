@@ -255,6 +255,8 @@ bool Device::init(const DeviceInitializationData &init_data)
 #pragma region CREATE_DEVICE_QUEUES
     {
         m_gpu = selectGPU(m_instance, m_surface, init_data.gpu_preference);
+        m_features = getGPUFeatures(m_gpu);
+        m_limits = getGPULimits(m_gpu);
 
         const auto queue_infos = createQueues(m_gpu, m_surface, &m_queue_index_compute, &m_queue_index_transfer);
         if (queue_infos.empty())
@@ -362,6 +364,21 @@ Texture Device::createTexture(const CommandEncoder &encoder, const std::string &
                             "Failed to create texture. Device is not initialized.");
     }
     return texture;
+}
+
+TextureSampler Device::createTextureSampler(const std::string &name, const SamplerData &data) const
+{
+    TextureSampler sampler;
+    if (m_device)
+    {
+        sampler.init(m_device, name, data);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create texture sampler. Device is not initialized.");
+    }
+    return sampler;
 }
 
 DescriptorAllocator Device::createDescriptorAllocator(const std::string &name,

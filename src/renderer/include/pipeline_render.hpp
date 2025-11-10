@@ -4,7 +4,6 @@
 #ifndef KIRANA_RENDERER_PIPELINE_RENDER_HPP
 #define KIRANA_RENDERER_PIPELINE_RENDER_HPP
 
-#include "pipeline_layout.hpp"
 #include "shader.hpp"
 
 namespace kirana::renderer
@@ -218,6 +217,8 @@ struct RenderState
     std::vector<ColorAttachment> color_attachments{};
     DepthStencilAttachment depth_stencil_attachment{};
 };
+
+class PipelineLayout;
 
 class PipelineRender
 {

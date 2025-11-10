@@ -7,7 +7,9 @@
 #include "queue.hpp"
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
+#include "texture_sampler.hpp"
 #include "descriptor_allocator.hpp"
+#include "pipeline_layout.hpp"
 #include "pipeline_compute.hpp"
 #include "pipeline_render.hpp"
 
@@ -31,6 +33,16 @@ public:
     [[nodiscard]] bool isValid() const
     {
         return m_instance != nullptr && m_device != nullptr && !m_queues.empty();
+    }
+
+    [[nodiscard]] const GPUFeatures &getFeatures() const
+    {
+        return m_features;
+    }
+
+    [[nodiscard]] const GPULimits &getLimits() const
+    {
+        return m_limits;
     }
 
     [[nodiscard]] bool supportsAsyncCompute() const
@@ -92,6 +104,9 @@ public:
                                         TextureLayout layout = TextureLayout::GENERAL,
                                         const void *data = nullptr) const;
 
+    [[nodiscard]] TextureSampler createTextureSampler(const std::string &name,
+                                                      const SamplerData &data = SamplerData{}) const;
+
     [[nodiscard]] DescriptorAllocator createDescriptorAllocator(
         const std::string &name, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
         uint32_t max_sets = 1024) const;
@@ -134,6 +149,9 @@ private:
 
     vk::PhysicalDevice m_gpu{nullptr};
     vk::Device m_device{nullptr};
+
+    GPUFeatures m_features{};
+    GPULimits m_limits{};
 
     std::vector<Queue> m_queues{};
     uint32_t m_queue_index_compute{0};
