@@ -12,10 +12,8 @@
 namespace kirana::renderer
 {
 
-const scene::Matrix4 VULKAN_PROJECTION_INVERT_Y{1.0f, 0.0f, 0.0f, 0.0f,
-                                                0.0f, -1.0f, 0.0f, 0.0f,
-                                                0.0f, 0.0f, 0.5f, 0.5f,
-                                                0.0f, 0.0f, 0.0f, 1.0f};
+const scene::Matrix4 VULKAN_PROJECTION_INVERT_Y{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                                0.0f, 0.0f, 0.5f, 0.5f, 0.0f, 0.0f,  0.0f, 1.0f};
 
 struct TextureData
 {
@@ -174,7 +172,7 @@ struct CameraData
 
 class SceneData
 {
-public:
+  public:
     SceneData() = default;
     ~SceneData() = default;
 
@@ -183,12 +181,17 @@ public:
 
     [[nodiscard]] bool hasTextures() const
     {
-        return m_textures.size() > 0 && m_buffer_texture_data.isValid() && m_texture_data.size() > 0;
+        return !m_textures.empty() && m_buffer_texture_data.isValid() && !m_texture_data.empty();
     }
 
     [[nodiscard]] const std::vector<Texture> &getTextures() const
     {
         return m_textures;
+    }
+
+    [[nodiscard]] const std::vector<TextureSampler> &getTextureSamplers() const
+    {
+        return m_texture_samplers;
     }
 
     [[nodiscard]] const Buffer &getTextureDataBuffer() const
@@ -213,8 +216,8 @@ public:
 
     [[nodiscard]] bool hasPunctualLights() const
     {
-        return m_buffer_punctual_lights.isValid() && m_buffer_punctual_light_instances.isValid() && m_punctual_lights.
-               size() > 0 && m_punctual_light_instances.size() > 0;
+        return m_buffer_punctual_lights.isValid() && m_buffer_punctual_light_instances.isValid() &&
+               !m_punctual_lights.empty() && !m_punctual_light_instances.empty();
     }
 
     [[nodiscard]] const Buffer &getPunctualLightsBuffer() const
@@ -239,9 +242,9 @@ public:
 
     [[nodiscard]] bool hasIndexBuffer() const
     {
-        return (m_buffer_index_8.isValid() && m_buffer_index_8.getSize() > 0)
-               || (m_buffer_index_16.isValid() && m_buffer_index_16.getSize() > 0)
-               || (m_buffer_index_32.isValid() && m_buffer_index_32.getSize() > 0);
+        return (m_buffer_index_8.isValid() && m_buffer_index_8.getSize() > 0) ||
+               (m_buffer_index_16.isValid() && m_buffer_index_16.getSize() > 0) ||
+               (m_buffer_index_32.isValid() && m_buffer_index_32.getSize() > 0);
     }
 
     [[nodiscard]] bool hasVertexBuffer() const
@@ -315,7 +318,7 @@ public:
 
     bool updateCamera(const Device &device, const scene::Matrix4 &view_matrix, const scene::Matrix4 &projection_matrix);
 
-private:
+  private:
     Fence m_fence{};
     CommandEncoder m_encoder{};
 
@@ -363,6 +366,6 @@ private:
                      const std::unordered_map<scene::MaterialHandle, uint32_t> &material_indices,
                      std::unordered_map<scene::MeshHandle, uint32_t> &out_mesh_indices);
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_SCENE_DATA_HPP
+#endif // KIRANA_RENDERER_SCENE_DATA_HPP

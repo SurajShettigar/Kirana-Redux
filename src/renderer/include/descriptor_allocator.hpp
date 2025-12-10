@@ -23,7 +23,7 @@ class DescriptorAllocator
 {
     friend class Device;
 
-public:
+  public:
     DescriptorAllocator() = default;
     ~DescriptorAllocator() = default;
 
@@ -39,19 +39,19 @@ public:
         return m_name;
     }
 
-    DescriptorSet allocate(const std::string &name, const DescriptorLayout &layout,
-                           const std::vector<ShaderBindingResource> &binding_resources = {}) const;
+    [[nodiscard]] DescriptorSet allocate(const std::string &name, const DescriptorLayout &layout,
+                                         const std::vector<ShaderBindingResource> &binding_resources = {}) const;
     void reset() const;
 
-private:
+  private:
     std::string m_name{};
 
     vk::Device m_device{nullptr};
     vk::DescriptorPool m_handle{nullptr};
 
     bool init(vk::Device device, const std::string &name,
-              const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, uint32_t max_sets = 1024);
+              const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, uint32_t max_sets = 16384);
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_DESCRIPTOR_ALLOCATOR_HPP
+#endif // KIRANA_RENDERER_DESCRIPTOR_ALLOCATOR_HPP

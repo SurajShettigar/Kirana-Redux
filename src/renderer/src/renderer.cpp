@@ -22,15 +22,14 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         return false;
     }
     const bool has_swapchain = m_swapchain.isValid();
-    const auto num_ctxs = has_swapchain
-                              ? m_swapchain.getTextureCount()
-                              : static_cast<size_t>(swapchain_data.buffer_mode);
+    const auto num_ctxs =
+        has_swapchain ? m_swapchain.getTextureCount() : static_cast<size_t>(swapchain_data.buffer_mode);
     m_ctxs.reserve(num_ctxs);
     for (size_t i = 0; i < num_ctxs; ++i)
     {
         const auto fence = m_device.createFence("Fence_Main_" + std::to_string(i));
-        const auto encoder = m_device.createCommandEncoder("Encoder_Render_" + std::to_string(i),
-                                                           m_device.getGraphicsQueue());
+        const auto encoder =
+            m_device.createCommandEncoder("Encoder_Render_" + std::to_string(i), m_device.getGraphicsQueue());
         const auto semaphore = m_device.createSemaphore("Semaphore_Render_" + std::to_string(i));
         m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
     }
@@ -40,47 +39,55 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
     m_render_target = m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Color", swapchain_data.size,
                                              TextureFormat::R32G32B32A32_SFLOAT,
                                              TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
-                                             TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
-    m_depth_buffer = m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
-                                            TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT |
-                                            TextureUsageFlags::TRANSFER_DST);
+                                                 TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
+    m_depth_buffer =
+        m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
+                               TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST);
     m_device.getGraphicsQueue().submit(m_ctxs[0].encoder.finish(), m_ctxs[0].fence);
 
-    m_descriptor_allocator = m_device.createDescriptorAllocator("Descriptor_Allocator",
-                                                                {
-                                                                    ShaderBindingTypeRatios{
-                                                                        ShaderBindingType::STORAGE_BUFFER, 0.75f},
-                                                                    ShaderBindingTypeRatios{
-                                                                        ShaderBindingType::UNIFORM_BUFFER, 0.25f},
-                                                                });
-    m_layout = m_device.createDescriptorLayout("Descriptor_Layout_Basic",
-                                               ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE,
-                                               {
-                                                   // Position Buffer
-                                                   ShaderBinding{0, ShaderBindingType::STORAGE_BUFFER},
-                                                   // Normal Buffer
-                                                   ShaderBinding{1, ShaderBindingType::STORAGE_BUFFER},
-                                                   // UV Buffer
-                                                   ShaderBinding{2, ShaderBindingType::STORAGE_BUFFER},
-                                                   // Mesh Buffer
-                                                   ShaderBinding{3, ShaderBindingType::STORAGE_BUFFER},
-                                                   // Transform Buffer
-                                                   ShaderBinding{4, ShaderBindingType::STORAGE_BUFFER},
-                                                   // Mesh Instance Buffer
-                                                   ShaderBinding{5, ShaderBindingType::STORAGE_BUFFER},
-                                                   // Camera Buffer
-                                                   ShaderBinding{6, ShaderBindingType::UNIFORM_BUFFER},
-                                               });
+    m_descriptor_allocator =
+        m_device.createDescriptorAllocator("Descriptor_Allocator",
+                                           {
+                                               ShaderBindingTypeRatios{ShaderBindingType::SAMPLED_IMAGE, 0.5f},
+                                               ShaderBindingTypeRatios{ShaderBindingType::SAMPLER, 0.03125f},
+                                               ShaderBindingTypeRatios{ShaderBindingType::STORAGE_BUFFER, 0.21875f},
+                                               ShaderBindingTypeRatios{ShaderBindingType::UNIFORM_BUFFER, 0.25f},
+                                           },
+                                           32768);
+    m_layout = m_device.createDescriptorLayout(
+        "Descriptor_Layout_Basic", ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE | ShaderStageFlags::FRAGMENT,
+        {
+            // Camera Buffer
+            ShaderBinding{0, ShaderBindingType::UNIFORM_BUFFER},
+            // Position Buffer
+            ShaderBinding{1, ShaderBindingType::STORAGE_BUFFER},
+            // Normal Buffer
+            ShaderBinding{2, ShaderBindingType::STORAGE_BUFFER},
+            // UV Buffer
+            ShaderBinding{3, ShaderBindingType::STORAGE_BUFFER},
+            // Mesh Buffer
+            ShaderBinding{4, ShaderBindingType::STORAGE_BUFFER},
+            // Transform Buffer
+            ShaderBinding{5, ShaderBindingType::STORAGE_BUFFER},
+            // Mesh Instance Buffer
+            ShaderBinding{6, ShaderBindingType::STORAGE_BUFFER},
+            // Texture Data Buffer
+            ShaderBinding{7, ShaderBindingType::STORAGE_BUFFER},
+            // Material Data Buffer
+            ShaderBinding{8, ShaderBindingType::STORAGE_BUFFER},
+            // Bindless Samplers
+            ShaderBinding{9, ShaderBindingType::SAMPLER, ShaderStageFlags::NONE, 1024, true},
+            // Bindless Textures
+            ShaderBinding{10, ShaderBindingType::SAMPLED_IMAGE, ShaderStageFlags::NONE, 16384, true},
+        });
     m_pipeline_layout = m_device.createPipelineLayout("Pipeline_Layout_Basic", {m_layout});
     m_shader = m_device.createShader("Shader_Basic_Vertex", "shaders/basic.spv",
-                                     {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT},
-                                     {"mainVS", "mainFS"});
+                                     {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT}, {"mainVS", "mainFS"});
 
     auto render_state = RenderState{};
     render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
     render_state.depth_stencil_attachment = DepthStencilAttachment{m_depth_buffer.getFormat(), DepthStencilState{}};
-    m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader},
-                                               render_state);
+    m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader}, render_state);
     loadScene(scene);
 
     m_current_index = 0;
@@ -173,7 +180,6 @@ void Renderer::render()
 
 void Renderer::lateUpdate()
 {
-
 }
 
 void Renderer::clean()
@@ -218,16 +224,21 @@ bool Renderer::loadScene(const scene::Scene &scene)
     m_scene_data.init(m_device, scene);
     if (m_scene_data.isValid())
     {
-        m_set = m_descriptor_allocator.allocate("Descriptor_Set_Gradient", m_layout,
-                                                {
-                                                    ShaderBindingResource{0, &m_scene_data.getPositionBuffer()},
-                                                    ShaderBindingResource{1, &m_scene_data.getNormalBuffer()},
-                                                    ShaderBindingResource{2, &m_scene_data.getUVBuffer()},
-                                                    ShaderBindingResource{3, &m_scene_data.getMeshesBuffer()},
-                                                    ShaderBindingResource{4, &m_scene_data.getTransformsBuffer()},
-                                                    ShaderBindingResource{5, &m_scene_data.getMeshInstancesBuffer()},
-                                                    ShaderBindingResource{6, &m_scene_data.getCameraBuffer()},
-                                                });
+        m_set = m_descriptor_allocator.allocate(
+            "Descriptor_Set_Gradient", m_layout,
+            {ShaderBindingResource{0, &m_scene_data.getCameraBuffer()},
+             ShaderBindingResource{1, &m_scene_data.getPositionBuffer()},
+             ShaderBindingResource{2, &m_scene_data.getNormalBuffer()},
+             ShaderBindingResource{3, &m_scene_data.getUVBuffer()},
+             ShaderBindingResource{4, &m_scene_data.getMeshesBuffer()},
+             ShaderBindingResource{5, &m_scene_data.getTransformsBuffer()},
+             ShaderBindingResource{6, &m_scene_data.getMeshInstancesBuffer()},
+             ShaderBindingResource{7, &m_scene_data.getTextureDataBuffer()},
+             ShaderBindingResource{8, &m_scene_data.getMaterialsBuffer()},
+             ShaderBindingResource{9, m_scene_data.getTextureSamplers().data(),
+                                   static_cast<uint32_t>(m_scene_data.getTextureSamplers().size())},
+             ShaderBindingResource{10, m_scene_data.getTextures().data(), nullptr,
+                                   static_cast<uint32_t>(m_scene_data.getTextures().size())}});
         return true;
     }
     return false;
@@ -237,4 +248,4 @@ bool Renderer::updateCamera(const scene::Matrix4 &view_matrix, const scene::Matr
 {
     return m_scene_data.updateCamera(m_device, view_matrix, projection_matrix);
 }
-}
+} // namespace kirana::renderer

@@ -39,10 +39,9 @@ int Application::init()
     m_main_window = m_window_manager.createWindow("Kirana", {1280, 720});
     m_window_manager.showWindow(m_main_window);
 
-    m_window_manager.getWindow(m_main_window).addOnWindowEventListener(
-        [&](const core::WindowEventType type, const core::WindowEventData &data) {
-            onWindowEvent(type, data);
-        });
+    m_window_manager.getWindow(m_main_window)
+        .addOnWindowEventListener(
+            [&](const core::WindowEventType type, const core::WindowEventData &data) { onWindowEvent(type, data); });
 
     core::Window &window = m_window_manager.getWindow(m_main_window);
     const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
@@ -53,29 +52,31 @@ int Application::init()
     gpu.features.synchronization_2 = true;
     gpu.features.dynamic_rendering = true;
     gpu.features.buffer_device_address = true;
+    gpu.features.runtime_descriptor_array = true;
+    gpu.features.descriptor_binding_partially_bound = true;
     // gpu.features.acceleration_structure = true;
     // gpu.features.ray_tracing_pipeline = true;
     if (!m_launch_scene_file.empty())
     {
         const auto info = scene::loadScene(m_launch_scene_file, &m_scene);
         core::Logger::get().info("Loaded scene at path: " + info.path);
-        const auto aspect_ratio = static_cast<float>(window.getSize().width) / static_cast<float>(window.getSize().
-                                      height);
+        const auto aspect_ratio =
+            static_cast<float>(window.getSize().width) / static_cast<float>(window.getSize().height);
         if (!m_scene.getActiveCamera())
         {
-            const auto cam_transform = scene::Transform{scene::Matrix4::lookAt(scene::Vector3{0.0f, 0.75f, 2.0f},
-                                                                               scene::Vector3{0.0f, 0.0f, 0.0f},
-                                                                               scene::Vector3::UP).transformInverse()};
+            const auto cam_transform =
+                scene::Transform{scene::Matrix4::lookAt(scene::Vector3{0.0f, 0.75f, 2.0f},
+                                                        scene::Vector3{0.0f, 0.0f, 0.0f}, scene::Vector3::UP)
+                                     .transformInverse()};
             const auto handle = m_scene.addPerspectiveCameraNode("Main_Camera", {0.01f, 1000.0f}, 30.0f, aspect_ratio,
-                                                                 scene::NodeFlags::NONE,
-                                                                 cam_transform);
+                                                                 scene::NodeFlags::NONE, cam_transform);
             m_scene.setActiveCamera(handle);
         }
         m_scene.getActiveCamera()->setAspectRatio(aspect_ratio);
     }
 
-    const bool is_initialized = m_renderer.
-        init(renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain, m_scene);
+    const bool is_initialized = m_renderer.init(
+        renderer::DeviceInitializationData{true, app_name, APP_VERSION, surface, gpu}, swapchain, m_scene);
 
     m_is_cleaned = false;
     return is_initialized ? 0 : 1;
@@ -112,8 +113,7 @@ int Application::run()
 {
     const int status = init();
 
-    core::Logger::get().debug("Application Initialized with status code: " +
-                              std::to_string(status));
+    core::Logger::get().debug("Application Initialized with status code: " + std::to_string(status));
 
     if (!status)
     {
@@ -131,4 +131,4 @@ int Application::run()
 
     return status;
 }
-}
+} // namespace kirana

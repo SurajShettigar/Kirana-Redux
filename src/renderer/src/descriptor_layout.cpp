@@ -9,6 +9,8 @@
 
 namespace kirana::renderer
 {
+constexpr vk::DescriptorBindingFlags BINDLESS_FLAGS = vk::DescriptorBindingFlagBits::ePartiallyBound;
+
 bool DescriptorLayout::init(const vk::Device device, const std::string &name, const ShaderStageFlags shader_stages,
                             const std::vector<ShaderBinding> &bindings)
 {
@@ -16,10 +18,9 @@ bool DescriptorLayout::init(const vk::Device device, const std::string &name, co
     m_name = name;
     m_shader_stages = shader_stages;
 
-    if (!bindings.empty())
+    for (const auto b : bindings)
     {
-        m_bindings.reserve(m_bindings.size() + bindings.size());
-        m_bindings.insert(m_bindings.end(), bindings.begin(), bindings.end());
+        addBinding(b);
     }
 
     if (m_bindings.empty())
@@ -30,14 +31,19 @@ bool DescriptorLayout::init(const vk::Device device, const std::string &name, co
         return false;
     }
     std::vector<vk::DescriptorSetLayoutBinding> vk_bindings{};
+    std::vector<vk::DescriptorBindingFlags> vk_binding_flags{};
     vk_bindings.reserve(m_bindings.size());
-    for (const auto &b : m_bindings)
+    vk_binding_flags.reserve(m_bindings.size());
+    for (const auto &[index, b] : m_bindings)
     {
         const auto stages = b.shader_stages | m_shader_stages;
-        vk_bindings.emplace_back(b.index, getDescriptorType(b.type), 1, getShaderStageFlags(stages));
+        vk_bindings.emplace_back(index, getDescriptorType(b.type), b.count, getShaderStageFlags(stages));
+        vk_binding_flags.emplace_back(b.bindless ? BINDLESS_FLAGS : vk::DescriptorBindingFlags{});
     }
 
-    const auto create_info = vk::DescriptorSetLayoutCreateInfo{vk::DescriptorSetLayoutCreateFlags{}, vk_bindings};
+    const auto bindless_flags_create_info = vk::DescriptorSetLayoutBindingFlagsCreateInfo{vk_binding_flags};
+    const auto create_info = vk::DescriptorSetLayoutCreateInfo{vk::DescriptorSetLayoutCreateFlags{}, vk_bindings,
+                                                               &bindless_flags_create_info};
     m_handle = m_device.createDescriptorSetLayout(create_info);
     if (!m_name.empty())
     {
@@ -52,9 +58,9 @@ void DescriptorLayout::destroy()
     if (m_device && m_handle)
     {
         m_device.destroyDescriptorSetLayout(m_handle);
-        m_bindings.clear();
+        clearBindings();
         m_handle = nullptr;
     }
 }
 
-}
+} // namespace kirana::renderer

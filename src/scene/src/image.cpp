@@ -9,6 +9,7 @@
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/filesystem.h>
+#include <OpenImageIO/imagebuf.h>
 
 namespace kirana::scene
 {
@@ -210,13 +211,7 @@ bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelForm
         core::Logger::error(LOG_CHANNEL_IMAGE, "Image has not been initialized correctly: " + m_path);
         return false;
     }
-    // TODO: Add option to convert images which were constructed through raw image buffer.
-    if (m_is_raw_buffer)
-    {
-        pixel_buffer.resize(m_pixels.size());
-        std::memcpy(pixel_buffer.data(), m_pixels.data(), m_pixels.size());
-        return true;
-    }
+
     bool convert = format != ImageChannelFormat::UNKNOWN && format != m_format;
     format = convert ? format : m_format;
 
@@ -226,10 +221,22 @@ bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelForm
 
     convert |= convert_channels;
 
+    // TODO: Add option to convert images which were constructed through raw image buffer.
+    if (m_is_raw_buffer)
+    {
+        if (convert)
+        {
+            core::Logger::warn(LOG_CHANNEL_IMAGE, "Embedded image buffer conversion is not yet supported: " + m_path);
+        }
+        pixel_buffer.resize(m_pixels.size());
+        std::memcpy(pixel_buffer.data(), m_pixels.data(), m_pixels.size());
+        return true;
+    }
+
     // In case the image needs to be converted, we need to pass OIIO's ImageSpec when opening the image.
     const TypeDesc native_format = getTypeDesc(format);
-    const ImageSpec img_spec{static_cast<int>(m_width), static_cast<int>(m_height),
-                             static_cast<int>(num_channels), native_format};
+    const ImageSpec img_spec{static_cast<int>(m_width), static_cast<int>(m_height), static_cast<int>(num_channels),
+                             native_format};
 
     std::unique_ptr<ImageInput> img = nullptr;
     core::DataURI data_uri{};
@@ -257,8 +264,8 @@ bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelForm
     stride_t x_stride = img->spec().nchannels < num_channels
                             ? num_channels * static_cast<stride_t>(getChannelFormatSize(format))
                             : AutoStride;
-    const bool status = img->read_image(0, 0, 0, static_cast<int32_t>(num_channels), native_format, pixel_buffer.data(),
-                                        x_stride);
+    const bool status =
+        img->read_image(0, 0, 0, static_cast<int32_t>(num_channels), native_format, pixel_buffer.data(), x_stride);
     img->close();
     if (!status)
     {
@@ -267,4 +274,4 @@ bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelForm
     }
     return true;
 }
-}
+} // namespace kirana::scene

@@ -55,6 +55,9 @@ function(addShader SOURCE_FILE SHADER_DEPENDENCIES)
 
     # Finally, add the output file to the command.
     list(APPEND COMPILE_COMMAND -o "${COMPILED_FILE}")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        list(APPEND COMPILE_COMMAND -g)
+    endif ()
 
     # Run the command.
     add_custom_command(OUTPUT ${COMPILED_FILE}

@@ -7,11 +7,12 @@
 #include <string>
 #include <array>
 #include <vector>
+#include <unordered_map>
 #include <version_code.hpp>
 
 namespace kirana::renderer
 {
-enum class IndexType: uint8_t
+enum class IndexType : uint8_t
 {
     NONE = 0u,
     UINT8 = 1u,
@@ -97,7 +98,7 @@ struct TextureCopyRegion
     Size2D size;
 };
 
-enum class BufferUsageFlags: uint32_t
+enum class BufferUsageFlags : uint32_t
 {
     UNKNOWN = 0x0u,
     TRANSFER_SRC = 0x00000001u,
@@ -293,11 +294,9 @@ enum class TextureFormat
 
 constexpr bool isDepthTextureFormat(const TextureFormat format)
 {
-    if (format == TextureFormat::D16_UNORM
-        || format == TextureFormat::D32_SFLOAT
-        || format == TextureFormat::D16_UNORM_S8_UINT
-        || format == TextureFormat::D24_UNORM_S8_UINT
-        || format == TextureFormat::D32_SFLOAT_S8_UINT)
+    if (format == TextureFormat::D16_UNORM || format == TextureFormat::D32_SFLOAT ||
+        format == TextureFormat::D16_UNORM_S8_UINT || format == TextureFormat::D24_UNORM_S8_UINT ||
+        format == TextureFormat::D32_SFLOAT_S8_UINT)
     {
         return true;
     }
@@ -306,12 +305,9 @@ constexpr bool isDepthTextureFormat(const TextureFormat format)
 
 constexpr bool isSRGBTextureFormat(const TextureFormat format)
 {
-    if (format == TextureFormat::R8_SRGB
-        || format == TextureFormat::R8G8_SRGB
-        || format == TextureFormat::R8G8B8_SRGB
-        || format == TextureFormat::R8G8B8A8_SRGB
-        || format == TextureFormat::B8G8R8_SRGB
-        || format == TextureFormat::B8G8R8A8_SRGB)
+    if (format == TextureFormat::R8_SRGB || format == TextureFormat::R8G8_SRGB ||
+        format == TextureFormat::R8G8B8_SRGB || format == TextureFormat::R8G8B8A8_SRGB ||
+        format == TextureFormat::B8G8R8_SRGB || format == TextureFormat::B8G8R8A8_SRGB)
     {
         return true;
     }
@@ -353,7 +349,7 @@ enum class TextureLayout
     VIDEO_ENCODE_QUANTIZATION_MAP = 30
 };
 
-enum class TextureUsageFlags: uint32_t
+enum class TextureUsageFlags : uint32_t
 {
     UNKNOWN = 0x00000000u,
     TRANSFER_SRC = 0x00000001u,
@@ -418,7 +414,7 @@ constexpr bool hasFlag(const TextureUsageFlags flags, const TextureUsageFlags re
     return (flags & req_flag) == req_flag;
 }
 
-enum class SampleCountFlags: uint8_t
+enum class SampleCountFlags : uint8_t
 {
     NONE = 0u,
     S_1 = 1u << 0u,
@@ -470,13 +466,13 @@ constexpr bool hasFlag(const SampleCountFlags flags, const SampleCountFlags req_
     return (flags & req_flag) == req_flag;
 }
 
-enum class SamplerFilterMode: uint8_t
+enum class SamplerFilterMode : uint8_t
 {
     NEAREST = 0u,
     LINEAR = 1u,
 };
 
-enum class SamplerWrapMode: uint8_t
+enum class SamplerWrapMode : uint8_t
 {
     REPEAT = 0u,
     MIRRORED_REPEAT = 1u,
@@ -485,7 +481,7 @@ enum class SamplerWrapMode: uint8_t
     MIRROR_CLAMP_TO_EDGE = 4u,
 };
 
-enum class ShaderStageFlags: uint32_t
+enum class ShaderStageFlags : uint32_t
 {
     NONE = 0x0u,
     VERTEX = 0x00000001u,
@@ -546,7 +542,7 @@ constexpr bool hasFlag(const ShaderStageFlags flags, const ShaderStageFlags req_
     return (flags & req_flag) == req_flag;
 }
 
-enum class SubgroupFeatureFlags: uint32_t
+enum class SubgroupFeatureFlags : uint32_t
 {
     NONE = 0u,
     BASIC = 0x00000001u,
@@ -602,7 +598,7 @@ constexpr bool hasFlag(const SubgroupFeatureFlags flags, const SubgroupFeatureFl
     return (flags & req_flag) == req_flag;
 }
 
-enum class ResolveModeFlags: uint8_t
+enum class ResolveModeFlags : uint8_t
 {
     NONE = 0x00u,
     SAMPLE_ZERO = 0x01u,
@@ -675,9 +671,11 @@ struct ShaderBinding
     uint32_t index = 0;
     ShaderBindingType type = ShaderBindingType::UNKNOWN;
     ShaderStageFlags shader_stages = ShaderStageFlags::NONE;
+    uint32_t count = 1;
+    bool bindless = false;
 };
 
-enum class MemoryAccessFlags: uint64_t
+enum class MemoryAccessFlags : uint64_t
 {
     NONE = 0x0u,
     INDIRECT_COMMAND_READ = 0x00000001ull,
@@ -761,7 +759,7 @@ constexpr bool hasFlag(const MemoryAccessFlags flags, const MemoryAccessFlags re
     return (flags & req_flag) == req_flag;
 }
 
-enum class PipelineStageFlags: uint64_t
+enum class PipelineStageFlags : uint64_t
 {
     NONE = 0ull,
     TOP_OF_PIPE = 0x00000001ull,
@@ -844,7 +842,7 @@ constexpr bool hasFlag(const PipelineStageFlags flags, const PipelineStageFlags 
     return (flags & req_flag) == req_flag;
 }
 
-enum class PipelineType: uint8_t
+enum class PipelineType : uint8_t
 {
     GRAPHICS = 0,
     COMPUTE = 1,
@@ -944,8 +942,7 @@ struct QueueFamily
 
     [[nodiscard]] bool supportsOnlyTransfer() const
     {
-        return supportsTransfer() &&
-               !(supportsCompute() || supportsRendering());
+        return supportsTransfer() && !(supportsCompute() || supportsRendering());
     }
 };
 
@@ -1441,5 +1438,5 @@ struct DeviceInitializationData
     SurfaceData surface = {};
     GPUSelectionPreference gpu_preference = {};
 };
-}
+} // namespace kirana::renderer
 #endif // KIRANA_RENDERER_COMMON_HPP

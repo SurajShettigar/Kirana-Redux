@@ -14,7 +14,7 @@ class DescriptorLayout
 {
     friend class Device;
 
-public:
+  public:
     DescriptorLayout() = default;
     ~DescriptorLayout() = default;
 
@@ -37,23 +37,31 @@ public:
 
     void addBinding(const ShaderBinding &binding)
     {
-        m_bindings.push_back(binding);
+        m_binding_count += binding.count;
+        m_bindings[binding.index] = binding;
     }
 
-    [[nodiscard]] const ShaderBinding &getBinding(const size_t index) const
+    [[nodiscard]] const ShaderBinding &getBinding(const uint32_t index) const
     {
-        return m_bindings[index];
+        return m_bindings.at(index);
     }
 
     void clearBindings()
     {
+        m_binding_count = 0;
         m_bindings.clear();
     }
 
-private:
+    [[nodiscard]] uint32_t getTotalBindingCount() const
+    {
+        return m_binding_count;
+    }
+
+  private:
     std::string m_name{};
     ShaderStageFlags m_shader_stages{};
-    std::vector<ShaderBinding> m_bindings{};
+    std::unordered_map<uint32_t, ShaderBinding> m_bindings{};
+    uint32_t m_binding_count{};
 
     vk::Device m_device{nullptr};
     vk::DescriptorSetLayout m_handle{nullptr};
@@ -61,6 +69,6 @@ private:
     bool init(vk::Device device, const std::string &name, ShaderStageFlags shader_stages,
               const std::vector<ShaderBinding> &bindings = {});
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_DESCRIPTOR_LAYOUT_HPP
+#endif // KIRANA_RENDERER_DESCRIPTOR_LAYOUT_HPP

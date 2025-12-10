@@ -27,13 +27,13 @@ bool DescriptorAllocator::init(const vk::Device device, const std::string &name,
     for (const auto &[type, ratio] : binding_type_ratios)
     {
         const float r = std::fmin(std::fmax(ratio, 0.0f), 1.0f);
-        const uint32_t count = r > 0.0f
-                                   ? static_cast<uint32_t>(r * static_cast<float>(max_sets))
-                                   : default_binding_count;
+        const uint32_t count =
+            r > 0.0f ? static_cast<uint32_t>(r * static_cast<float>(max_sets)) : default_binding_count;
         pool_sizes.emplace_back(getDescriptorType(type), count);
     }
 
-    const auto create_info = vk::DescriptorPoolCreateInfo{vk::DescriptorPoolCreateFlags{}, max_sets, pool_sizes};
+    const auto create_info =
+        vk::DescriptorPoolCreateInfo{vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind, max_sets, pool_sizes};
     m_handle = m_device.createDescriptorPool(create_info);
     if (!m_name.empty())
     {
@@ -53,15 +53,21 @@ void DescriptorAllocator::destroy()
 }
 
 DescriptorSet DescriptorAllocator::allocate(const std::string &name, const DescriptorLayout &layout,
-                                            const std::vector<ShaderBindingResource> &resources) const
+                                            const std::vector<ShaderBindingResource> &binding_resources) const
 {
     const std::vector layout_handles = {layout.getNativeHandle()};
-    const auto allocate_info = vk::DescriptorSetAllocateInfo{m_handle, layout_handles};
+    auto allocate_info = vk::DescriptorSetAllocateInfo{m_handle, layout_handles};
+
+    std::vector descriptor_counts{layout.getTotalBindingCount()};
+    const vk::DescriptorSetVariableDescriptorCountAllocateInfo variable_info{descriptor_counts};
+
+    allocate_info.pNext = &variable_info;
+
     const auto vk_set = m_device.allocateDescriptorSets(allocate_info)[0];
     const auto set = DescriptorSet{m_device, vk_set, name};
-    if (!resources.empty())
+    if (!binding_resources.empty())
     {
-        set.updateBindingResources(layout, resources);
+        set.updateBindingResources(layout, binding_resources);
     }
     return set;
 }
@@ -71,4 +77,4 @@ void DescriptorAllocator::reset() const
     m_device.resetDescriptorPool(m_handle, vk::DescriptorPoolResetFlags{});
 }
 
-}
+} // namespace kirana::renderer

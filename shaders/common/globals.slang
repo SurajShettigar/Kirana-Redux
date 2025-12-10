@@ -1,5 +1,7 @@
 implementing common;
 
+public static const uint INVALID_ID = 4294967295u;
+
 public struct TextureData {
     public float2 offset;
     public float2 scale;
