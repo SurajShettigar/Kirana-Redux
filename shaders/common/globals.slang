@@ -2,6 +2,13 @@ implementing common;
 
 public static const uint INVALID_ID = 4294967295u;
 
+public static const float PI = 3.1415926535897932384626433832795;
+public static const float TWO_PI = 6.283185307179586476925286766559;
+public static const float FOUR_PI = 12.566370614359172953850573533118;
+public static const float ONE_OVER_PI = 0.31830988618379067153776752674503;
+public static const float ONE_OVER_TWO_PI = 0.15915494309189533576888376337251;
+public static const float ONE_OVER_FOUR_PI = 0.07957747154594766788444188168626;
+
 public struct TextureData {
     public float2 offset;
     public float2 scale;
@@ -36,9 +43,11 @@ public enum PunctualLightType: uint {
 public struct EnvironmentLight {
     public float3 color;
     public float intensity;
+
+    public float4x4 rotation_matrix;
+
     public LightUnit unit;
     public uint texture_index;
-    public uint transform_index;
 }
 
 public struct PunctualLight {

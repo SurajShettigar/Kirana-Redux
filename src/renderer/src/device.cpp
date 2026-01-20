@@ -40,8 +40,7 @@ struct QueueInfo
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 validationCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
                    const vk::DebugUtilsMessageTypeFlagsEXT message_types,
-                   const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
-                   void *p_user_data)
+                   const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data)
 {
     // const Device* device = reinterpret_cast<Device*>(p_user_data);
     const auto &message = [&]() -> std::string {
@@ -123,8 +122,8 @@ std::vector<QueueInfo> createQueues(const vk::PhysicalDevice gpu, const vk::Surf
     uint32_t transfer_family_index = 0;
     for (uint32_t i = 0; i < families.size(); ++i)
     {
-        if ((surface != nullptr && families[i].supportsSurfaceRendering())
-            || (surface == nullptr && families[i].supportsRendering()))
+        if ((surface != nullptr && families[i].supportsSurfaceRendering()) ||
+            (surface == nullptr && families[i].supportsRendering()))
         {
             graphics_family_index = i;
             break;
@@ -184,17 +183,13 @@ bool Device::init(const DeviceInitializationData &init_data)
 #pragma region DEBUG_MESSENGER_INFO
     auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT{
         {},
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose
-        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo
-        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
-        | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
-        | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
         // |vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding,
         validationCallback,
-        this
-    };
+        this};
 #pragma endregion
 
 #pragma region CREATE_INSTANCE
@@ -213,16 +208,10 @@ bool Device::init(const DeviceInitializationData &init_data)
         }
         const char *app_name = init_data.app_name.c_str();
         const uint32_t version =
-            VK_MAKE_VERSION(init_data.version.major, init_data.version.minor,
-                            init_data.version.patch);
+            VK_MAKE_VERSION(init_data.version.major, init_data.version.minor, init_data.version.patch);
 
-        vk::ApplicationInfo app_info{
-            app_name, version, app_name, version,
-            VK_API_VERSION_1_4
-        };
-        vk::InstanceCreateInfo create_info{
-            {}, &app_info, instance_layers, instance_extensions
-        };
+        vk::ApplicationInfo app_info{app_name, version, app_name, version, VK_API_VERSION_1_4};
+        vk::InstanceCreateInfo create_info{{}, &app_info, instance_layers, instance_extensions};
         create_info.pNext = &debug_create_info;
         m_instance = vk::createInstance(create_info);
 
@@ -247,8 +236,7 @@ bool Device::init(const DeviceInitializationData &init_data)
 #pragma region CREATE_DEBUG_MESSENGER
     if (init_data.debug_mode)
     {
-        m_debug_messenger =
-            m_instance.createDebugUtilsMessengerEXT(debug_create_info);
+        m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info);
     }
 #pragma endregion
 
@@ -277,7 +265,10 @@ bool Device::init(const DeviceInitializationData &init_data)
             device_extensions.push_back(vk::KHRSwapchainExtensionName);
         }
         auto create_info = vk::DeviceCreateInfo{
-            vk::DeviceCreateFlags{0}, queue_create_infos, {}, device_extensions,
+            vk::DeviceCreateFlags{0},
+            queue_create_infos,
+            {},
+            device_extensions,
         };
         auto enabled_features = EnabledFeatures{};
         getEnabledFeatures(init_data.gpu_preference.features, &enabled_features);
@@ -301,11 +292,31 @@ bool Device::init(const DeviceInitializationData &init_data)
         return false;
     }
 #pragma endregion
+
+#pragma region CREATE_DESCRIPTOR_ALLOCATOR
+    if (!m_descriptor_allocator.init(m_device, "Descriptor_Allocator_Default",
+                                     {
+                                         ShaderBindingTypeRatios{ShaderBindingType::COMBINED_IMAGE_SAMPLER, 0.25f},
+                                         ShaderBindingTypeRatios{ShaderBindingType::SAMPLED_IMAGE, 0.25f},
+                                         ShaderBindingTypeRatios{ShaderBindingType::SAMPLER, 0.25f},
+                                         ShaderBindingTypeRatios{ShaderBindingType::STORAGE_BUFFER, 0.25f},
+                                         ShaderBindingTypeRatios{ShaderBindingType::UNIFORM_BUFFER, 0.25f},
+                                     },
+                                     81920))
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to initialize descriptor allocator.");
+        return false;
+    }
+#pragma endregion
     return true;
 }
 
 void Device::destroy()
 {
+    if (m_descriptor_allocator.isValid())
+    {
+        m_descriptor_allocator.destroy();
+    }
     if (m_memory_allocator.isValid())
     {
         m_memory_allocator.destroy();
@@ -342,16 +353,15 @@ Buffer Device::createBuffer(const CommandEncoder &encoder, const std::string &na
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create buffer. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create buffer. Device is not initialized.");
     }
     return buffer;
 }
 
 
 Texture Device::createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
-                              const TextureFormat format, const TextureUsageFlags usage,
-                              const TextureLayout layout, const void *data) const
+                              const TextureFormat format, const TextureUsageFlags usage, const TextureLayout layout,
+                              const void *data) const
 {
     Texture texture;
     if (m_device)
@@ -360,8 +370,7 @@ Texture Device::createTexture(const CommandEncoder &encoder, const std::string &
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create texture. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create texture. Device is not initialized.");
     }
     return texture;
 }
@@ -375,8 +384,7 @@ TextureSampler Device::createTextureSampler(const std::string &name, const Sampl
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create texture sampler. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create texture sampler. Device is not initialized.");
     }
     return sampler;
 }
@@ -392,8 +400,7 @@ DescriptorAllocator Device::createDescriptorAllocator(const std::string &name,
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Descriptor Allocator. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Descriptor Allocator. Device is not initialized.");
     }
     return allocator;
 }
@@ -408,10 +415,25 @@ DescriptorLayout Device::createDescriptorLayout(const std::string &name, const S
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Descriptor Layout. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Descriptor Layout. Device is not initialized.");
     }
     return layout;
+}
+
+DescriptorSet Device::allocateDescriptorSet(const std::string &name, const DescriptorLayout &layout,
+                                            const std::vector<ShaderBindingResource> &binding_resources) const
+{
+    DescriptorSet set;
+    if (m_descriptor_allocator.isValid())
+    {
+        set = m_descriptor_allocator.allocate(name, layout, binding_resources);
+    }
+    else
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create Descriptor Set. Descriptor Allocator is not initialized.");
+    }
+    return set;
 }
 
 Shader Device::createShader(const std::string &name, const core::Filepath &source_path,
@@ -425,8 +447,7 @@ Shader Device::createShader(const std::string &name, const core::Filepath &sourc
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Shader. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Shader. Device is not initialized.");
     }
     return shader;
 }
@@ -440,8 +461,7 @@ PipelineLayout Device::createPipelineLayout(const std::string &name, const std::
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Pipeline Layout. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Pipeline Layout. Device is not initialized.");
     }
     return layout;
 }
@@ -456,8 +476,7 @@ PipelineCompute Device::createComputePipeline(const std::string &name, const Pip
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Compute Pipeline. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Compute Pipeline. Device is not initialized.");
     }
     return pipeline;
 }
@@ -472,8 +491,7 @@ PipelineRender Device::createRenderPipeline(const std::string &name, const Pipel
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Render Pipeline. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Render Pipeline. Device is not initialized.");
     }
     return pipeline;
 }
@@ -488,8 +506,7 @@ Swapchain Device::createSwapchain(const std::string &name, const SwapchainData &
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Swapchain. Device or surface is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Swapchain. Device or surface is not initialized.");
     }
     return swapchain;
 }
@@ -518,8 +535,7 @@ Semaphore Device::createSemaphore(const std::string &name, const PipelineStageFl
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Semaphore. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Semaphore. Device is not initialized.");
     }
     return semaphore;
 }
@@ -533,8 +549,7 @@ Fence Device::createFence(const std::string &name) const
     }
     else
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN,
-                            "Failed to create Fence. Device is not initialized.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Fence. Device is not initialized.");
     }
     return fence;
 }
@@ -549,4 +564,4 @@ void Device::waitIdle() const
     m_device.waitIdle();
 }
 
-}
+} // namespace kirana::renderer

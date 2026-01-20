@@ -11,8 +11,7 @@ namespace kirana::renderer
 {
 
 inline TextureFormat getTextureFormatForImage(const scene::ImageChannelFormat channel_format,
-                                              const uint32_t num_channels,
-                                              const bool is_srgb)
+                                              const uint32_t num_channels, const bool is_srgb)
 {
     switch (channel_format)
     {
@@ -174,7 +173,6 @@ uint32_t SceneData::addTextureSampler(const Device &device, const scene::Texture
         case scene::TextureFilterMode::NEAREST:
         default:
             return SamplerFilterMode::NEAREST;
-
         }
     };
     const auto getWrapMode = [](const scene::TextureWrapMode mode) -> SamplerWrapMode {
@@ -193,9 +191,9 @@ uint32_t SceneData::addTextureSampler(const Device &device, const scene::Texture
             return SamplerWrapMode::REPEAT;
         }
     };
-    const SamplerData data{getFilterMode(sampler.mag_filter), getFilterMode(sampler.min_filter),
+    const SamplerData data{getFilterMode(sampler.mag_filter),   getFilterMode(sampler.min_filter),
                            getFilterMode(sampler.mip_map_mode), getWrapMode(sampler.wrap_mode_u),
-                           getWrapMode(sampler.wrap_mode_v), sampler.max_anisotropy};
+                           getWrapMode(sampler.wrap_mode_v),    sampler.max_anisotropy};
 
     // Avoid duplicating samplers with same properties.
     const auto it = std::ranges::find_if(m_texture_samplers, [&data](const auto &tex_sampler) {
@@ -227,18 +225,13 @@ uint32_t SceneData::addMesh(const scene::MeshHandle &handle, const scene::Mesh &
     {
         material_index = material_indices.at(mesh.material);
     }
-    m_meshes.emplace_back(MeshData{mesh.indices.format, static_cast<uint32_t>(mesh.indices.range.offset),
-                                   static_cast<uint32_t>(mesh.indices.range.size),
-                                   static_cast<uint32_t>(mesh.vertices.positions.offset),
-                                   static_cast<uint32_t>(mesh.vertices.positions.size),
-                                   static_cast<uint32_t>(mesh.vertices.normals.offset),
-                                   static_cast<uint32_t>(mesh.vertices.normals.size),
-                                   static_cast<uint32_t>(mesh.vertices.uvs.offset),
-                                   static_cast<uint32_t>(mesh.vertices.uvs.size),
-                                   static_cast<uint32_t>(mesh.vertices.colors.offset),
-                                   static_cast<uint32_t>(mesh.vertices.colors.size),
-                                   material_index
-    });
+    m_meshes.emplace_back(MeshData{
+        mesh.indices.format, static_cast<uint32_t>(mesh.indices.range.offset),
+        static_cast<uint32_t>(mesh.indices.range.size), static_cast<uint32_t>(mesh.vertices.positions.offset),
+        static_cast<uint32_t>(mesh.vertices.positions.size), static_cast<uint32_t>(mesh.vertices.normals.offset),
+        static_cast<uint32_t>(mesh.vertices.normals.size), static_cast<uint32_t>(mesh.vertices.uvs.offset),
+        static_cast<uint32_t>(mesh.vertices.uvs.size), static_cast<uint32_t>(mesh.vertices.colors.offset),
+        static_cast<uint32_t>(mesh.vertices.colors.size), material_index});
 
     out_mesh_indices.insert(std::make_pair(handle, mesh_index));
     return mesh_index;
@@ -255,6 +248,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
 
     m_encoder.begin();
 
+#pragma region TEXTURE DATA
     std::unordered_map<scene::ImageHandle, uint32_t> texture_indices{};
     std::vector<uint8_t> pixel_buffer{};
     scene.forEachImage([&](const scene::ImageHandle handle, const scene::Image &image) {
@@ -265,12 +259,11 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         num_channels = num_channels == 3 ? 4 : num_channels;
         if (image.readPixelBuffer(pixel_buffer, scene::ImageChannelFormat::UNKNOWN, num_channels))
         {
-            const auto texture = device.createTexture(m_encoder, tex_name, Size2D{image.getWidth(), image.getHeight()},
-                                                      getTextureFormatForImage(image.getChannelFormat(), num_channels,
-                                                                               image.isColorSpaceSRGB()),
-                                                      TextureUsageFlags::SAMPLED | TextureUsageFlags::TRANSFER_DST,
-                                                      TextureLayout::SHADER_READ_ONLY_OPTIMAL,
-                                                      pixel_buffer.data());
+            const auto texture = device.createTexture(
+                m_encoder, tex_name, Size2D{image.getWidth(), image.getHeight()},
+                getTextureFormatForImage(image.getChannelFormat(), num_channels, image.isColorSpaceSRGB()),
+                TextureUsageFlags::SAMPLED | TextureUsageFlags::TRANSFER_DST, TextureLayout::SHADER_READ_ONLY_OPTIMAL,
+                pixel_buffer.data());
             m_textures.emplace_back(texture);
             texture_indices.insert(std::make_pair(handle, tex_index));
         }
@@ -310,60 +303,63 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         }
         return std::numeric_limits<uint32_t>::max();
     };
+#pragma endregion
 
+#pragma region MATERIAL DATA
     std::unordered_map<scene::MaterialHandle, uint32_t> material_indices{};
     scene.forEachMaterial([&](const scene::MaterialHandle handle, const scene::MaterialPBR &material) {
         const auto mat_index = static_cast<uint32_t>(m_materials.size());
 
-        MaterialPBRData data{material.base_color,
-                             material.specular_color,
-                             material.specular_factor,
-                             material.emissive_color,
-                             material.emissive_strength,
-                             material.sheen_color,
-                             material.sheen_roughness_factor,
-                             material.metallic_factor,
-                             material.roughness_factor,
-                             material.anisotropy_strength,
-                             material.anisotropy_rotation,
-                             material.iridescence_factor,
-                             material.iridescence_ior,
-                             material.iridescence_thickness_min,
-                             material.iridescence_thickness_max,
-                             material.diffuse_transmission_color,
-                             material.diffuse_transmission_factor,
-                             material.volume_attenuation_color,
-                             material.volume_thickness_factor,
-                             material.volume_attenuation_distance,
-                             material.dispersion_factor,
-                             material.transmission_factor,
-                             material.ior,
-                             material.clearcoat_factor,
-                             material.clearcoat_roughness_factor,
-                             material.normal_scale,
-                             material.occlusion_strength,
-                             getTextureDataIndex(material.texture_base_color),
-                             getTextureDataIndex(material.texture_specular_color),
-                             getTextureDataIndex(material.texture_specular),
-                             getTextureDataIndex(material.texture_emissive),
-                             getTextureDataIndex(material.texture_sheen_color),
-                             getTextureDataIndex(material.texture_sheen_roughness),
-                             getTextureDataIndex(material.texture_metallic_roughness),
-                             getTextureDataIndex(material.texture_anisotropy),
-                             getTextureDataIndex(material.texture_iridescence),
-                             getTextureDataIndex(material.texture_iridescence_thickness),
-                             getTextureDataIndex(material.texture_diffuse_transmission_color),
-                             getTextureDataIndex(material.texture_diffuse_transmission),
-                             getTextureDataIndex(material.texture_volume_thickness),
-                             getTextureDataIndex(material.texture_transmission),
-                             getTextureDataIndex(material.texture_clearcoat),
-                             getTextureDataIndex(material.texture_clearcoat_roughness),
-                             getTextureDataIndex(material.texture_clearcoat_normal),
-                             getTextureDataIndex(material.texture_normal),
-                             getTextureDataIndex(material.texture_occlusion),
-                             material.alpha_mode,
-                             material.alpha_cutoff,
-                             material.double_sided,
+        MaterialPBRData data{
+            material.base_color,
+            material.specular_color,
+            material.specular_factor,
+            material.emissive_color,
+            material.emissive_strength,
+            material.sheen_color,
+            material.sheen_roughness_factor,
+            material.metallic_factor,
+            material.roughness_factor,
+            material.anisotropy_strength,
+            material.anisotropy_rotation,
+            material.iridescence_factor,
+            material.iridescence_ior,
+            material.iridescence_thickness_min,
+            material.iridescence_thickness_max,
+            material.diffuse_transmission_color,
+            material.diffuse_transmission_factor,
+            material.volume_attenuation_color,
+            material.volume_thickness_factor,
+            material.volume_attenuation_distance,
+            material.dispersion_factor,
+            material.transmission_factor,
+            material.ior,
+            material.clearcoat_factor,
+            material.clearcoat_roughness_factor,
+            material.normal_scale,
+            material.occlusion_strength,
+            getTextureDataIndex(material.texture_base_color),
+            getTextureDataIndex(material.texture_specular_color),
+            getTextureDataIndex(material.texture_specular),
+            getTextureDataIndex(material.texture_emissive),
+            getTextureDataIndex(material.texture_sheen_color),
+            getTextureDataIndex(material.texture_sheen_roughness),
+            getTextureDataIndex(material.texture_metallic_roughness),
+            getTextureDataIndex(material.texture_anisotropy),
+            getTextureDataIndex(material.texture_iridescence),
+            getTextureDataIndex(material.texture_iridescence_thickness),
+            getTextureDataIndex(material.texture_diffuse_transmission_color),
+            getTextureDataIndex(material.texture_diffuse_transmission),
+            getTextureDataIndex(material.texture_volume_thickness),
+            getTextureDataIndex(material.texture_transmission),
+            getTextureDataIndex(material.texture_clearcoat),
+            getTextureDataIndex(material.texture_clearcoat_roughness),
+            getTextureDataIndex(material.texture_clearcoat_normal),
+            getTextureDataIndex(material.texture_normal),
+            getTextureDataIndex(material.texture_occlusion),
+            material.alpha_mode,
+            material.alpha_cutoff,
+            material.double_sided,
         };
 
         m_materials.emplace_back(data);
@@ -376,6 +372,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
         m_buffer_materials = device.createBuffer(m_encoder, "Buffer_Materials", size, m_materials.data(),
                                                  BufferUsageFlags::STORAGE_BUFFER);
     }
+#pragma endregion
 
     const auto &i_buffers = scene.getIndexBuffer();
     if (!i_buffers.indices_8.empty())
@@ -420,8 +417,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     {
         const uint64_t size = v_buffers.colors.size() * sizeof(scene::Vector4);
         m_buffer_color = device.createBuffer(m_encoder, "Buffer_Colors", size, v_buffers.colors.data(),
-                                             BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::VERTEX_BUFFER
-            );
+                                             BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::VERTEX_BUFFER);
     }
 
     std::unordered_map<scene::MeshHandle, uint32_t> mesh_indices;
@@ -457,24 +453,36 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     }
     if (!m_mesh_instances.empty())
     {
-        m_buffer_mesh_instances = device.createBuffer(m_encoder, "Buffer_Mesh_Instances",
-                                                      m_mesh_instances.size() * sizeof(InstanceData),
-                                                      m_mesh_instances.data(), BufferUsageFlags::STORAGE_BUFFER);
+        m_buffer_mesh_instances =
+            device.createBuffer(m_encoder, "Buffer_Mesh_Instances", m_mesh_instances.size() * sizeof(InstanceData),
+                                m_mesh_instances.data(), BufferUsageFlags::STORAGE_BUFFER);
     }
+
+#pragma region ENVIRONMENT_LIGHT
+    const auto &env_light = scene.getEnvironmentLight();
+    m_environment_light.color = env_light.color;
+    m_environment_light.intensity = env_light.intensity;
+    m_environment_light.unit = env_light.unit;
+    m_environment_light.rotation_matrix = env_light.rotation.getMatrix().getAsArray();
+    m_environment_light.texture_index = getTextureDataIndex(env_light.texture);
+
+    m_buffer_environment_light = device.createBuffer(m_encoder, "Buffer_Environment_Data", sizeof(EnvironmentLightData),
+                                                     &m_environment_light, BufferUsageFlags::UNIFORM_BUFFER);
+#pragma endregion
 
     // TODO: Upload light data to GPU.
 
     if (!m_transforms.empty())
     {
-        m_buffer_transforms = device.createBuffer(m_encoder, "Buffer_Transforms",
-                                                  m_transforms.size() * sizeof(TransformData),
-                                                  m_transforms.data(), BufferUsageFlags::STORAGE_BUFFER);
+        m_buffer_transforms =
+            device.createBuffer(m_encoder, "Buffer_Transforms", m_transforms.size() * sizeof(TransformData),
+                                m_transforms.data(), BufferUsageFlags::STORAGE_BUFFER);
     }
 
     m_camera = CameraData{scene.getViewMatrix().getAsArray(),
                           (VULKAN_PROJECTION_INVERT_Y * scene.getProjectionMatrix()).getAsArray()};
-    m_buffer_camera = device.createBuffer(m_encoder, "Buffer_Camera", sizeof(CameraData),
-                                          &m_camera, BufferUsageFlags::UNIFORM_BUFFER);
+    m_buffer_camera = device.createBuffer(m_encoder, "Buffer_Camera", sizeof(CameraData), &m_camera,
+                                          BufferUsageFlags::UNIFORM_BUFFER);
 
     device.getTransferQueue().submit(m_encoder.finish(), m_fence);
     // TODO: Remove wait for fences for async scene data transfer.
@@ -495,6 +503,8 @@ void SceneData::destroy()
 
     m_buffer_transforms.destroy();
     m_transforms.clear();
+
+    m_buffer_environment_light.destroy();
 
     m_buffer_mesh_instances.destroy();
     m_mesh_instance_map.clear();
@@ -555,4 +565,4 @@ bool SceneData::updateCamera(const Device &device, const scene::Matrix4 &view_ma
     }
     return true;
 }
-}
+} // namespace kirana::renderer

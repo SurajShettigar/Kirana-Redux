@@ -45,15 +45,21 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
                                TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST);
     m_device.getGraphicsQueue().submit(m_ctxs[0].encoder.finish(), m_ctxs[0].fence);
 
-    m_descriptor_allocator =
-        m_device.createDescriptorAllocator("Descriptor_Allocator",
-                                           {
-                                               ShaderBindingTypeRatios{ShaderBindingType::SAMPLED_IMAGE, 0.5f},
-                                               ShaderBindingTypeRatios{ShaderBindingType::SAMPLER, 0.03125f},
-                                               ShaderBindingTypeRatios{ShaderBindingType::STORAGE_BUFFER, 0.21875f},
-                                               ShaderBindingTypeRatios{ShaderBindingType::UNIFORM_BUFFER, 0.25f},
-                                           },
-                                           32768);
+    m_layout_env = m_device.createDescriptorLayout("Descriptor_Layout_Environment",
+                                                   ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE |
+                                                       ShaderStageFlags::FRAGMENT,
+                                                   {
+                                                       // Camera Buffer
+                                                       ShaderBinding{0, ShaderBindingType::UNIFORM_BUFFER},
+                                                       // Environment Data Buffer
+                                                       ShaderBinding{1, ShaderBindingType::UNIFORM_BUFFER},
+                                                       // Environment Texture
+                                                       ShaderBinding{2, ShaderBindingType::COMBINED_IMAGE_SAMPLER},
+                                                   });
+    m_pipeline_layout_env = m_device.createPipelineLayout("Pipeline_Layout_Environment", {m_layout_env});
+    m_shader_env = m_device.createShader("Shader_Environment", "shaders/environment.spv",
+                                         {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT}, {"mainVS", "mainFS"});
+
     m_layout = m_device.createDescriptorLayout(
         "Descriptor_Layout_Basic", ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE | ShaderStageFlags::FRAGMENT,
         {
@@ -87,6 +93,12 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
     auto render_state = RenderState{};
     render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
     render_state.depth_stencil_attachment = DepthStencilAttachment{m_depth_buffer.getFormat(), DepthStencilState{}};
+
+    render_state.rasterization.cull_mode = CullMode::FRONT;
+    m_pipeline_env =
+        m_device.createRenderPipeline("Pipeline_Environment", m_pipeline_layout_env, {m_shader_env}, render_state);
+
+    render_state.rasterization.cull_mode = CullMode::BACK;
     m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader}, render_state);
     loadScene(scene);
 
@@ -133,7 +145,15 @@ void Renderer::render()
         encoder.transitionTextureLayout(m_render_target, TextureLayout::COLOR_ATTACHMENT_OPTIMAL);
         encoder.transitionTextureLayout(m_depth_buffer, TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Hello Triangle");
+        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Environment");
+        encoder.bindRenderPipeline(m_pipeline_env);
+        encoder.bindDescriptorSet(m_pipeline_layout_env, 0, m_set_env);
+        encoder.setViewport(Rect2D{Offset2D{}, m_render_target.getSize()});
+        encoder.setScissor(Rect2D{Offset2D{}, m_render_target.getSize()});
+        encoder.draw(3, 1);
+        encoder.endRendering();
+
+        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Basic");
         encoder.bindRenderPipeline(m_pipeline);
         encoder.bindDescriptorSet(m_pipeline_layout, 0, m_set);
 
@@ -196,7 +216,11 @@ void Renderer::clean()
     m_shader.destroy();
     m_pipeline_layout.destroy();
     m_layout.destroy();
-    m_descriptor_allocator.destroy();
+
+    m_pipeline_env.destroy();
+    m_shader_env.destroy();
+    m_pipeline_layout_env.destroy();
+    m_layout_env.destroy();
 
     m_depth_buffer.destroy();
     m_render_target.destroy();
@@ -224,8 +248,17 @@ bool Renderer::loadScene(const scene::Scene &scene)
     m_scene_data.init(m_device, scene);
     if (m_scene_data.isValid())
     {
-        m_set = m_descriptor_allocator.allocate(
-            "Descriptor_Set_Gradient", m_layout,
+        m_set_env =
+            m_device.allocateDescriptorSet("Descriptor_Set_Environment", m_layout_env,
+                                           {
+                                               ShaderBindingResource{0, &m_scene_data.getCameraBuffer()},
+                                               ShaderBindingResource{1, &m_scene_data.getEnvironmentLightBuffer()},
+                                               ShaderBindingResource{2, &m_scene_data.getEnvironmentLightTexture(),
+                                                                     &m_scene_data.getEnvironmentLightTextureSampler()},
+                                           });
+
+        m_set = m_device.allocateDescriptorSet(
+            "Descriptor_Set_Basic", m_layout,
             {ShaderBindingResource{0, &m_scene_data.getCameraBuffer()},
              ShaderBindingResource{1, &m_scene_data.getPositionBuffer()},
              ShaderBindingResource{2, &m_scene_data.getNormalBuffer()},

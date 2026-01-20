@@ -51,10 +51,10 @@ struct EnvironmentLightData
     std::array<float, 3> color{};
     float intensity{};
 
+    std::array<float, 16> rotation_matrix{};
+
     scene::LightUnit unit{};
     uint32_t texture_index{};
-    uint32_t transform_index{};
-    uint32_t _padding{};
 };
 
 struct MaterialPBRData
@@ -212,6 +212,21 @@ class SceneData
     [[nodiscard]] const Buffer &getEnvironmentLightBuffer() const
     {
         return m_buffer_environment_light;
+    }
+
+    [[nodiscard]] bool hasEnvironmentLightTexture() const
+    {
+        return m_environment_light.texture_index < std::numeric_limits<uint32_t>::max();
+    }
+
+    [[nodiscard]] const Texture &getEnvironmentLightTexture() const
+    {
+        return m_textures[m_texture_data[m_environment_light.texture_index].texture_index];
+    }
+
+    [[nodiscard]] const TextureSampler &getEnvironmentLightTextureSampler() const
+    {
+        return m_texture_samplers[m_texture_data[m_environment_light.texture_index].sampler_index];
     }
 
     [[nodiscard]] bool hasPunctualLights() const

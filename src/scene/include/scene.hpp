@@ -31,7 +31,7 @@ using RenderableCallback = std::function<void(NodeHandle node_handle, MeshHandle
 
 class Scene : public core::NoCopy
 {
-public:
+  public:
     Scene() = default;
     ~Scene() = default;
 
@@ -71,16 +71,14 @@ public:
     CameraHandle addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                        const float size, const float aspect_ratio = 1.0f)
     {
-        return addCamera(name,
-                         Camera::getOrthographic(clipping_planes[0], clipping_planes[1], size, aspect_ratio));
+        return addCamera(name, Camera::getOrthographic(clipping_planes[0], clipping_planes[1], size, aspect_ratio));
     }
 
     CameraHandle addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                        const std::array<float, 2> &size_2d)
     {
-        return addCamera(name,
-                         Camera::getOrthographicFromSize2D(clipping_planes[0], clipping_planes[1], size_2d[0],
-                                                           size_2d[1]));
+        return addCamera(
+            name, Camera::getOrthographicFromSize2D(clipping_planes[0], clipping_planes[1], size_2d[0], size_2d[1]));
     }
 
     void setEnvironmentLight(const EnvironmentLight &light)
@@ -110,10 +108,9 @@ public:
 
     PunctualLightHandle addPunctualLight(const std::string &name, const PunctualLight &light);
 
-    PunctualLightHandle addDirectionalLight(const std::string &name, const std::array<float, 3> &color,
-                                            const float intensity,
-                                            const LightUnit unit = DEFAULT_LIGHT_UNITS.at(
-                                                PunctualLightType::DIRECTIONAL))
+    PunctualLightHandle addDirectionalLight(
+        const std::string &name, const std::array<float, 3> &color, const float intensity,
+        const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::DIRECTIONAL))
     {
         return addPunctualLight(name, PunctualLight{PunctualLightType::DIRECTIONAL, unit, color, intensity});
     }
@@ -137,17 +134,16 @@ public:
     MeshHandle addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
                        MaterialHandle material);
 
-    NodeHandle addNode(const std::string &name, NodeFlags flags, const Transform &transform,
-                       const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource =
-                           std::nullopt,
-                       const std::optional<NodeHandle> &parent = std::nullopt);
+    NodeHandle addNode(
+        const std::string &name, NodeFlags flags, const Transform &transform,
+        const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource = std::nullopt,
+        const std::optional<NodeHandle> &parent = std::nullopt);
 
     NodeHandle addCameraNode(const std::string &name, const Camera &camera, const NodeFlags flags = NodeFlags::NONE,
                              const Transform &transform = Transform{},
                              const std::optional<NodeHandle> &parent = std::nullopt)
     {
-        if (const auto cam_handle = addCamera(name, camera);
-            cam_handle.isValid())
+        if (const auto cam_handle = addCamera(name, camera); cam_handle.isValid())
         {
             return addNode(name, flags, transform, cam_handle, parent);
         }
@@ -195,8 +191,7 @@ public:
     }
 
     NodeHandle addPunctualLightNode(const std::string &name, const PunctualLight &light,
-                                    const NodeFlags flags = NodeFlags::NONE,
-                                    const Transform &transform = Transform{},
+                                    const NodeFlags flags = NodeFlags::NONE, const Transform &transform = Transform{},
                                     const std::optional<NodeHandle> &parent = std::nullopt)
     {
         if (const auto light_handle = addPunctualLight(name, light); light_handle.isValid())
@@ -220,11 +215,10 @@ public:
         return NodeHandle{};
     }
 
-    NodeHandle addPointLightNode(const std::string &name, const std::array<float, 3> &color,
-                                 const float intensity, const float range = -1.0f,
+    NodeHandle addPointLightNode(const std::string &name, const std::array<float, 3> &color, const float intensity,
+                                 const float range = -1.0f,
                                  const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::POINT),
-                                 const NodeFlags flags = NodeFlags::NONE,
-                                 const Transform &transform = Transform{},
+                                 const NodeFlags flags = NodeFlags::NONE, const Transform &transform = Transform{},
                                  const std::optional<NodeHandle> &parent = std::nullopt)
     {
         if (const auto light_handle = addPointLight(name, color, intensity, range, unit); light_handle.isValid())
@@ -234,16 +228,16 @@ public:
         return NodeHandle{};
     }
 
-    NodeHandle addSpotLightNode(const std::string &name, const std::array<float, 3> &color,
-                                const float intensity, const float range = -1.0f, const float inner_cone_angle = 0.0f,
+    NodeHandle addSpotLightNode(const std::string &name, const std::array<float, 3> &color, const float intensity,
+                                const float range = -1.0f, const float inner_cone_angle = 0.0f,
                                 const float outer_cone_angle = 0.78539816339f,
                                 const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::SPOT),
-                                const NodeFlags flags = NodeFlags::NONE,
-                                const Transform &transform = Transform{},
+                                const NodeFlags flags = NodeFlags::NONE, const Transform &transform = Transform{},
                                 const std::optional<NodeHandle> &parent = std::nullopt)
     {
-        if (const auto light_handle = addSpotLight(name, color, intensity, range, inner_cone_angle, outer_cone_angle,
-                                                   unit); light_handle.isValid())
+        if (const auto light_handle =
+                addSpotLight(name, color, intensity, range, inner_cone_angle, outer_cone_angle, unit);
+            light_handle.isValid())
         {
             return addNode(name, flags, transform, light_handle, parent);
         }
@@ -385,6 +379,11 @@ public:
         }
     }
 
+    const EnvironmentLight &getEnvironmentLight() const
+    {
+        return m_environment_light;
+    }
+
     [[nodiscard]] std::string getPunctualLightName(const PunctualLightHandle handle) const
     {
         return m_punctual_light_names.contains(handle) ? m_punctual_light_names.at(handle) : "";
@@ -485,7 +484,7 @@ public:
         });
     }
 
-private:
+  private:
     std::string m_name{DEFAULT_NAME_SCENE};
 
     IndexBuffer m_index_buffer{};
@@ -516,5 +515,5 @@ private:
     CameraHandle m_active_camera{};
     NodeHandle m_active_camera_node{};
 };
-}
-#endif //KIRANA_SCENE_SCENE_HPP
+} // namespace kirana::scene
+#endif // KIRANA_SCENE_SCENE_HPP

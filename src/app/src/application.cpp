@@ -45,7 +45,7 @@ int Application::init()
 
     core::Window &window = m_window_manager.getWindow(m_main_window);
     const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
-    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}};
+    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}, renderer::TextureFormat::B8G8R8A8_SRGB};
 
     renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
     gpu.features.shader_draw_parameters = true;
@@ -59,6 +59,12 @@ int Application::init()
     if (!m_launch_scene_file.empty())
     {
         const auto info = scene::loadScene(m_launch_scene_file, &m_scene);
+        if (!m_environment_file.empty())
+        {
+            m_scene.setEnvironmentLightImage(
+                scene::Image{m_environment_file},
+                scene::TextureSampler{scene::TextureFilterMode::LINEAR, scene::TextureFilterMode::LINEAR});
+        }
         core::Logger::get().info("Loaded scene at path: " + info.path);
         const auto aspect_ratio =
             static_cast<float>(window.getSize().width) / static_cast<float>(window.getSize().height);

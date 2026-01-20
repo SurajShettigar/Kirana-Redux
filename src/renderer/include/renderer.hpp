@@ -21,7 +21,7 @@ struct RenderContext
 
 class Renderer : core::NoCopy
 {
-public:
+  public:
     Renderer() = default;
     ~Renderer() = default;
 
@@ -29,7 +29,8 @@ public:
     Renderer(const Renderer &renderer) = delete;
     Renderer &operator=(const Renderer &renderer) = delete;
 
-    bool init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data = {}, const scene::Scene &scene = {});
+    bool init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data = {},
+              const scene::Scene &scene = {});
     void update();
     void render();
     void lateUpdate();
@@ -39,7 +40,8 @@ public:
 
     bool loadScene(const scene::Scene &scene);
     bool updateCamera(const scene::Matrix4 &view_matrix, const scene::Matrix4 &projection_matrix);
-private:
+
+  private:
     Device m_device{};
     Swapchain m_swapchain{};
     std::vector<RenderContext> m_ctxs{};
@@ -48,7 +50,12 @@ private:
 
     SceneData m_scene_data{};
 
-    DescriptorAllocator m_descriptor_allocator{};
+    DescriptorLayout m_layout_env{};
+    DescriptorSet m_set_env{};
+    PipelineLayout m_pipeline_layout_env{};
+    Shader m_shader_env{};
+    PipelineRender m_pipeline_env{};
+
     DescriptorLayout m_layout{};
     DescriptorSet m_set{};
     PipelineLayout m_pipeline_layout{};
@@ -57,6 +64,6 @@ private:
 
     size_t m_current_index{0};
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_RENDERER_HPP
+#endif // KIRANA_RENDERER_RENDERER_HPP

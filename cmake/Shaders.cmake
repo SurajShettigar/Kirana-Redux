@@ -73,3 +73,4 @@ endfunction()
 
 addShader(${SHADERS_ROOT_DIR_SOURCE}/gradient.slang "")
 addShader(${SHADERS_ROOT_DIR_SOURCE}/basic.slang "" "mainVS" "mainFS")
+addShader(${SHADERS_ROOT_DIR_SOURCE}/environment.slang "" "mainVS" "mainFS")

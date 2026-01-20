@@ -18,12 +18,10 @@ namespace kirana::renderer
 class Device
 {
     friend VKAPI_ATTR VkBool32 VKAPI_CALL validationCallback(
-        vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
-        vk::DebugUtilsMessageTypeFlagsEXT message_types,
-        const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
-        void *p_user_data);
+        vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity, vk::DebugUtilsMessageTypeFlagsEXT message_types,
+        const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data);
 
-public:
+  public:
     Device() = default;
     ~Device() = default;
 
@@ -114,6 +112,10 @@ public:
     [[nodiscard]] DescriptorLayout createDescriptorLayout(const std::string &name, ShaderStageFlags shader_stages,
                                                           const std::vector<ShaderBinding> &bindings = {}) const;
 
+    [[nodiscard]] DescriptorSet allocateDescriptorSet(
+        const std::string &name, const DescriptorLayout &layout,
+        const std::vector<ShaderBindingResource> &binding_resources = {}) const;
+
     [[nodiscard]] Shader createShader(const std::string &name, const core::Filepath &source_path,
                                       const std::vector<ShaderStageFlags> &stages = {ShaderStageFlags::COMPUTE},
                                       const std::vector<std::string> &entry_points = {"main"}) const;
@@ -141,7 +143,7 @@ public:
 
     void waitIdle() const;
 
-private:
+  private:
     vk::Instance m_instance{nullptr};
     vk::DebugUtilsMessengerEXT m_debug_messenger{nullptr};
 
@@ -158,6 +160,7 @@ private:
     uint32_t m_queue_index_transfer{0};
 
     MemoryAllocator m_memory_allocator{};
+    DescriptorAllocator m_descriptor_allocator{};
 };
-}
+} // namespace kirana::renderer
 #endif // KIRANA_RENDERER_DEVICE_HPP

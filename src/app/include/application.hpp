@@ -24,6 +24,10 @@ public:
         {
             m_launch_scene_file = argv[1];
         }
+        if (argc > 2)
+        {
+            m_environment_file = argv[2];
+        }
     }
 
     ~Application()
@@ -35,6 +39,7 @@ public:
 
 private:
     std::string m_launch_scene_file{};
+    std::string m_environment_file{};
 
     core::TimeManager m_time_manager{};
     core::InputManager m_input_manager{};

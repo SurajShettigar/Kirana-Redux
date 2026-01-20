@@ -8,14 +8,14 @@
 
 namespace kirana::scene
 {
-enum struct PunctualLightType: uint32_t
+enum struct PunctualLightType : uint32_t
 {
     DIRECTIONAL = 0u,
     POINT = 1u,
     SPOT = 2u,
 };
 
-enum struct LightUnit: uint32_t
+enum struct LightUnit : uint32_t
 {
     /// Luminous FLux (lm) Radiometric Unit => Radiant Flux (watt (W))
     LUMEN = 0u,
@@ -38,7 +38,7 @@ struct PunctualLight final : core::IResource
     std::array<float, 3> color{1.0f, 1.0f, 1.0f};
     float intensity{1.0f};
     float range{-1.0f};
-    float spot_cone_angle_inner{0.0f}; // radians
+    float spot_cone_angle_inner{0.0f};           // radians
     float spot_cone_angle_outer{0.78539816339f}; // radians
 
     PunctualLight() = default;
@@ -54,11 +54,12 @@ struct PunctualLight final : core::IResource
 
 struct EnvironmentLight
 {
-    LightUnit unit{LightUnit::NIT};
     std::array<float, 3> color{1.0f, 1.0f, 1.0f};
     float intensity{1.0f};
+    LightUnit unit{LightUnit::NIT};
+    Quaternion rotation{};
     TextureHandle texture{};
 };
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_LIGHT_HPP
+#endif // KIRANA_SCENE_LIGHT_HPP
