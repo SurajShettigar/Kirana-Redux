@@ -34,6 +34,8 @@ StructuredBuffer<MaterialPBR> materials;
 SamplerState samplers[];
 Texture2D<float4> textures[];
 
+static const float3 LIGHT_DIR = float3(0.0f, 0.0f, 1.0f);
+
 
 float4 sampleTexture(uint index, float2 uv) {
     if(index == INVALID_ID) {
@@ -67,6 +69,8 @@ VertexOutput mainVS(VertexInput input)
 FragmentOutput mainFS(VertexOutput v_input)
 {
     const MaterialPBR mat = materials[v_input.mat_id];
-    const float4 color = mat.base_color * sampleTexture(mat.texture_base_color_index, v_input.uv);
+    float3 color = mat.base_color.rgb * sampleTexture(mat.texture_base_color_index, v_input.uv).rgb;
+    float3 dot_p = (1.0 + dot(v_input.normal, LIGHT_DIR)) * 0.5;
+    color *= dot_p * dot_p;
     return FragmentOutput(float4(color.rgb, 1.0));
 }

@@ -299,10 +299,11 @@ bool Device::init(const DeviceInitializationData &init_data)
                                          ShaderBindingTypeRatios{ShaderBindingType::COMBINED_IMAGE_SAMPLER, 0.25f},
                                          ShaderBindingTypeRatios{ShaderBindingType::SAMPLED_IMAGE, 0.25f},
                                          ShaderBindingTypeRatios{ShaderBindingType::SAMPLER, 0.25f},
+                                         ShaderBindingTypeRatios{ShaderBindingType::STORAGE_IMAGE, 0.25f},
                                          ShaderBindingTypeRatios{ShaderBindingType::STORAGE_BUFFER, 0.25f},
                                          ShaderBindingTypeRatios{ShaderBindingType::UNIFORM_BUFFER, 0.25f},
                                      },
-                                     81920))
+                                     98304))
     {
         core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to initialize descriptor allocator.");
         return false;

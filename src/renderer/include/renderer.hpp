@@ -62,6 +62,12 @@ class Renderer : core::NoCopy
     Shader m_shader{};
     PipelineRender m_pipeline{};
 
+    DescriptorLayout m_layout_tonemap{};
+    DescriptorSet m_set_tonemap{};
+    PipelineLayout m_pipeline_layout_tonemap{};
+    Shader m_shader_tonemap{};
+    PipelineCompute m_pipeline_tonemap{};
+
     size_t m_current_index{0};
 };
 } // namespace kirana::renderer

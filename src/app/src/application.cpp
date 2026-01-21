@@ -45,7 +45,8 @@ int Application::init()
 
     core::Window &window = m_window_manager.getWindow(m_main_window);
     const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
-    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height}, renderer::TextureFormat::B8G8R8A8_SRGB};
+    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height},
+                                            renderer::TextureFormat::B8G8R8A8_UNORM};
 
     renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
     gpu.features.shader_draw_parameters = true;

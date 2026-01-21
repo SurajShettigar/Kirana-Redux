@@ -29,6 +29,11 @@ struct Size2D
     {
         return width != 0 && height != 0;
     }
+
+    [[nodiscard]] bool operator==(const Size2D &rhs) const
+    {
+        return width == rhs.width && height == rhs.height;
+    }
 };
 
 struct Size3D
@@ -40,6 +45,11 @@ struct Size3D
     [[nodiscard]] bool isValid() const
     {
         return width != 0 && height != 0 && depth != 0;
+    }
+
+    [[nodiscard]] bool operator==(const Size3D &rhs) const
+    {
+        return width == rhs.width && height == rhs.height && depth == rhs.depth;
     }
 };
 

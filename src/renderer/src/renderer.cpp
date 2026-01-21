@@ -90,6 +90,14 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
     m_shader = m_device.createShader("Shader_Basic_Vertex", "shaders/basic.spv",
                                      {ShaderStageFlags::VERTEX, ShaderStageFlags::FRAGMENT}, {"mainVS", "mainFS"});
 
+    m_layout_tonemap = m_device.createDescriptorLayout("Descriptor_Layout_Tonemap", ShaderStageFlags::COMPUTE,
+                                                       {
+                                                           // Render Texture
+                                                           ShaderBinding{0, ShaderBindingType::STORAGE_IMAGE},
+                                                       });
+    m_pipeline_layout_tonemap = m_device.createPipelineLayout("Pipeline_Layout_Tonemap", {m_layout_tonemap});
+    m_shader_tonemap = m_device.createShader("Shader_Tonemap", "shaders/tonemapping.spv", {ShaderStageFlags::COMPUTE});
+
     auto render_state = RenderState{};
     render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
     render_state.depth_stencil_attachment = DepthStencilAttachment{m_depth_buffer.getFormat(), DepthStencilState{}};
@@ -100,6 +108,14 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
 
     render_state.rasterization.cull_mode = CullMode::BACK;
     m_pipeline = m_device.createRenderPipeline("Pipeline_Basic", m_pipeline_layout, {m_shader}, render_state);
+
+    m_pipeline_tonemap =
+        m_device.createComputePipeline("Pipeline_Tonemap", m_pipeline_layout_tonemap, m_shader_tonemap);
+    m_set_tonemap = m_device.allocateDescriptorSet("Descriptor_Set_Tonemap", m_layout_tonemap,
+                                                   {
+                                                       ShaderBindingResource{0, &m_render_target},
+                                                   });
+
     loadScene(scene);
 
     m_current_index = 0;
@@ -129,6 +145,33 @@ void Renderer::render()
     const auto [swapchain_index, swapchain_texture, swapchain_semaphore] = swapchain_result.value();
 
     fence.reset();
+
+    // TODO: Add better texture resizing.
+    if (swapchain_texture.getSize() != m_render_target.getSize())
+    {
+        const auto size = swapchain_texture.getSize();
+        m_render_target.destroy();
+        m_depth_buffer.destroy();
+
+        encoder.begin();
+        m_render_target =
+            m_device.createTexture(encoder, "Render_Target_Color", size, TextureFormat::R32G32B32A32_SFLOAT,
+                                   TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
+                                       TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
+        m_depth_buffer =
+            m_device.createTexture(encoder, "Render_Target_Depth", size, TextureFormat::D32_SFLOAT,
+                                   TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST);
+
+        queue.submit(encoder.finish(), fence);
+        if (!fence.wait(FENCE_WAIT_TIMEOUT))
+        {
+            return;
+        }
+        fence.reset();
+
+        m_set_tonemap.updateBindingResources(m_layout_tonemap, {ShaderBindingResource{0, &m_render_target}});
+    }
+
     const auto &render_semaphore = m_ctxs[swapchain_index].semaphore;
 
     queue.addWaitSemaphore(swapchain_semaphore);
@@ -178,12 +221,15 @@ void Renderer::render()
         });
         encoder.endRendering();
     }
-    // const auto [width, height] = m_render_target.getSize();
-    // const std::array<uint32_t, 3> group_count = {
-    //     static_cast<uint32_t>(std::ceil(static_cast<float>(width) / 16.0f)),
-    //     static_cast<uint32_t>(std::ceil(static_cast<float>(height) / 16.0f)),
-    //     1};
-    // encoder.dispatch(group_count);
+
+    encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
+    encoder.bindComputePipeline(m_pipeline_tonemap);
+    encoder.bindDescriptorSet(m_pipeline_layout_tonemap, 0, m_set_tonemap);
+    const auto [width, height] = m_render_target.getSize();
+    const std::array<uint32_t, 3> group_count = {static_cast<uint32_t>(std::ceil(static_cast<float>(width) / 16.0f)),
+                                                 static_cast<uint32_t>(std::ceil(static_cast<float>(height) / 16.0f)),
+                                                 1};
+    encoder.dispatch(group_count);
 
     encoder.transitionTextureLayout(m_render_target, TextureLayout::TRANSFER_SRC_OPTIMAL);
     encoder.transitionTextureLayout(swapchain_texture, TextureLayout::TRANSFER_DST_OPTIMAL);
@@ -211,6 +257,11 @@ void Renderer::clean()
     m_device.waitIdle();
 
     m_scene_data.destroy();
+
+    m_pipeline_tonemap.destroy();
+    m_shader_tonemap.destroy();
+    m_pipeline_layout_tonemap.destroy();
+    m_layout_tonemap.destroy();
 
     m_pipeline.destroy();
     m_shader.destroy();
