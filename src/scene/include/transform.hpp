@@ -12,7 +12,7 @@ namespace kirana::scene
 {
 class Transform
 {
-public:
+  public:
     Transform() = default;
 
     explicit Transform(const Matrix4 &matrix)
@@ -27,32 +27,26 @@ public:
         decomposeMatrix();
     }
 
-    explicit Transform(const Vector3 &position,
-                       const Quaternion &rotation,
-                       const Vector3 &scale)
+    explicit Transform(const Vector3 &position, const Quaternion &rotation, const Vector3 &scale)
         : m_position{position}, m_rotation{rotation}, m_scale{scale}
     {
         updateMatrix();
     }
 
-    explicit Transform(const Vector3 &position,
-                       const Vector3 &euler_angles,
-                       const Vector3 &scale)
+    explicit Transform(const Vector3 &position, const Vector3 &euler_angles, const Vector3 &scale)
         : m_position{position}, m_rotation{Quaternion::fromEulerAngles(euler_angles)}, m_scale{scale}
     {
         updateMatrix();
     }
 
-    explicit Transform(const std::array<float, 3> &position,
-                       const std::array<float, 4> &quaternion,
+    explicit Transform(const std::array<float, 3> &position, const std::array<float, 4> &quaternion,
                        const std::array<float, 3> &scale)
         : m_position{position}, m_rotation{quaternion}, m_scale{scale}
     {
         updateMatrix();
     }
 
-    explicit Transform(const std::array<float, 3> &position,
-                       const std::array<float, 3> &euler_angles,
+    explicit Transform(const std::array<float, 3> &position, const std::array<float, 3> &euler_angles,
                        const std::array<float, 3> &scale)
         : m_position{position}, m_rotation{Quaternion::fromEulerAngles(Vector3{euler_angles})}, m_scale{scale}
     {
@@ -220,7 +214,7 @@ public:
         return static_cast<Vector3>(transformVector(static_cast<Vector4>(dir)));
     }
 
-private:
+  private:
     Vector3 m_position{0.0f};
     Quaternion m_rotation{};
     Vector3 m_scale{1.0f};
@@ -252,11 +246,19 @@ struct HierarchyTransform final : core::IResource
 
     HierarchyTransform() = default;
 
-    explicit HierarchyTransform(const Transform &local, const Transform &world)
-        : IResource{}, local{local}, world{world}
+    explicit HierarchyTransform(const Transform &local, const Transform &world) : local{local}, world{world}
+    {
+    }
+
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
     {
     }
 };
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_TRANSFORM_HPP
+#endif // KIRANA_SCENE_TRANSFORM_HPP

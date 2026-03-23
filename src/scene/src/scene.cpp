@@ -9,9 +9,17 @@
 
 namespace kirana::scene
 {
-ImageHandle Scene::addImage(const std::string &name, const Image &image)
+ImageHandle Scene::addImage(const std::string &name, const std::string &path, const std::vector<uint8_t> &raw_buffer)
 {
-    const auto handle = m_images.add(image);
+    ImageHandle handle;
+    if (raw_buffer.empty())
+    {
+        handle = m_images.add(Image{path});
+    }
+    else
+    {
+        handle = m_images.add(Image{path, raw_buffer});
+    }
     if (!handle.isValid())
     {
         return handle;
@@ -20,16 +28,6 @@ ImageHandle Scene::addImage(const std::string &name, const Image &image)
                                                ? DEFAULT_NAME_IMAGE + "_" + std::to_string(handle.getIndex())
                                                : name);
     return handle;
-}
-
-ImageHandle Scene::addImage(const std::string &name, const std::string &path)
-{
-    return addImage(name, Image{path});
-}
-
-ImageHandle Scene::addImage(const std::string &name, const std::vector<uint8_t> &raw_buffer)
-{
-    return addImage(name, Image::loadFromRawBuffer(name, raw_buffer));
 }
 
 TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image, const TextureSampler &sampler,
@@ -48,7 +46,7 @@ TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image
 
 MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &material)
 {
-    const auto handle = m_materials.add(material);
+    const auto handle = m_materials.add(MaterialPBR{material});
     if (!handle.isValid())
     {
         return handle;
@@ -61,7 +59,7 @@ MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &ma
 
 CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
 {
-    const auto handle = m_cameras.add(camera);
+    const auto handle = m_cameras.add(Camera{camera});
     if (!handle.isValid())
     {
         return handle;
@@ -79,7 +77,7 @@ CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
 
 PunctualLightHandle Scene::addPunctualLight(const std::string &name, const PunctualLight &light)
 {
-    const auto handle = m_punctual_lights.add(light);
+    const auto handle = m_punctual_lights.add(PunctualLight{light});
     if (!handle.isValid())
     {
         return handle;

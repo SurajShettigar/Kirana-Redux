@@ -10,14 +10,14 @@
 
 namespace kirana::scene
 {
-enum class AlphaMode: uint32_t
+enum class AlphaMode : uint32_t
 {
     OPAQUE = 0u,
     MASK = 1u,
     BLEND = 2u,
 };
 
-struct MaterialPBR: core::IResource
+struct MaterialPBR final : core::IResource
 {
     AlphaMode alpha_mode{AlphaMode::OPAQUE};
     float alpha_cutoff{0.5f};
@@ -86,7 +86,16 @@ struct MaterialPBR: core::IResource
     TextureHandle texture_volume_thickness{};
 
     MaterialPBR() = default;
-};
-}
 
-#endif //KIRANA_SCENE_MATERIAL_HPP
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
+    {
+    }
+};
+} // namespace kirana::scene
+
+#endif // KIRANA_SCENE_MATERIAL_HPP

@@ -59,14 +59,23 @@ struct Texture final : core::IResource
 
     explicit Texture(const ImageHandle image, const TextureSampler &sampler, const TextureTransform &transform,
                      const uint32_t tex_coord)
-        : IResource{}, image{image}, sampler{sampler}, transform{transform}, tex_coord{tex_coord}
+        : image{image}, sampler{sampler}, transform{transform}, tex_coord{tex_coord}
     {
 
     }
 
-    [[nodiscard]] bool isValid() const
+    [[nodiscard]] bool isValid() const override
     {
-        return image.isValid();
+        return IResource::isValid() && image.isValid();
+    }
+
+protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
+    {
     }
 };
 }

@@ -50,9 +50,7 @@ class Scene : public core::NoCopy
     }
 
 
-    ImageHandle addImage(const std::string &name, const Image &image);
-    ImageHandle addImage(const std::string &name, const std::string &path);
-    ImageHandle addImage(const std::string &name, const std::vector<uint8_t> &raw_buffer);
+    ImageHandle addImage(const std::string &name, const std::string &path, const std::vector<uint8_t> &raw_buffer = {});
 
     TextureHandle addTexture(const std::string &name, ImageHandle image, const TextureSampler &sampler = {},
                              const TextureTransform &transform = {}, uint32_t tex_coord = 0u);
@@ -86,7 +84,7 @@ class Scene : public core::NoCopy
         m_environment_light = light;
     }
 
-    TextureHandle setEnvironmentLightImage(const Image &image, const TextureSampler &sampler = {},
+    TextureHandle setEnvironmentLightImage(const std::string &image_path, const TextureSampler &sampler = {},
                                            const TextureTransform &transform = {})
     {
         if (const auto tex = getTexture(m_environment_light.texture); tex)
@@ -96,12 +94,12 @@ class Scene : public core::NoCopy
             {
                 m_images.remove(tex->image);
             }
-            tex->image = addImage("Image_Environment_Light", image);
+            tex->image = addImage("Image_Environment_Light", image_path);
             tex->sampler = sampler;
             tex->transform = transform;
             return m_environment_light.texture;
         }
-        const auto img_handle = addImage("Image_Environment_Light", image);
+        const auto img_handle = addImage("Image_Environment_Light", image_path);
         m_environment_light.texture = addTexture("Texture_Environment_Light", img_handle, sampler, transform);
         return m_environment_light.texture;
     }

@@ -90,7 +90,7 @@ enum class GLTFComponentType : uint32_t
     FLOAT = 5126u
 };
 
-enum class GLTFAccessorType: uint32_t
+enum class GLTFAccessorType : uint32_t
 {
     UNKNOWN = 0u,
     SCALAR = 1u,
@@ -102,7 +102,7 @@ enum class GLTFAccessorType: uint32_t
     MAT_4 = 7u
 };
 
-enum class GLTFPrimitiveAttribute: uint32_t
+enum class GLTFPrimitiveAttribute : uint32_t
 {
     UNKNOWN = 0u,
     POSITION = 1u,
@@ -158,27 +158,27 @@ enum class GLTFWrapMode : uint32_t
     REPEAT = 10497
 };
 
-enum class GLTFCameraType: uint32_t
+enum class GLTFCameraType : uint32_t
 {
     PERSPECTIVE = 0u,
     ORTHOGRAPHIC = 1u
 };
 
-enum class GLTFAlphaMode: uint32_t
+enum class GLTFAlphaMode : uint32_t
 {
     OPAQUE = 0u,
     MASK = 1u,
     BLEND = 2u,
 };
 
-enum class GLTFPunctualLightType: uint32_t
+enum class GLTFPunctualLightType : uint32_t
 {
     DIRECTIONAL = 0u,
     POINT = 1u,
     SPOT = 2u,
 };
 
-enum class GLTFAnimationPath: uint32_t
+enum class GLTFAnimationPath : uint32_t
 {
     UNKNOWN = 0u,
     TRANSLATION = 1u,
@@ -187,7 +187,7 @@ enum class GLTFAnimationPath: uint32_t
     WEIGHTS = 4u
 };
 
-enum class GLTFInterpolation: uint32_t
+enum class GLTFInterpolation : uint32_t
 {
     UNKNOWN = 0u,
     LINEAR = 1u,
@@ -224,7 +224,7 @@ struct GLTFBuffer
 struct GLTFBufferView
 {
     /// Index into the buffer array.
-    uint32_t buffer{}; // required
+    uint32_t buffer{};      // required
     uint64_t byte_length{}; // required
 
     uint64_t byte_offset{0};
@@ -242,7 +242,7 @@ struct GLTFBufferView
 struct GLTFAccessorSparseIndices
 {
     GLTFComponentType component_type{}; // required - must be an unsigned int type
-    uint32_t buffer_view{}; // required
+    uint32_t buffer_view{};             // required
     uint64_t byte_offset{0};
 
     [[nodiscard]] bool isValid() const
@@ -260,9 +260,9 @@ struct GLTFAccessorSparseValues
 
 struct GLTFAccessorSparse
 {
-    uint64_t count{}; // required
+    uint64_t count{};                    // required
     GLTFAccessorSparseIndices indices{}; // required
-    GLTFAccessorSparseValues values{}; // required
+    GLTFAccessorSparseValues values{};   // required
 
     [[nodiscard]] bool isValid() const
     {
@@ -273,8 +273,8 @@ struct GLTFAccessorSparse
 struct GLTFAccessor
 {
     GLTFComponentType component_type{}; // required
-    GLTFAccessorType type{}; // required
-    uint64_t count{}; // required
+    GLTFAccessorType type{};            // required
+    uint64_t count{};                   // required
 
     std::optional<uint32_t> buffer_view{};
     std::optional<GLTFAccessorSparse> sparse{};
@@ -350,8 +350,8 @@ struct GLTFImage
 
     [[nodiscard]] bool isValid() const
     {
-        return (uri.has_value() && !buffer_view.has_value())
-               || (!uri.has_value() && buffer_view.has_value() && mime_type.has_value());
+        return (uri.has_value() && !buffer_view.has_value()) ||
+               (!uri.has_value() && buffer_view.has_value() && mime_type.has_value());
     }
 };
 
@@ -545,7 +545,8 @@ struct GLTFMeshPrimitive
     /// Index into the material array.
     std::optional<uint32_t> material{};
     GLTFPrimitiveMode mode{GLTFPrimitiveMode::TRIANGLES};
-    /// Array of morph targets. Each morph target has a mapping of the attribute name and its corresponding accessor index.
+    /// Array of morph targets. Each morph target has a mapping of the attribute name and its corresponding accessor
+    /// index.
     std::map<std::string, uint32_t> targets{};
 
     [[nodiscard]] bool isValid() const
@@ -636,8 +637,8 @@ struct GLTFCameraOrthographic
 {
     float magnification_x{}; // required
     float magnification_y{}; // required
-    float z_far{}; // required
-    float z_near{}; // required
+    float z_far{};           // required
+    float z_near{};          // required
 
     [[nodiscard]] bool isValid() const
     {
@@ -647,15 +648,15 @@ struct GLTFCameraOrthographic
 
 struct GLTFCameraPerspective
 {
-    float fov_y{}; // required
+    float fov_y{};  // required
     float z_near{}; // required
     std::optional<float> aspect_ratio{};
     std::optional<float> z_far{};
 
     [[nodiscard]] bool isValid() const
     {
-        return fov_y > 0.0f && z_near > 0.0f && (z_far.has_value() ? *z_far > 0.0f && *z_far > z_near : true) && (
-                   aspect_ratio.has_value() ? *aspect_ratio > 0.0f : true);
+        return fov_y > 0.0f && z_near > 0.0f && (z_far.has_value() ? *z_far > 0.0f && *z_far > z_near : true) &&
+               (aspect_ratio.has_value() ? *aspect_ratio > 0.0f : true);
     }
 };
 
@@ -713,10 +714,10 @@ struct GLTFNode
 
     [[nodiscard]] bool isValid() const
     {
-        return (camera.has_value() && !skin.has_value() && !mesh.has_value())
-               || (!camera.has_value() && mesh.has_value())
-               || (!camera.has_value() && skin.has_value() && mesh.has_value())
-               || (!camera.has_value() && !weights.empty() && mesh.has_value());
+        return (camera.has_value() && !skin.has_value() && !mesh.has_value()) ||
+               (!camera.has_value() && mesh.has_value()) ||
+               (!camera.has_value() && skin.has_value() && mesh.has_value()) ||
+               (!camera.has_value() && !weights.empty() && mesh.has_value());
     }
 };
 
@@ -755,7 +756,7 @@ struct GLTFAnimationChannelTarget
 
 struct GLTFAnimationChannel
 {
-    uint32_t sampler{}; // required
+    uint32_t sampler{};                  // required
     GLTFAnimationChannelTarget target{}; // required
 };
 
@@ -833,7 +834,7 @@ struct GLTFBinaryHeader
     }
 };
 
-enum class GLTFBinaryChunkType: uint32_t
+enum class GLTFBinaryChunkType : uint32_t
 {
     BIN = 0x004E4942u,
     JSON = 0x4E4F534Au,
@@ -848,7 +849,7 @@ struct GLTFBinaryChunk
 
 class GLTFBinaryDocument
 {
-public:
+  public:
     GLTFBinaryDocument() = default;
     ~GLTFBinaryDocument() = default;
 
@@ -885,14 +886,14 @@ public:
         return {};
     }
 
-private:
+  private:
     GLTFBinaryHeader m_header{};
     std::vector<GLTFBinaryChunk> m_chunks{};
 };
 
 class GLTFLoader
 {
-public:
+  public:
     GLTFLoader() = default;
     ~GLTFLoader() = default;
 
@@ -902,6 +903,16 @@ public:
      * @param load_buffers If true, the external binary buffers (.bin) files are loaded into the memory.
      */
     explicit GLTFLoader(std::string path, bool load_buffers = false);
+
+    [[nodiscard]] const std::string &getFilePath() const
+    {
+        return m_path;
+    }
+
+    [[nodiscard]] const std::string &getFileRootPath() const
+    {
+        return m_base_path;
+    }
 
     [[nodiscard]] bool isValid() const
     {
@@ -928,7 +939,7 @@ public:
     bool loadBufferViewData(const GLTFBufferView &view, uint8_t *out_data);
     bool loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_data);
 
-private:
+  private:
     std::string m_path{};
     std::string m_base_path{};
 
@@ -944,605 +955,353 @@ private:
     bool loadImage(uint32_t image_index);
 };
 #pragma endregion
-}
+} // namespace kirana::scene
 #pragma region GLAZE_JSON_SCHEMA
-template <>
-struct glz::meta<kirana::scene::GLTFAccessorType>
+template <> struct glz::meta<kirana::scene::GLTFAccessorType>
 {
     using enum kirana::scene::GLTFAccessorType;
-    static constexpr auto value = enumerate(
-        "SCALAR", SCALAR,
-        "VEC2", VEC_2,
-        "VEC3", VEC_3,
-        "VEC4", VEC_4,
-        "MAT2", MAT_2,
-        "MAT3", MAT_3,
-        "MAT4", MAT_4
-        );
+    static constexpr auto value = enumerate("SCALAR", SCALAR, "VEC2", VEC_2, "VEC3", VEC_3, "VEC4", VEC_4, "MAT2",
+                                            MAT_2, "MAT3", MAT_3, "MAT4", MAT_4);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFImageMimeType>
+template <> struct glz::meta<kirana::scene::GLTFImageMimeType>
 {
     using enum kirana::scene::GLTFImageMimeType;
-    static constexpr auto value = glz::enumerate(
-        "image/jpeg", JPEG,
-        "image/png", PNG
-        );
+    static constexpr auto value = glz::enumerate("image/jpeg", JPEG, "image/png", PNG);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFCameraType>
+template <> struct glz::meta<kirana::scene::GLTFCameraType>
 {
     using enum kirana::scene::GLTFCameraType;
-    static constexpr auto value = glz::enumerate(
-        "perspective", PERSPECTIVE,
-        "orthographic", ORTHOGRAPHIC
-        );
+    static constexpr auto value = glz::enumerate("perspective", PERSPECTIVE, "orthographic", ORTHOGRAPHIC);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFPunctualLightType>
+template <> struct glz::meta<kirana::scene::GLTFPunctualLightType>
 {
     using enum kirana::scene::GLTFPunctualLightType;
-    static constexpr auto value = glz::enumerate(
-        "directional", DIRECTIONAL,
-        "point", POINT,
-        "spot", SPOT
-        );
+    static constexpr auto value = glz::enumerate("directional", DIRECTIONAL, "point", POINT, "spot", SPOT);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAlphaMode>
+template <> struct glz::meta<kirana::scene::GLTFAlphaMode>
 {
     using enum kirana::scene::GLTFAlphaMode;
-    static constexpr auto value = glz::enumerate(
-        "OPAQUE", OPAQUE,
-        "MASK", MASK,
-        "BLEND", BLEND
-        );
+    static constexpr auto value = glz::enumerate("OPAQUE", OPAQUE, "MASK", MASK, "BLEND", BLEND);
 };
 
 
-template <>
-struct glz::meta<kirana::scene::GLTFAnimationPath>
+template <> struct glz::meta<kirana::scene::GLTFAnimationPath>
 {
     using enum kirana::scene::GLTFAnimationPath;
-    static constexpr auto value = glz::enumerate(
-        "translation", TRANSLATION,
-        "rotation", ROTATION,
-        "scale", SCALE,
-        "weights", WEIGHTS
-        );
+    static constexpr auto value =
+        glz::enumerate("translation", TRANSLATION, "rotation", ROTATION, "scale", SCALE, "weights", WEIGHTS);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFInterpolation>
+template <> struct glz::meta<kirana::scene::GLTFInterpolation>
 {
     using enum kirana::scene::GLTFInterpolation;
-    static constexpr auto value = glz::enumerate(
-        "LINEAR", LINEAR,
-        "STEP", STEP,
-        "CUBICSPLINE", CUBIC_SPLINE
-        );
+    static constexpr auto value = glz::enumerate("LINEAR", LINEAR, "STEP", STEP, "CUBICSPLINE", CUBIC_SPLINE);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAsset>
+template <> struct glz::meta<kirana::scene::GLTFAsset>
 {
     using T = kirana::scene::GLTFAsset;
-    static constexpr auto value = object(
-        "version", &T::version,
-        "minVersion", &T::min_version,
-        "copyright", &T::copyright,
-        "generator", &T::generator
-        );
+    static constexpr auto value = object("version", &T::version, "minVersion", &T::min_version, "copyright",
+                                         &T::copyright, "generator", &T::generator);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFBuffer>
+template <> struct glz::meta<kirana::scene::GLTFBuffer>
 {
     using T = kirana::scene::GLTFBuffer;
-    static constexpr auto value = object(
-        "uri", &T::uri,
-        "byteLength", &T::byte_length,
-        "name", &T::name
-        );
+    static constexpr auto value = object("uri", &T::uri, "byteLength", &T::byte_length, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFBufferView>
+template <> struct glz::meta<kirana::scene::GLTFBufferView>
 {
     using T = kirana::scene::GLTFBufferView;
-    static constexpr auto value = object(
-        "buffer", &T::buffer,
-        "byteOffset", &T::byte_offset,
-        "byteLength", &T::byte_length,
-        "byteStride", &T::byte_stride,
-        "target", &T::target,
-        "name", &T::name
-        );
+    static constexpr auto value =
+        object("buffer", &T::buffer, "byteOffset", &T::byte_offset, "byteLength", &T::byte_length, "byteStride",
+               &T::byte_stride, "target", &T::target, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAccessorSparseIndices>
+template <> struct glz::meta<kirana::scene::GLTFAccessorSparseIndices>
 {
     using T = kirana::scene::GLTFAccessorSparseIndices;
-    static constexpr auto value = object(
-        "bufferView", &T::buffer_view,
-        "byteOffset", &T::byte_offset,
-        "componentType", &T::component_type
-        );
+    static constexpr auto value =
+        object("bufferView", &T::buffer_view, "byteOffset", &T::byte_offset, "componentType", &T::component_type);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAccessorSparseValues>
+template <> struct glz::meta<kirana::scene::GLTFAccessorSparseValues>
 {
     using T = kirana::scene::GLTFAccessorSparseValues;
-    static constexpr auto value = object(
-        "bufferView", &T::buffer_view,
-        "byteOffset", &T::byte_offset
-        );
+    static constexpr auto value = object("bufferView", &T::buffer_view, "byteOffset", &T::byte_offset);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAccessorSparse>
+template <> struct glz::meta<kirana::scene::GLTFAccessorSparse>
 {
     using T = kirana::scene::GLTFAccessorSparse;
-    static constexpr auto value = object(
-        "count", &T::count,
-        "indices", &T::indices,
-        "values", &T::values
-        );
+    static constexpr auto value = object("count", &T::count, "indices", &T::indices, "values", &T::values);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAccessor>
+template <> struct glz::meta<kirana::scene::GLTFAccessor>
 {
     using T = kirana::scene::GLTFAccessor;
-    static constexpr auto value = object(
-        "bufferView", &T::buffer_view,
-        "byteOffset", &T::byte_offset,
-        "componentType", &T::component_type,
-        "normalized", &T::normalized,
-        "count", &T::count,
-        "type", &T::type,
-        "max", &T::max,
-        "min", &T::min,
-        "sparse", &T::sparse,
-        "name", &T::name
-        );
+    static constexpr auto value =
+        object("bufferView", &T::buffer_view, "byteOffset", &T::byte_offset, "componentType", &T::component_type,
+               "normalized", &T::normalized, "count", &T::count, "type", &T::type, "max", &T::max, "min", &T::min,
+               "sparse", &T::sparse, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFImage>
+template <> struct glz::meta<kirana::scene::GLTFImage>
 {
     using T = kirana::scene::GLTFImage;
-    static constexpr auto value = object(
-        "uri", &T::uri,
-        "mimeType", &T::mime_type,
-        "bufferView", &T::buffer_view,
-        "name", &T::name
-        );
+    static constexpr auto value =
+        object("uri", &T::uri, "mimeType", &T::mime_type, "bufferView", &T::buffer_view, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFSampler>
+template <> struct glz::meta<kirana::scene::GLTFSampler>
 {
     using T = kirana::scene::GLTFSampler;
-    static constexpr auto value = object(
-        "magFilter", &T::mag_filter,
-        "minFilter", &T::min_filter,
-        "wrapS", &T::wrap_s,
-        "wrapT", &T::wrap_t,
-        "name", &T::name
-        );
+    static constexpr auto value = object("magFilter", &T::mag_filter, "minFilter", &T::min_filter, "wrapS", &T::wrap_s,
+                                         "wrapT", &T::wrap_t, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFTexture>
+template <> struct glz::meta<kirana::scene::GLTFTexture>
 {
     using T = kirana::scene::GLTFTexture;
-    static constexpr auto value = object(
-        "sampler", &T::sampler,
-        "source", &T::source,
-        "name", &T::name
-        );
+    static constexpr auto value = object("sampler", &T::sampler, "source", &T::source, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFTextureTransform>
+template <> struct glz::meta<kirana::scene::GLTFTextureTransform>
 {
     using T = kirana::scene::GLTFTextureTransform;
-    static constexpr auto value = object(
-        "offset", &T::offset,
-        "rotation", &T::rotation,
-        "scale", &T::scale,
-        "texCoord", &T::tex_coord
-        );
+    static constexpr auto value =
+        object("offset", &T::offset, "rotation", &T::rotation, "scale", &T::scale, "texCoord", &T::tex_coord);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFTextureInfo>
+template <> struct glz::meta<kirana::scene::GLTFTextureInfo>
 {
     using T = kirana::scene::GLTFTextureInfo;
-    static constexpr auto value = object(
-        "index", &T::index,
-        "texCoord", &T::tex_coord,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+    static constexpr auto value = object("index", &T::index, "texCoord", &T::tex_coord, "extensions",
+                                         glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFTextureInfoNormal>
+template <> struct glz::meta<kirana::scene::GLTFTextureInfoNormal>
 {
     using T = kirana::scene::GLTFTextureInfoNormal;
-    static constexpr auto value = object(
-        "index", &T::index,
-        "texCoord", &T::tex_coord,
-        "scale", &T::scale,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+    static constexpr auto value = object("index", &T::index, "texCoord", &T::tex_coord, "scale", &T::scale,
+                                         "extensions", glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFTextureInfoOcclusion>
+template <> struct glz::meta<kirana::scene::GLTFTextureInfoOcclusion>
 {
     using T = kirana::scene::GLTFTextureInfoOcclusion;
-    static constexpr auto value = object(
-        "index", &T::index,
-        "texCoord", &T::tex_coord,
-        "strength", &T::strength,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+    static constexpr auto value = object("index", &T::index, "texCoord", &T::tex_coord, "strength", &T::strength,
+                                         "extensions", glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialPBRMetallicRoughness>
+template <> struct glz::meta<kirana::scene::GLTFMaterialPBRMetallicRoughness>
 {
     using T = kirana::scene::GLTFMaterialPBRMetallicRoughness;
-    static constexpr auto value = object(
-        "baseColorFactor", &T::base_color_factor,
-        "baseColorTexture", &T::base_color_texture,
-        "metallicFactor", &T::metallic_factor,
-        "roughnessFactor", &T::roughness_factor,
-        "metallicRoughnessTexture", &T::metallic_roughness_texture
-        );
+    static constexpr auto value =
+        object("baseColorFactor", &T::base_color_factor, "baseColorTexture", &T::base_color_texture, "metallicFactor",
+               &T::metallic_factor, "roughnessFactor", &T::roughness_factor, "metallicRoughnessTexture",
+               &T::metallic_roughness_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialAnisotropy>
+template <> struct glz::meta<kirana::scene::GLTFMaterialAnisotropy>
 {
     using T = kirana::scene::GLTFMaterialAnisotropy;
-    static constexpr auto value = object(
-        "anisotropyStrength", &T::strength,
-        "anisotropyRotation", &T::rotation,
-        "anisotropyTexture", &T::texture
-        );
+    static constexpr auto value = object("anisotropyStrength", &T::strength, "anisotropyRotation", &T::rotation,
+                                         "anisotropyTexture", &T::texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialClearcoat>
+template <> struct glz::meta<kirana::scene::GLTFMaterialClearcoat>
 {
     using T = kirana::scene::GLTFMaterialClearcoat;
-    static constexpr auto value = object(
-        "clearcoatFactor", &T::factor,
-        "clearcoatTexture", &T::texture,
-        "clearcoatRoughnessFactor", &T::roughness_factor,
-        "clearcoatRoughnessTexture", &T::roughness_texture,
-        "clearcoatNormalTexture", &T::normal_texture
-        );
+    static constexpr auto value = object("clearcoatFactor", &T::factor, "clearcoatTexture", &T::texture,
+                                         "clearcoatRoughnessFactor", &T::roughness_factor, "clearcoatRoughnessTexture",
+                                         &T::roughness_texture, "clearcoatNormalTexture", &T::normal_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialDiffuseTransmission>
+template <> struct glz::meta<kirana::scene::GLTFMaterialDiffuseTransmission>
 {
     using T = kirana::scene::GLTFMaterialDiffuseTransmission;
-    static constexpr auto value = object(
-        "diffuseTransmissionFactor", &T::factor,
-        "diffuseTransmissionTexture", &T::texture,
-        "diffuseTransmissionColorFactor", &T::color_factor,
-        "diffuseTransmissionColorTexture", &T::color_texture
-        );
+    static constexpr auto value = object("diffuseTransmissionFactor", &T::factor, "diffuseTransmissionTexture",
+                                         &T::texture, "diffuseTransmissionColorFactor", &T::color_factor,
+                                         "diffuseTransmissionColorTexture", &T::color_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialDispersion>
+template <> struct glz::meta<kirana::scene::GLTFMaterialDispersion>
 {
     using T = kirana::scene::GLTFMaterialDispersion;
-    static constexpr auto value = object(
-        "dispersion", &T::dispersion
-        );
+    static constexpr auto value = object("dispersion", &T::dispersion);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialEmissiveStrength>
+template <> struct glz::meta<kirana::scene::GLTFMaterialEmissiveStrength>
 {
     using T = kirana::scene::GLTFMaterialEmissiveStrength;
-    static constexpr auto value = object(
-        "emissiveStrength", &T::strength
-        );
+    static constexpr auto value = object("emissiveStrength", &T::strength);
 };
 
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialIOR>
+template <> struct glz::meta<kirana::scene::GLTFMaterialIOR>
 {
     using T = kirana::scene::GLTFMaterialIOR;
-    static constexpr auto value = object(
-        "ior", &T::ior
-        );
+    static constexpr auto value = object("ior", &T::ior);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialIridescence>
+template <> struct glz::meta<kirana::scene::GLTFMaterialIridescence>
 {
     using T = kirana::scene::GLTFMaterialIridescence;
-    static constexpr auto value = object(
-        "iridescenceFactor", &T::factor,
-        "iridescenceTexture", &T::texture,
-        "iridescenceIor", &T::ior,
-        "iridescenceThicknessMinimum", &T::thickness_min,
-        "iridescenceThicknessMaximum", &T::thickness_max,
-        "iridescenceThicknessTexture", &T::thickness_texture
-        );
+    static constexpr auto value =
+        object("iridescenceFactor", &T::factor, "iridescenceTexture", &T::texture, "iridescenceIor", &T::ior,
+               "iridescenceThicknessMinimum", &T::thickness_min, "iridescenceThicknessMaximum", &T::thickness_max,
+               "iridescenceThicknessTexture", &T::thickness_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialSheen>
+template <> struct glz::meta<kirana::scene::GLTFMaterialSheen>
 {
     using T = kirana::scene::GLTFMaterialSheen;
-    static constexpr auto value = object(
-        "sheenColorFactor", &T::color_factor,
-        "sheenColorTexture", &T::color_texture,
-        "sheenRoughnessFactor", &T::roughness_factor,
-        "sheenRoughnessTexture", &T::roughness_texture
-        );
+    static constexpr auto value =
+        object("sheenColorFactor", &T::color_factor, "sheenColorTexture", &T::color_texture, "sheenRoughnessFactor",
+               &T::roughness_factor, "sheenRoughnessTexture", &T::roughness_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialSpecular>
+template <> struct glz::meta<kirana::scene::GLTFMaterialSpecular>
 {
     using T = kirana::scene::GLTFMaterialSpecular;
-    static constexpr auto value = object(
-        "specularFactor", &T::factor,
-        "specularTexture", &T::texture,
-        "specularColorFactor", &T::color_factor,
-        "specularColorTexture", &T::color_texture
-        );
+    static constexpr auto value =
+        object("specularFactor", &T::factor, "specularTexture", &T::texture, "specularColorFactor", &T::color_factor,
+               "specularColorTexture", &T::color_texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialTransmission>
+template <> struct glz::meta<kirana::scene::GLTFMaterialTransmission>
 {
     using T = kirana::scene::GLTFMaterialTransmission;
-    static constexpr auto value = object(
-        "transmissionFactor", &T::factor,
-        "transmissionTexture", &T::texture
-        );
+    static constexpr auto value = object("transmissionFactor", &T::factor, "transmissionTexture", &T::texture);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterialVolume>
+template <> struct glz::meta<kirana::scene::GLTFMaterialVolume>
 {
     using T = kirana::scene::GLTFMaterialVolume;
-    static constexpr auto value = object(
-        "thicknessFactor", &T::thickness_factor,
-        "thicknessTexture", &T::thickness_texture,
-        "attenuationDistance", &T::attenuation_distance,
-        "attenuationColor", &T::attenuation_color
-        );
+    static constexpr auto value =
+        object("thicknessFactor", &T::thickness_factor, "thicknessTexture", &T::thickness_texture,
+               "attenuationDistance", &T::attenuation_distance, "attenuationColor", &T::attenuation_color);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMaterial>
+template <> struct glz::meta<kirana::scene::GLTFMaterial>
 {
     using T = kirana::scene::GLTFMaterial;
-    static constexpr auto value = object(
-        "name", &T::name,
-        "pbrMetallicRoughness", &T::pbr_metallic_roughness,
-        "normalTexture", &T::normal_texture,
-        "occlusionTexture", &T::occlusion_texture,
-        "emissiveTexture", &T::emissive_texture,
-        "emissiveFactor", &T::emissive_factor,
-        "alphaMode", &T::alpha_mode,
-        "alphaCutoff", &T::alpha_cutoff,
-        "doubleSided", &T::double_sided,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+    static constexpr auto value =
+        object("name", &T::name, "pbrMetallicRoughness", &T::pbr_metallic_roughness, "normalTexture",
+               &T::normal_texture, "occlusionTexture", &T::occlusion_texture, "emissiveTexture", &T::emissive_texture,
+               "emissiveFactor", &T::emissive_factor, "alphaMode", &T::alpha_mode, "alphaCutoff", &T::alpha_cutoff,
+               "doubleSided", &T::double_sided, "extensions", glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMeshPrimitive>
+template <> struct glz::meta<kirana::scene::GLTFMeshPrimitive>
 {
     using T = kirana::scene::GLTFMeshPrimitive;
-    static constexpr auto value = object(
-        "attributes", &T::attributes,
-        "indices", &T::indices,
-        "material", &T::material,
-        "mode", &T::mode,
-        "targets", &T::targets
-        );
+    static constexpr auto value = object("attributes", &T::attributes, "indices", &T::indices, "material", &T::material,
+                                         "mode", &T::mode, "targets", &T::targets);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFMesh>
+template <> struct glz::meta<kirana::scene::GLTFMesh>
 {
     using T = kirana::scene::GLTFMesh;
-    static constexpr auto value = object(
-        "primitives", &T::primitives,
-        "weights", &T::weights,
-        "name", &T::name
-        );
+    static constexpr auto value = object("primitives", &T::primitives, "weights", &T::weights, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFCameraOrthographic>
+template <> struct glz::meta<kirana::scene::GLTFCameraOrthographic>
 {
     using T = kirana::scene::GLTFCameraOrthographic;
-    static constexpr auto value = object(
-        "xmag", &T::magnification_x,
-        "ymag", &T::magnification_y,
-        "zfar", &T::z_far,
-        "znear", &T::z_near
-        );
+    static constexpr auto value =
+        object("xmag", &T::magnification_x, "ymag", &T::magnification_y, "zfar", &T::z_far, "znear", &T::z_near);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFCameraPerspective>
+template <> struct glz::meta<kirana::scene::GLTFCameraPerspective>
 {
     using T = kirana::scene::GLTFCameraPerspective;
-    static constexpr auto value = object(
-        "aspectRatio", &T::aspect_ratio,
-        "yfov", &T::fov_y,
-        "zfar", &T::z_far,
-        "znear", &T::z_near
-        );
+    static constexpr auto value =
+        object("aspectRatio", &T::aspect_ratio, "yfov", &T::fov_y, "zfar", &T::z_far, "znear", &T::z_near);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFCamera>
+template <> struct glz::meta<kirana::scene::GLTFCamera>
 {
     using T = kirana::scene::GLTFCamera;
-    static constexpr auto value = object(
-        "orthographic", &T::orthographic,
-        "perspective", &T::perspective,
-        "type", &T::type,
-        "name", &T::name
-        );
+    static constexpr auto value =
+        object("orthographic", &T::orthographic, "perspective", &T::perspective, "type", &T::type, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFSpotLight>
+template <> struct glz::meta<kirana::scene::GLTFSpotLight>
 {
     using T = kirana::scene::GLTFSpotLight;
-    static constexpr auto value = object(
-        "innerConeAngle", &T::cone_angle_inner,
-        "outerConeAngle", &T::cone_angle_outer
-        );
+    static constexpr auto value =
+        object("innerConeAngle", &T::cone_angle_inner, "outerConeAngle", &T::cone_angle_outer);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFPunctualLight>
+template <> struct glz::meta<kirana::scene::GLTFPunctualLight>
 {
     using T = kirana::scene::GLTFPunctualLight;
-    static constexpr auto value = object(
-        "type", &T::type,
-        "color", &T::color,
-        "intensity", &T::intensity,
-        "range", &T::range,
-        "spot", &T::spot,
-        "name", &T::name
-        );
+    static constexpr auto value = object("type", &T::type, "color", &T::color, "intensity", &T::intensity, "range",
+                                         &T::range, "spot", &T::spot, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFNode>
+template <> struct glz::meta<kirana::scene::GLTFNode>
 {
     using T = kirana::scene::GLTFNode;
-    static constexpr auto value = object(
-        "camera", &T::camera,
-        "children", &T::children,
-        "skin", &T::skin,
-        "matrix", &T::matrix,
-        "mesh", &T::mesh,
-        "rotation", &T::rotation,
-        "scale", &T::scale,
-        "translation", &T::translation,
-        "weights", &T::weights,
-        "name", &T::name,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+    static constexpr auto value =
+        object("camera", &T::camera, "children", &T::children, "skin", &T::skin, "matrix", &T::matrix, "mesh", &T::mesh,
+               "rotation", &T::rotation, "scale", &T::scale, "translation", &T::translation, "weights", &T::weights,
+               "name", &T::name, "extensions", glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFSkin>
+template <> struct glz::meta<kirana::scene::GLTFSkin>
 {
     using T = kirana::scene::GLTFSkin;
-    static constexpr auto value = object(
-        "inverseBindMatrices", &T::inverse_bind_matrices,
-        "skeleton", &T::skeleton,
-        "joints", &T::joints,
-        "name", &T::name
-        );
+    static constexpr auto value = object("inverseBindMatrices", &T::inverse_bind_matrices, "skeleton", &T::skeleton,
+                                         "joints", &T::joints, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFScene>
+template <> struct glz::meta<kirana::scene::GLTFScene>
 {
     using T = kirana::scene::GLTFScene;
-    static constexpr auto value = object(
-        "nodes", &T::nodes,
-        "name", &T::name
-        );
+    static constexpr auto value = object("nodes", &T::nodes, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAnimationChannelTarget>
+template <> struct glz::meta<kirana::scene::GLTFAnimationChannelTarget>
 {
     using T = kirana::scene::GLTFAnimationChannelTarget;
-    static constexpr auto value = object(
-        "node", &T::node,
-        "path", &T::path
-        );
+    static constexpr auto value = object("node", &T::node, "path", &T::path);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAnimationChannel>
+template <> struct glz::meta<kirana::scene::GLTFAnimationChannel>
 {
     using T = kirana::scene::GLTFAnimationChannel;
-    static constexpr auto value = object(
-        "sampler", &T::sampler,
-        "target", &T::target
-        );
+    static constexpr auto value = object("sampler", &T::sampler, "target", &T::target);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAnimationSampler>
+template <> struct glz::meta<kirana::scene::GLTFAnimationSampler>
 {
     using T = kirana::scene::GLTFAnimationSampler;
-    static constexpr auto value = object(
-        "input", &T::input,
-        "interpolation", &T::interpolation,
-        "output", &T::output
-        );
+    static constexpr auto value = object("input", &T::input, "interpolation", &T::interpolation, "output", &T::output);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFAnimation>
+template <> struct glz::meta<kirana::scene::GLTFAnimation>
 {
     using T = kirana::scene::GLTFAnimation;
-    static constexpr auto value = object(
-        "channels", &T::channels,
-        "samplers", &T::samplers,
-        "name", &T::name
-        );
+    static constexpr auto value = object("channels", &T::channels, "samplers", &T::samplers, "name", &T::name);
 };
 
-template <>
-struct glz::meta<kirana::scene::GLTFDocument>
+template <> struct glz::meta<kirana::scene::GLTFDocument>
 {
     using T = kirana::scene::GLTFDocument;
     static constexpr auto value = object(
-        "asset", &T::asset,
-        "extensionsUsed", &T::extensions_used,
-        "extensionsRequired", &T::extensions_required,
-        "accessors", &T::accessors,
-        "animations", &T::animations,
-        "buffers", &T::buffers,
-        "bufferViews", &T::buffer_views,
-        "cameras", &T::cameras,
-        "images", &T::images,
-        "materials", &T::materials,
-        "meshes", &T::meshes,
-        "nodes", &T::nodes,
-        "samplers", &T::samplers,
-        "scene", &T::scene,
-        "scenes", &T::scenes,
-        "skins", &T::skins,
-        "textures", &T::textures,
-        "extensions", glz::custom<&T::setExtensions, &T::getExtensions>
-        );
+        "asset", &T::asset, "extensionsUsed", &T::extensions_used, "extensionsRequired", &T::extensions_required,
+        "accessors", &T::accessors, "animations", &T::animations, "buffers", &T::buffers, "bufferViews",
+        &T::buffer_views, "cameras", &T::cameras, "images", &T::images, "materials", &T::materials, "meshes",
+        &T::meshes, "nodes", &T::nodes, "samplers", &T::samplers, "scene", &T::scene, "scenes", &T::scenes, "skins",
+        &T::skins, "textures", &T::textures, "extensions", glz::custom<&T::setExtensions, &T::getExtensions>);
 };
 #pragma endregion
-#endif //KIRANA_SCENE_GLTF_HPP
+#endif // KIRANA_SCENE_GLTF_HPP

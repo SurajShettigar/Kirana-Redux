@@ -9,8 +9,7 @@
 
 namespace kirana::scene
 {
-template <class T>
-void fromJson(const std::string &name, const glz::json_t &src, T &dst)
+template <class T> void fromJson(const std::string &name, const glz::json_t &src, T &dst)
 {
     if (const auto err = glz::read<glz::opts{}>(dst, src); err)
     {
@@ -27,8 +26,7 @@ void fromJson(const std::string &name, const glz::json_t &src, T &dst)
     }
 }
 
-template <class T>
-void toJson(const std::string &name, const T &src, glz::json_t &dst)
+template <class T> void toJson(const std::string &name, const T &src, glz::json_t &dst)
 {
     std::string buffer{};
     if (const auto err = glz::write_json(src, buffer); !err)
@@ -520,8 +518,8 @@ bool GLTFLoader::loadImage(const uint32_t image_index)
         // const auto image = core::Image::loadFromRawBuffer(image_name, buffer_data, pixel_buffer);
         // if (!image.isValid())
         // {
-        //     core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load image from buffer: " + std::to_string(image_index));
-        //     return false;
+        //     core::Logger::error(LOG_CHANNEL_GLTF, "Failed to load image from buffer: " +
+        //     std::to_string(image_index)); return false;
         // }
         // m_images.insert(std::make_pair(image_index, image));
         // m_image_buffers.insert(std::make_pair(image_index, std::move(pixel_buffer)));
@@ -685,9 +683,8 @@ bool GLTFLoader::loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_dat
     }
     if (accessor.buffer_view.value() >= m_document.buffer_views.size())
     {
-        core::Logger::error(LOG_CHANNEL_GLTF,
-                            "Buffer view with index: " + std::to_string(accessor.buffer_view.value()) +
-                            " does not exist.");
+        core::Logger::error(LOG_CHANNEL_GLTF, "Buffer view with index: " +
+                                                  std::to_string(accessor.buffer_view.value()) + " does not exist.");
         return false;
     }
     const auto &view = m_document.buffer_views.at(accessor.buffer_view.value());
@@ -718,4 +715,4 @@ bool GLTFLoader::loadAccessorData(const GLTFAccessor &accessor, uint8_t *out_dat
     }
     return true;
 }
-}
+} // namespace kirana::scene

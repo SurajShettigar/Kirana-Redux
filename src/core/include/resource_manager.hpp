@@ -13,27 +13,60 @@
 namespace kirana::core
 {
 /// Resource interface with generation and alive tracking
-struct IResource
+class IResource
 {
-    uint32_t generation : 16 {HANDLE_MAX_GENERATION};
-    uint32_t status : 16 {0u};
-
+  public:
+    IResource() = default;
     virtual ~IResource() = default;
+
+    [[nodiscard]] virtual bool isValid() const
+    {
+        return m_status && m_generation != HANDLE_MAX_GENERATION;
+    }
+
+    bool load()
+    {
+        m_status = doLoad() ? 1 : 0;
+        m_generation = m_generation == HANDLE_MAX_GENERATION ? 0 : m_generation + 1;
+        return m_status;
+    }
+
+    void unload()
+    {
+        doUnload();
+        m_status = 0u;
+    }
+
+    [[nodiscard]] bool isLoaded() const
+    {
+        return m_status;
+    }
+
+    [[nodiscard]] uint32_t getGeneration() const
+    {
+        return m_generation;
+    }
+
+  protected:
+    uint32_t m_generation{HANDLE_MAX_GENERATION};
+    uint32_t m_status{0u};
+
+    virtual bool doLoad() = 0;
+    virtual void doUnload() = 0;
 };
 
 /// Manages resources derived from type IResource. Uses generational indices to keep track of resource lifetime.
 /// @tparam T type of the resource.
 /// @tparam H type of the resource handle.
-template <typename T, typename H>
-class ResourceManager
+template <typename T, typename H> class ResourceManager
 {
     static_assert(std::is_base_of_v<IResource, T>, "T must derive from IResource");
 
-public:
+  public:
     ResourceManager() = default;
     ~ResourceManager() = default;
 
-    [[nodiscard]] Handle<H> add(const T &resource)
+    [[nodiscard]] Handle<H> add(T &&resource)
     {
         uint64_t index;
 
@@ -41,7 +74,7 @@ public:
         {
             index = m_free_indices.front();
             m_free_indices.pop();
-            m_resources[index] = resource;
+            m_resources.emplace(m_resources.begin() + index, std::move(resource));
         }
         else
         {
@@ -50,14 +83,16 @@ public:
             {
                 return Handle<H>();
             }
-            m_resources.push_back(resource);
+            m_resources.emplace_back(std::move(resource));
         }
 
         auto &res = m_resources[index];
-        res.status = 1u;
-        res.generation = res.generation == HANDLE_MAX_GENERATION ? 0 : res.generation + 1;
+        if (!res.load())
+        {
+            m_free_indices.push(index);
+        }
 
-        return Handle<H>(index, res.generation);
+        return Handle<H>(index, res.getGeneration());
     }
 
     [[nodiscard]] bool isValid(const Handle<H> handle) const
@@ -65,7 +100,7 @@ public:
         if (!handle.isValid() || handle.getIndex() >= m_resources.size())
             return false;
         const auto &res = m_resources[handle.getIndex()];
-        return res.status && res.generation == handle.getGeneration();
+        return res.isLoaded() && res.getGeneration() == handle.getGeneration();
     }
 
     T *get(const Handle<H> handle)
@@ -88,8 +123,7 @@ public:
             return false;
 
         auto &res = m_resources[handle.getIndex()];
-        res = T();
-        res.status = 0u;
+        res.unload();
         m_free_indices.push(handle.getIndex());
         return true;
     }
@@ -99,9 +133,9 @@ public:
         std::vector<Handle<H>> result;
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.status)
+            if (const auto &res = m_resources[i]; res.isLoaded())
             {
-                result.emplace_back(i, res.generation);
+                result.emplace_back(i, res.getGeneration());
             }
         }
         return result;
@@ -111,9 +145,9 @@ public:
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (auto &res = m_resources[i]; res.status)
+            if (auto &res = m_resources[i]; res.isLoaded())
             {
-                callback(Handle<H>(i, res.generation), res);
+                callback(Handle<H>(i, res.getGeneration()), res);
             }
         }
     }
@@ -122,9 +156,9 @@ public:
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.status)
+            if (const auto &res = m_resources[i]; res.isLoaded())
             {
-                callback(Handle<H>(i, res.generation), res);
+                callback(Handle<H>(i, res.getGeneration()), res);
             }
         }
     }
@@ -144,7 +178,7 @@ public:
         size_t count = 0;
         for (const auto &res : m_resources)
         {
-            if (res.status)
+            if (res.isLoaded())
                 count++;
         }
         return count;
@@ -164,10 +198,10 @@ public:
         }
     }
 
-private:
+  private:
     std::vector<T> m_resources;
     std::queue<uint64_t> m_free_indices;
 };
-}
+} // namespace kirana::core
 
-#endif //KIRANA_CORE_RESOURCE_MANAGER_HPP
+#endif // KIRANA_CORE_RESOURCE_MANAGER_HPP

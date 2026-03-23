@@ -10,7 +10,7 @@
 
 namespace kirana::scene
 {
-enum class CameraType: uint32_t
+enum class CameraType : uint32_t
 {
     PERSPECTIVE = 0u,
     ORTHOGRAPHIC = 1u,
@@ -18,7 +18,7 @@ enum class CameraType: uint32_t
 
 class Camera final : public core::IResource
 {
-public:
+  public:
     static constexpr float INFINITE_FAR_CLIPPING_PLANE = 1000000.0f;
 
     static Camera getPerspective(const float near_plane, const float far_plane, const float fov_vertical,
@@ -54,7 +54,6 @@ public:
         : m_type{type}, m_near_plane{near_plane}, m_far_plane{far_plane}, m_fov_y_size{fov_vertical_size},
           m_aspect_ratio{aspect_ratio}
     {
-        updateProjectionMatrix();
     }
 
     [[nodiscard]] CameraType getType() const
@@ -76,7 +75,7 @@ public:
     {
         m_near_plane = planes[0];
         m_far_plane = planes[1];
-        updateProjectionMatrix();
+        m_is_dirty = true;
     }
 
     [[nodiscard]] std::optional<float> getPerspectiveFieldOfView() const
@@ -93,7 +92,7 @@ public:
         if (m_type == CameraType::PERSPECTIVE)
         {
             m_fov_y_size = fov_vertical;
-            updateProjectionMatrix();
+            m_is_dirty = true;
             return true;
         }
         return false;
@@ -113,7 +112,7 @@ public:
         if (m_type == CameraType::ORTHOGRAPHIC)
         {
             m_fov_y_size = size;
-            updateProjectionMatrix();
+            m_is_dirty = true;
             return true;
         }
         return false;
@@ -125,7 +124,7 @@ public:
         {
             m_aspect_ratio = size_x / size_y;
             m_fov_y_size = size_x;
-            updateProjectionMatrix();
+            m_is_dirty = true;
             return true;
         }
         return false;
@@ -139,15 +138,19 @@ public:
     void setAspectRatio(const float aspect_ratio)
     {
         m_aspect_ratio = aspect_ratio;
-        updateProjectionMatrix();
+        m_is_dirty = true;
     }
 
     [[nodiscard]] const Matrix4 &getProjectionMatrix() const
     {
+        if (m_is_dirty)
+        {
+            updateProjectionMatrix();
+        }
         return m_projection_matrix;
     }
 
-protected:
+  protected:
     CameraType m_type{CameraType::PERSPECTIVE};
 
     float m_near_plane{0.0001f};
@@ -157,25 +160,36 @@ protected:
     float m_fov_y_size{50.0f};
     float m_aspect_ratio{1.0f};
 
-    Matrix4 m_projection_matrix{};
+    mutable bool m_is_dirty{true};
+    mutable Matrix4 m_projection_matrix{};
 
-    void updateProjectionMatrix()
+    void updateProjectionMatrix() const
     {
         switch (m_type)
         {
         case CameraType::PERSPECTIVE: {
-            m_projection_matrix = Matrix4::perspectiveProjectionRH(m_fov_y_size, m_aspect_ratio, m_near_plane,
-                                                                   m_far_plane);
+            m_projection_matrix =
+                Matrix4::perspectiveProjectionRH(m_fov_y_size, m_aspect_ratio, m_near_plane, m_far_plane);
         }
         break;
         case CameraType::ORTHOGRAPHIC: {
-            m_projection_matrix = Matrix4::orthographicProjectionRH(m_fov_y_size, m_aspect_ratio, m_near_plane,
-                                                                    m_far_plane);
+            m_projection_matrix =
+                Matrix4::orthographicProjectionRH(m_fov_y_size, m_aspect_ratio, m_near_plane, m_far_plane);
         }
         break;
         }
+        m_is_dirty = false;
+    }
+
+    bool doLoad() override
+    {
+        return true;
+    }
+
+    void doUnload() override
+    {
     }
 };
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_CAMERA_HPP
+#endif // KIRANA_SCENE_CAMERA_HPP

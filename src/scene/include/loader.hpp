@@ -12,7 +12,7 @@ namespace kirana::scene
 {
 static const std::array<std::string, 2> EXTENSIONS_GLTF = {"gltf", "glb"};
 
-enum class SceneFileFormat: uint8_t
+enum class SceneFileFormat : uint8_t
 {
     UNKNOWN = 0u,
     GLTF = 1u,
@@ -55,6 +55,6 @@ bool loadScene(const SceneFileInfo &info, Scene *out_scene);
  * @return Scene file information.
  */
 SceneFileInfo loadScene(const std::string &path, Scene *out_scene = nullptr);
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_LOADER_HPP
+#endif // KIRANA_SCENE_LOADER_HPP

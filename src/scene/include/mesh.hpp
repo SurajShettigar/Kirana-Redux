@@ -12,7 +12,7 @@
 
 namespace kirana::scene
 {
-enum class IndexFormat: uint32_t
+enum class IndexFormat : uint32_t
 {
     UINT_32 = 0u,
     UINT_16 = 1u,
@@ -50,12 +50,13 @@ struct IndexBuffer
         return indices_8.empty() && indices_16.empty() && indices.empty();
     }
 
-    /// Returns true if the buffer only contains indices of a single integer type (either 8, 16 or 32-bit unsigned integer).
+    /// Returns true if the buffer only contains indices of a single integer type (either 8, 16 or 32-bit unsigned
+    /// integer).
     [[nodiscard]] bool isSingleType() const
     {
-        return (!indices_8.empty() && indices.empty() && indices_16.empty())
-               || (!indices_16.empty() && indices.empty() && indices_8.empty())
-               || (!indices.empty() && indices_8.empty() && indices_16.empty());
+        return (!indices_8.empty() && indices.empty() && indices_16.empty()) ||
+               (!indices_16.empty() && indices.empty() && indices_8.empty()) ||
+               (!indices.empty() && indices_8.empty() && indices_16.empty());
     }
 
     [[nodiscard]] std::span<const uint8_t> getIndexRef8(const size_t offset, const size_t count) const
@@ -65,9 +66,8 @@ struct IndexBuffer
 
     [[nodiscard]] std::span<const uint16_t> getIndexRef16(const size_t offset, const size_t count) const
     {
-        return offset + count > indices_16.size()
-                   ? std::span<uint16_t>{}
-                   : std::span{indices_16.data() + offset, count};
+        return offset + count > indices_16.size() ? std::span<uint16_t>{}
+                                                  : std::span{indices_16.data() + offset, count};
     }
 
     [[nodiscard]] std::span<const uint32_t> getIndexRef(const size_t offset, const size_t count) const
@@ -182,16 +182,14 @@ struct VertexBuffer
 
     [[nodiscard]] std::span<const Vector3> getPositionRef(const BufferRange &range) const
     {
-        return range.getEnd() > positions.size()
-                   ? std::span<Vector3>{}
-                   : std::span{positions.data() + range.offset, range.size};
+        return range.getEnd() > positions.size() ? std::span<Vector3>{}
+                                                 : std::span{positions.data() + range.offset, range.size};
     }
 
     [[nodiscard]] std::span<const Vector3> getNormalRef(const BufferRange &range) const
     {
-        return range.getEnd() > normals.size()
-                   ? std::span<Vector3>{}
-                   : std::span{normals.data() + range.offset, range.size};
+        return range.getEnd() > normals.size() ? std::span<Vector3>{}
+                                               : std::span{normals.data() + range.offset, range.size};
     }
 
     [[nodiscard]] std::span<const Vector2> getUVRef(const BufferRange &range) const
@@ -201,9 +199,8 @@ struct VertexBuffer
 
     [[nodiscard]] std::span<const Vector4> getColorRef(const BufferRange &range) const
     {
-        return range.getEnd() > colors.size()
-                   ? std::span<Vector4>{}
-                   : std::span{colors.data() + range.offset, range.size};
+        return range.getEnd() > colors.size() ? std::span<Vector4>{}
+                                              : std::span{colors.data() + range.offset, range.size};
     }
 
     void setPositions(const std::vector<std::array<Float, 3>> &arr_positions)
@@ -293,10 +290,19 @@ struct Mesh final : core::IResource
 
     explicit Mesh(const IndexBufferRange &indices, const VertexBufferRange &vertices,
                   const MaterialHandle &material = MaterialHandle{})
-        : IResource{}, indices{indices}, vertices{vertices}, material{material}
+        : indices{indices}, vertices{vertices}, material{material}
+    {
+    }
+
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
     {
     }
 };
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_MESH_HPP
+#endif // KIRANA_SCENE_MESH_HPP

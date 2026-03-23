@@ -19,9 +19,7 @@ inline SceneFileFormat getSceneFileFormat(const core::Filepath &filepath, std::s
 
     if (!out_extension.empty())
     {
-        const auto it = std::ranges::find_if(EXTENSIONS_GLTF, [&](const auto &e) {
-            return e == out_extension;
-        });
+        const auto it = std::ranges::find_if(EXTENSIONS_GLTF, [&](const auto &e) { return e == out_extension; });
         if (it != EXTENSIONS_GLTF.end())
         {
             return SceneFileFormat::GLTF;
@@ -54,16 +52,19 @@ inline std::unordered_map<uint32_t, ImageHandle> loadGLTFImages(const GLTFLoader
         else
         {
             image_name = image_name.empty() ? "Image_Embedded_" + std::to_string(i_index) : image_name;
+            std::string image_file = image_name;
             if (const auto mime_type = gltf_image.mime_type.value_or(GLTFImageMimeType::PNG);
                 mime_type == GLTFImageMimeType::PNG)
             {
-                image_name += ".png";
+                image_file += ".png";
             }
             else if (mime_type == GLTFImageMimeType::JPEG)
             {
-                image_name += ".jpg";
+                image_file += ".jpg";
             }
-            img_handle = out_scene->addImage(image_name, std::get<std::vector<uint8_t>>(img_path_buffer));
+            core::Filepath image_path = core::Filepath(loader.getFileRootPath()) / core::Filepath(image_file);
+            img_handle =
+                out_scene->addImage(image_name, image_path.string(), std::get<std::vector<uint8_t>>(img_path_buffer));
         }
         images.insert_or_assign(i_index, img_handle);
     }
@@ -120,17 +121,14 @@ inline std::vector<TextureSampler> loadGLTFTextureSamplers(const GLTFDocument &d
         samplers.emplace_back(get_filter_mode(gltf_sampler.mag_filter.value_or(GLTFFilter::NEAREST)),
                               get_filter_mode(gltf_sampler.min_filter.value_or(GLTFFilter::NEAREST)),
                               get_mip_map_mode(gltf_sampler.min_filter.value_or(GLTFFilter::NEAREST)),
-                              get_wrap_mode(gltf_sampler.wrap_s),
-                              get_wrap_mode(gltf_sampler.wrap_t));
+                              get_wrap_mode(gltf_sampler.wrap_s), get_wrap_mode(gltf_sampler.wrap_t));
     }
     return samplers;
 }
 
-inline std::unordered_map<uint32_t, TextureHandle> loadGLTFTextures(const GLTFDocument &doc,
-                                                                    const std::unordered_map<uint32_t, ImageHandle> &
-                                                                    images,
-                                                                    const std::vector<TextureSampler> &samplers,
-                                                                    Scene *out_scene)
+inline std::unordered_map<uint32_t, TextureHandle> loadGLTFTextures(
+    const GLTFDocument &doc, const std::unordered_map<uint32_t, ImageHandle> &images,
+    const std::vector<TextureSampler> &samplers, Scene *out_scene)
 {
     std::unordered_map<uint32_t, TextureHandle> textures{};
     for (uint32_t t_index = 0; t_index < doc.textures.size(); ++t_index)
@@ -146,9 +144,8 @@ inline std::unordered_map<uint32_t, TextureHandle> loadGLTFTextures(const GLTFDo
     return textures;
 }
 
-inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTFDocument &doc,
-                                                                      const std::unordered_map<uint32_t, TextureHandle>
-                                                                      &textures, Scene *out_scene)
+inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(
+    const GLTFDocument &doc, const std::unordered_map<uint32_t, TextureHandle> &textures, Scene *out_scene)
 {
     std::unordered_map<uint32_t, MaterialHandle> materials{};
 
@@ -165,72 +162,71 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(const GLTF
             return AlphaMode::OPAQUE;
         }
     };
-    const auto getTextureHandle = [&](const std::variant<std::optional<GLTFTextureInfo>,
-                                                         std::optional<GLTFTextureInfoNormal>,
-                                                         std::optional<GLTFTextureInfoOcclusion>> &tex_info) {
-        if (tex_info.index() == 0)
-        {
-            const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info);
+    const auto getTextureHandle =
+        [&](const std::variant<std::optional<GLTFTextureInfo>, std::optional<GLTFTextureInfoNormal>,
+                               std::optional<GLTFTextureInfoOcclusion>> &tex_info) {
+            if (tex_info.index() == 0)
+            {
+                const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info);
+                return info ? textures.at(info.value().index) : TextureHandle{};
+            }
+            if (tex_info.index() == 1)
+            {
+                const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info);
+                return info ? textures.at(info.value().index) : TextureHandle{};
+            }
+            const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info);
             return info ? textures.at(info.value().index) : TextureHandle{};
-        }
-        if (tex_info.index() == 1)
-        {
-            const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info);
-            return info ? textures.at(info.value().index) : TextureHandle{};
-        }
-        const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info);
-        return info ? textures.at(info.value().index) : TextureHandle{};
-    };
-    const auto updateTexture = [&](const std::variant<std::optional<GLTFTextureInfo>,
-                                                      std::optional<GLTFTextureInfoNormal>,
-                                                      std::optional<GLTFTextureInfoOcclusion>> &tex_info,
-                                   const TextureHandle &handle,
-                                   const bool is_srgb = false) {
-        uint32_t tex_coord = 0u;
-        GLTFTextureTransform transform{};
-        if (tex_info.index() == 0)
-        {
-            if (const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info); info)
+        };
+    const auto updateTexture =
+        [&](const std::variant<std::optional<GLTFTextureInfo>, std::optional<GLTFTextureInfoNormal>,
+                               std::optional<GLTFTextureInfoOcclusion>> &tex_info,
+            const TextureHandle &handle, const bool is_srgb = false) {
+            uint32_t tex_coord = 0u;
+            GLTFTextureTransform transform{};
+            if (tex_info.index() == 0)
             {
-                tex_coord = info.value().tex_coord;
-                if (info.value().transform)
+                if (const auto &info = std::get<std::optional<GLTFTextureInfo>>(tex_info); info)
                 {
-                    transform = info.value().transform.value();
+                    tex_coord = info.value().tex_coord;
+                    if (info.value().transform)
+                    {
+                        transform = info.value().transform.value();
+                    }
                 }
             }
-        }
-        else if (tex_info.index() == 1)
-        {
-            if (const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info); info)
+            else if (tex_info.index() == 1)
             {
-                tex_coord = info.value().tex_coord;
-                if (info.value().transform)
+                if (const auto &info = std::get<std::optional<GLTFTextureInfoNormal>>(tex_info); info)
                 {
-                    transform = info.value().transform.value();
+                    tex_coord = info.value().tex_coord;
+                    if (info.value().transform)
+                    {
+                        transform = info.value().transform.value();
+                    }
                 }
             }
-        }
-        else
-        {
-            if (const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info); info)
+            else
             {
-                tex_coord = info.value().tex_coord;
-                if (info.value().transform)
+                if (const auto &info = std::get<std::optional<GLTFTextureInfoOcclusion>>(tex_info); info)
                 {
-                    transform = info.value().transform.value();
+                    tex_coord = info.value().tex_coord;
+                    if (info.value().transform)
+                    {
+                        transform = info.value().transform.value();
+                    }
                 }
             }
-        }
-        if (const auto texture = out_scene->getTexture(handle); texture)
-        {
-            if (const auto image = out_scene->getImage(texture->image))
+            if (const auto texture = out_scene->getTexture(handle); texture)
             {
-                image->setColorSpace(is_srgb);
+                if (const auto image = out_scene->getImage(texture->image))
+                {
+                    image->setColorSpace(is_srgb);
+                }
+                texture->tex_coord = tex_coord;
+                texture->transform = TextureTransform{transform.offset, transform.scale, transform.rotation};
             }
-            texture->tex_coord = tex_coord;
-            texture->transform = TextureTransform{transform.offset, transform.scale, transform.rotation};
-        }
-    };
+        };
 
     for (uint32_t m_index = 0; m_index < doc.materials.size(); ++m_index)
     {
@@ -437,18 +433,17 @@ inline std::unordered_map<uint32_t, CameraHandle> loadGLTFCameras(const GLTFDocu
         if (cam.type == GLTFCameraType::PERSPECTIVE)
         {
             const auto &p_cam = cam.perspective.value();
-            cameras.insert_or_assign(c_index, out_scene->addPerspectiveCamera(
-                                         cam_name,
-                                         {p_cam.z_near, p_cam.z_far.value_or(Camera::INFINITE_FAR_CLIPPING_PLANE)},
-                                         ganita::degree(p_cam.fov_y),
-                                         p_cam.aspect_ratio.value_or(1.0f)));
+            cameras.insert_or_assign(
+                c_index, out_scene->addPerspectiveCamera(
+                             cam_name, {p_cam.z_near, p_cam.z_far.value_or(Camera::INFINITE_FAR_CLIPPING_PLANE)},
+                             ganita::degree(p_cam.fov_y), p_cam.aspect_ratio.value_or(1.0f)));
         }
         else if (cam.type == GLTFCameraType::ORTHOGRAPHIC)
         {
             const auto &o_cam = cam.orthographic.value();
-            cameras.insert_or_assign(c_index, out_scene->addOrthographicCamera(
-                                         cam_name, {o_cam.z_near, o_cam.z_far},
-                                         {o_cam.magnification_x, o_cam.magnification_y}));
+            cameras.insert_or_assign(c_index,
+                                     out_scene->addOrthographicCamera(cam_name, {o_cam.z_near, o_cam.z_far},
+                                                                      {o_cam.magnification_x, o_cam.magnification_y}));
         }
     }
     return cameras;
@@ -463,14 +458,14 @@ inline std::unordered_map<uint32_t, PunctualLightHandle> loadGLTFLights(const GL
         std::string light_name{gltf_light.name.value_or("")};
         if (gltf_light.type == GLTFPunctualLightType::DIRECTIONAL)
         {
-            lights.insert_or_assign(
-                l_index, out_scene->addDirectionalLight(light_name, gltf_light.color, gltf_light.intensity));
+            lights.insert_or_assign(l_index,
+                                    out_scene->addDirectionalLight(light_name, gltf_light.color, gltf_light.intensity));
         }
         else if (gltf_light.type == GLTFPunctualLightType::POINT)
         {
-            lights.insert_or_assign(
-                l_index, out_scene->addPointLight(light_name, gltf_light.color, gltf_light.intensity,
-                                                  gltf_light.range.value_or(-1.0f)));
+            lights.insert_or_assign(l_index,
+                                    out_scene->addPointLight(light_name, gltf_light.color, gltf_light.intensity,
+                                                             gltf_light.range.value_or(-1.0f)));
         }
         else if (gltf_light.type == GLTFPunctualLightType::SPOT)
         {
@@ -484,9 +479,9 @@ inline std::unordered_map<uint32_t, PunctualLightHandle> loadGLTFLights(const GL
             }
             else
             {
-                lights.insert_or_assign(
-                    l_index, out_scene->addSpotLight(light_name, gltf_light.color, gltf_light.intensity,
-                                                     gltf_light.range.value_or(-1.0f)));
+                lights.insert_or_assign(l_index,
+                                        out_scene->addSpotLight(light_name, gltf_light.color, gltf_light.intensity,
+                                                                gltf_light.range.value_or(-1.0f)));
             }
         }
     }
@@ -514,7 +509,7 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 // TODO: Add support for non-triangle meshes.
                 core::Logger::warn(LOG_CHANNEL_SCENE,
                                    "Unsupported primitive mode: " + std::to_string(static_cast<int>(prim.mode)) +
-                                   " for mesh: " + std::to_string(m_index));
+                                       " for mesh: " + std::to_string(m_index));
                 continue;
             }
             IndexBuffer index_buffer{};
@@ -539,8 +534,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 else
                 {
                     core::Logger::error(LOG_CHANNEL_SCENE,
-                                        "Unsupported index buffer component type: " + std::to_string(
-                                            static_cast<int>(accessor.component_type)));
+                                        "Unsupported index buffer component type: " +
+                                            std::to_string(static_cast<int>(accessor.component_type)));
                     continue;
                 }
             }
@@ -553,9 +548,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 const auto &pos_accessor = doc.accessors.at(pos_accessors.front());
                 if (pos_accessor.type != GLTFAccessorType::VEC_3)
                 {
-                    core::Logger::error(LOG_CHANNEL_SCENE,
-                                        "Unsupported position attribute accessor type: " + std::to_string(
-                                            static_cast<int>(pos_accessor.type)));
+                    core::Logger::error(LOG_CHANNEL_SCENE, "Unsupported position attribute accessor type: " +
+                                                               std::to_string(static_cast<int>(pos_accessor.type)));
                     continue;
                 }
                 std::vector<std::array<Float, 3>> positions{};
@@ -576,9 +570,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 const auto &normal_accessor = doc.accessors.at(normal_accessors.front());
                 if (normal_accessor.type != GLTFAccessorType::VEC_3)
                 {
-                    core::Logger::error(LOG_CHANNEL_SCENE,
-                                        "Unsupported normal attribute accessor type: " + std::to_string(
-                                            static_cast<int>(normal_accessor.type)));
+                    core::Logger::error(LOG_CHANNEL_SCENE, "Unsupported normal attribute accessor type: " +
+                                                               std::to_string(static_cast<int>(normal_accessor.type)));
                     continue;
                 }
                 std::vector<std::array<Float, 3>> normals{};
@@ -594,9 +587,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 const auto &uv_accessor = doc.accessors.at(uv_accessors.front());
                 if (uv_accessor.type != GLTFAccessorType::VEC_2)
                 {
-                    core::Logger::error(LOG_CHANNEL_SCENE,
-                                        "Unsupported texture coordinate attribute accessor type: " + std::to_string(
-                                            static_cast<int>(uv_accessor.type)));
+                    core::Logger::error(LOG_CHANNEL_SCENE, "Unsupported texture coordinate attribute accessor type: " +
+                                                               std::to_string(static_cast<int>(uv_accessor.type)));
                     continue;
                 }
                 std::vector<std::array<Float, 2>> uvs{};
@@ -612,9 +604,8 @@ inline std::unordered_map<uint32_t, std::vector<MeshHandle>> loadGLTFMeshes(
                 const auto &color_accessor = doc.accessors.at(color_accessors.front());
                 if (color_accessor.type != GLTFAccessorType::VEC_3 && color_accessor.type != GLTFAccessorType::VEC_4)
                 {
-                    core::Logger::error(LOG_CHANNEL_SCENE,
-                                        "Unsupported color attribute accessor type: " + std::to_string(
-                                            static_cast<int>(color_accessor.type)));
+                    core::Logger::error(LOG_CHANNEL_SCENE, "Unsupported color attribute accessor type: " +
+                                                               std::to_string(static_cast<int>(color_accessor.type)));
                     continue;
                 }
                 if (color_accessor.type == GLTFAccessorType::VEC_3)
@@ -652,11 +643,10 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
 
         std::optional<NodeHandle> current_parent = std::nullopt;
         std::string node_name = node.name.value_or("");
-        auto transform = node.matrix
-                             ? Transform{Matrix4{node.matrix.value()}.transpose()}
-                             : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
-                                         node.rotation.value_or({0.0f, 0.0f, 0.0f, 1.0f}),
-                                         node.scale.value_or({1.0f, 1.0f, 1.0f})};
+        auto transform = node.matrix ? Transform{Matrix4{node.matrix.value()}.transpose()}
+                                     : Transform{node.translation.value_or({0.0f, 0.0f, 0.0f}),
+                                                 node.rotation.value_or({0.0f, 0.0f, 0.0f, 1.0f}),
+                                                 node.scale.value_or({1.0f, 1.0f, 1.0f})};
         if (node.camera && cameras.contains(node.camera.value()))
         {
             const auto &camera_handle = cameras.at(node.camera.value());
@@ -677,8 +667,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             std::optional<NodeHandle> group_handle = parent_node;
             if (is_group)
             {
-                group_handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt,
-                                                  parent_node);
+                group_handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt, parent_node);
                 // The children of the current node will have this grouped node as parent.
                 current_parent = group_handle;
                 transform = Transform{};
@@ -686,8 +675,8 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             for (const auto &mesh_handle : mesh_handles)
             {
                 node_name = node_name.empty() ? out_scene->getMeshName(mesh_handle) : node_name;
-                const auto handle = out_scene->
-                    addNode(node_name, NodeFlags::NONE, transform, mesh_handle, group_handle);
+                const auto handle =
+                    out_scene->addNode(node_name, NodeFlags::NONE, transform, mesh_handle, group_handle);
                 if (!current_parent)
                 {
                     // If there's no grouped parent (which means a single mesh primitive), we use that mesh node as the
@@ -698,8 +687,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         }
         else
         {
-            const auto handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt,
-                                                   parent_node);
+            const auto handle = out_scene->addNode(node_name, NodeFlags::NONE, transform, std::nullopt, parent_node);
             current_parent = handle;
         }
         if (!node.children.empty())
@@ -787,4 +775,4 @@ SceneFileInfo loadScene(const std::string &path, Scene *out_scene)
     }
     return info;
 }
-}
+} // namespace kirana::scene

@@ -63,7 +63,7 @@ int Application::init()
         if (!m_environment_file.empty())
         {
             m_scene.setEnvironmentLightImage(
-                scene::Image{m_environment_file},
+                m_environment_file,
                 scene::TextureSampler{scene::TextureFilterMode::LINEAR, scene::TextureFilterMode::LINEAR});
         }
         core::Logger::get().info("Loaded scene at path: " + info.path);

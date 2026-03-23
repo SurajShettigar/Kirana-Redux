@@ -14,7 +14,7 @@
 namespace kirana::scene
 {
 
-enum class NodeType: uint8_t
+enum class NodeType : uint8_t
 {
     EMPTY = 0u,
     CAMERA = 1u,
@@ -23,7 +23,7 @@ enum class NodeType: uint8_t
     COUNT = 4u,
 };
 
-enum class NodeFlags: uint32_t
+enum class NodeFlags : uint32_t
 {
     NONE = 0u,
     HIDDEN = 1u << 0u,
@@ -89,15 +89,25 @@ struct Node final : core::IResource
 
     Node() = default;
 
-    explicit Node(const NodeFlags flags, const std::optional<NodeHandle> &parent = std::nullopt,
-                  const std::optional<NodeHandle> &first_child = std::nullopt,
-                  const std::optional<NodeHandle> &next_sibling = std::nullopt, const uint32_t level = 0,
-                  const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource = std::nullopt)
+    explicit Node(
+        const NodeFlags flags, const std::optional<NodeHandle> &parent = std::nullopt,
+        const std::optional<NodeHandle> &first_child = std::nullopt,
+        const std::optional<NodeHandle> &next_sibling = std::nullopt, const uint32_t level = 0,
+        const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource = std::nullopt)
         : IResource{}, flags{flags}, parent{parent}, first_child{first_child}, next_sibling{next_sibling}, level{level},
           resource{resource}
     {
     }
-};
-}
 
-#endif //KIRANA_SCENE_NODE_HPP
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
+    {
+    }
+};
+} // namespace kirana::scene
+
+#endif // KIRANA_SCENE_NODE_HPP

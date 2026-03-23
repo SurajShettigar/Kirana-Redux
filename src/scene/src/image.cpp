@@ -107,41 +107,6 @@ inline size_t getBufferSize(const uint32_t width, const uint32_t height, const u
     return width * height * num_channels * getChannelFormatSize(format);
 }
 
-Image Image::loadFromRawBuffer(const std::string &path, const std::vector<uint8_t> &buffer)
-{
-    using namespace OIIO;
-    Image image{};
-    image.m_path = path;
-    image.m_is_raw_buffer = true;
-
-    auto reader = Filesystem::IOMemReader(buffer.data(), buffer.size());
-
-    const auto img = ImageInput::open(image.m_path, nullptr, &reader);
-    if (!img)
-    {
-        core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to open image: " + image.m_path);
-        return image;
-    }
-    const auto &img_spec = img->spec();
-    if (const auto color_space_val = img_spec.find_attribute("oiio:ColorSpace", TypeDesc::STRING); color_space_val)
-    {
-        const auto color_space = color_space_val->get_string();
-        image.m_is_srgb = color_space == "sRGB";
-    }
-    image.m_width = img_spec.width;
-    image.m_height = img_spec.height;
-    image.m_channels = img_spec.nchannels;
-    image.m_format = getFormat(img_spec.format);
-
-    const size_t num_bytes = getBufferSize(image.m_width, image.m_height, image.m_channels, image.m_format);
-    image.m_pixels.clear();
-    image.m_pixels.resize(num_bytes);
-
-    img->read_image(0, 0, 0, img_spec.nchannels, img_spec.format, image.m_pixels.data());
-    img->close();
-    return image;
-}
-
 inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::string &path, core::DataURI &out_uri)
 {
     using namespace OIIO;
@@ -157,7 +122,7 @@ inline std::optional<OIIO::Filesystem::IOMemReader> getUriReader(const std::stri
     return std::nullopt;
 }
 
-Image::Image(std::string path, const bool read_pixels) : IResource{}, m_path{std::move(path)}
+bool Image::doLoad()
 {
     using namespace OIIO;
 
@@ -178,7 +143,7 @@ Image::Image(std::string path, const bool read_pixels) : IResource{}, m_path{std
     if (!img)
     {
         core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to open image: " + m_path);
-        return;
+        return false;
     }
     const auto &img_spec = img->spec();
     if (const auto color_space_val = img_spec.find_attribute("oiio:ColorSpace", TypeDesc::STRING); color_space_val)
@@ -191,15 +156,35 @@ Image::Image(std::string path, const bool read_pixels) : IResource{}, m_path{std
     m_channels = img_spec.nchannels;
     m_format = getFormat(img_spec.format);
 
-    if (read_pixels)
+    img->close();
+    return true;
+}
+
+Image::Image(std::string path, const std::vector<uint8_t> &raw_buffer) : m_path{std::move(path)}
+{
+    using namespace OIIO;
+
+    auto reader = Filesystem::IOMemReader(raw_buffer.data(), raw_buffer.size());
+    const auto img = ImageInput::open(m_path, nullptr, &reader);
+    if (!img)
     {
-        const size_t num_bytes = getBufferSize(m_width, m_height, m_channels, m_format);
-        m_pixels.resize(num_bytes);
-        if (!img->read_image(0, 0, 0, img_spec.nchannels, img_spec.format, m_pixels.data()))
-        {
-            core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to read image buffer: " + m_path);
-        }
+        core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to open raw image buffer: " + m_path);
+        return;
     }
+    const auto &img_spec = img->spec();
+    const auto img_out = ImageOutput::create(m_path);
+    if (!img_out)
+    {
+        core::Logger::error(LOG_CHANNEL_IMAGE, "Failed to create file for raw image buffer: " + m_path);
+        return;
+    }
+    img_out->open(m_path, img_spec);
+    if (!img_out->copy_image(img.get()))
+    {
+        core::Logger::error(LOG_CHANNEL_IMAGE,
+                            "Failed to write raw image buffer to file: " + m_path + " Error: " + img_out->geterror());
+    }
+    img_out->close();
     img->close();
 }
 
@@ -220,18 +205,6 @@ bool Image::readPixelBuffer(std::vector<uint8_t> &pixel_buffer, ImageChannelForm
     num_channels = convert_channels ? num_channels : m_channels;
 
     convert |= convert_channels;
-
-    // TODO: Add option to convert images which were constructed through raw image buffer.
-    if (m_is_raw_buffer)
-    {
-        if (convert)
-        {
-            core::Logger::warn(LOG_CHANNEL_IMAGE, "Embedded image buffer conversion is not yet supported: " + m_path);
-        }
-        pixel_buffer.resize(m_pixels.size());
-        std::memcpy(pixel_buffer.data(), m_pixels.data(), m_pixels.size());
-        return true;
-    }
 
     // In case the image needs to be converted, we need to pass OIIO's ImageSpec when opening the image.
     const TypeDesc native_format = getTypeDesc(format);

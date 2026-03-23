@@ -46,8 +46,17 @@ struct PunctualLight final : core::IResource
     explicit PunctualLight(const PunctualLightType type, const LightUnit unit, const std::array<float, 3> &color,
                            const float intensity, const float range = -1.0f, const float spot_cone_angle_inner = 0.0f,
                            const float spot_cone_angle_outer = 0.78539816339f)
-        : IResource{}, type{type}, unit{unit}, color{color}, intensity{intensity}, range{range},
+        : type{type}, unit{unit}, color{color}, intensity{intensity}, range{range},
           spot_cone_angle_inner{spot_cone_angle_inner}, spot_cone_angle_outer{spot_cone_angle_outer}
+    {
+    }
+
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
     {
     }
 };
