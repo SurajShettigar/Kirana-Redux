@@ -314,6 +314,7 @@ bool Device::init(const DeviceInitializationData &init_data)
 
 void Device::destroy()
 {
+    m_resource_manager_buffers.clear();
     if (m_descriptor_allocator.isValid())
     {
         m_descriptor_allocator.destroy();
@@ -344,21 +345,25 @@ void Device::destroy()
     }
 }
 
-Buffer Device::createBuffer(const CommandEncoder &encoder, const std::string &name, const uint64_t size,
+BufferHandle Device::createBuffer(const CommandEncoder &encoder, const std::string &name, const uint64_t size,
                             const void *data, const BufferUsageFlags usage) const
 {
-    Buffer buffer;
+    BufferHandle handle;
     if (m_device)
     {
-        buffer.init(m_device, &m_memory_allocator, encoder, name, size, data, usage);
+        handle = m_resource_manager_buffers.add(this, &m_memory_allocator, &encoder, name, size, data, usage);
     }
     else
     {
         core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create buffer. Device is not initialized.");
     }
-    return buffer;
+    return handle;
 }
 
+Buffer *Device::getBuffer(const BufferHandle handle) const
+{
+    return m_resource_manager_buffers.get(handle);
+}
 
 Texture Device::createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
                               const TextureFormat format, const TextureUsageFlags usage, const TextureLayout layout,

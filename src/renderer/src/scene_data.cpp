@@ -499,29 +499,29 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
 
 void SceneData::destroy()
 {
-    m_buffer_camera.destroy();
-
-    m_buffer_transforms.destroy();
+    // m_buffer_camera.destroy();
+    //
+    // m_buffer_transforms.destroy();
     m_transforms.clear();
-
-    m_buffer_environment_light.destroy();
-
-    m_buffer_mesh_instances.destroy();
+    //
+    // m_buffer_environment_light.destroy();
+    //
+    // m_buffer_mesh_instances.destroy();
     m_mesh_instance_map.clear();
     m_mesh_instances.clear();
-
-    m_buffer_meshes.destroy();
+    //
+    // m_buffer_meshes.destroy();
     m_meshes.clear();
-
-    m_buffer_color.destroy();
-    m_buffer_uv.destroy();
-    m_buffer_normal.destroy();
-    m_buffer_position.destroy();
-    m_buffer_index_32.destroy();
-    m_buffer_index_16.destroy();
-    m_buffer_index_8.destroy();
-
-    m_buffer_materials.destroy();
+    //
+    // m_buffer_color.destroy();
+    // m_buffer_uv.destroy();
+    // m_buffer_normal.destroy();
+    // m_buffer_position.destroy();
+    // m_buffer_index_32.destroy();
+    // m_buffer_index_16.destroy();
+    // m_buffer_index_8.destroy();
+    //
+    // m_buffer_materials.destroy();
     m_materials.clear();
 
     for (auto &s : m_texture_samplers)
@@ -530,7 +530,7 @@ void SceneData::destroy()
     }
     m_texture_samplers.clear();
 
-    m_buffer_texture_data.destroy();
+    // m_buffer_texture_data.destroy();
     m_texture_data.clear();
     for (auto &t : m_textures)
     {
@@ -552,7 +552,9 @@ bool SceneData::updateCamera(const Device &device, const scene::Matrix4 &view_ma
     m_fence.reset();
     m_encoder.begin();
     m_camera = CameraData{view_matrix.getAsArray(), (VULKAN_PROJECTION_INVERT_Y * projection_matrix).getAsArray()};
-    m_buffer_camera.update(m_encoder, sizeof(CameraData), &m_camera);
+
+    device.getBuffer(m_buffer_camera)->write(&m_encoder, sizeof(CameraData), &m_camera);
+    // m_buffer_camera.update(m_encoder, sizeof(CameraData), &m_camera);
     device.getTransferQueue().submit(m_encoder.finish(), m_fence);
     // TODO: Remove wait for fences for async scene data transfer.
     if (!m_fence.wait(FENCE_WAIT_TIMEOUT))

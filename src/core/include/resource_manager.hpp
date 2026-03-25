@@ -4,7 +4,7 @@
 #ifndef KIRANA_CORE_RESOURCE_MANAGER_HPP
 #define KIRANA_CORE_RESOURCE_MANAGER_HPP
 
-#include "handle.hpp"
+#include "resource.hpp"
 
 #include <functional>
 #include <queue>
@@ -12,49 +12,6 @@
 
 namespace kirana::core
 {
-/// Resource interface with generation and alive tracking
-class IResource
-{
-  public:
-    IResource() = default;
-    virtual ~IResource() = default;
-
-    [[nodiscard]] virtual bool isValid() const
-    {
-        return m_status && m_generation != HANDLE_MAX_GENERATION;
-    }
-
-    bool load()
-    {
-        m_status = doLoad() ? 1 : 0;
-        m_generation = m_generation == HANDLE_MAX_GENERATION ? 0 : m_generation + 1;
-        return m_status;
-    }
-
-    void unload()
-    {
-        doUnload();
-        m_status = 0u;
-    }
-
-    [[nodiscard]] bool isLoaded() const
-    {
-        return m_status;
-    }
-
-    [[nodiscard]] uint32_t getGeneration() const
-    {
-        return m_generation;
-    }
-
-  protected:
-    uint32_t m_generation{HANDLE_MAX_GENERATION};
-    uint32_t m_status{0u};
-
-    virtual bool doLoad() = 0;
-    virtual void doUnload() = 0;
-};
-
 /// Manages resources derived from type IResource. Uses generational indices to keep track of resource lifetime.
 /// @tparam T type of the resource.
 /// @tparam H type of the resource handle.
@@ -64,9 +21,12 @@ template <typename T, typename H> class ResourceManager
 
   public:
     ResourceManager() = default;
+    explicit ResourceManager(const bool auto_load_resource) : m_auto_load_resource{auto_load_resource}
+    {
+    }
     ~ResourceManager() = default;
 
-    [[nodiscard]] Handle<H> add(T &&resource)
+    template <typename... Args> [[nodiscard]] Handle<H> add(Args &&...args)
     {
         uint64_t index;
 
@@ -74,7 +34,7 @@ template <typename T, typename H> class ResourceManager
         {
             index = m_free_indices.front();
             m_free_indices.pop();
-            m_resources.emplace(m_resources.begin() + index, std::move(resource));
+            m_resources.emplace(m_resources.begin() + index, std::forward<Args>(args)...);
         }
         else
         {
@@ -83,16 +43,17 @@ template <typename T, typename H> class ResourceManager
             {
                 return Handle<H>();
             }
-            m_resources.emplace_back(std::move(resource));
+            m_resources.emplace_back(std::forward<Args>(args)...);
         }
 
         auto &res = m_resources[index];
-        if (!res.load())
+        res.m_status = 1u;
+        res.m_generation = res.m_generation == HANDLE_MAX_GENERATION ? 0 : res.m_generation + 1;
+        if (m_auto_load_resource)
         {
-            m_free_indices.push(index);
+            res.load();
         }
-
-        return Handle<H>(index, res.getGeneration());
+        return Handle<H>(index, res.m_generation);
     }
 
     [[nodiscard]] bool isValid(const Handle<H> handle) const
@@ -100,7 +61,7 @@ template <typename T, typename H> class ResourceManager
         if (!handle.isValid() || handle.getIndex() >= m_resources.size())
             return false;
         const auto &res = m_resources[handle.getIndex()];
-        return res.isLoaded() && res.getGeneration() == handle.getGeneration();
+        return res.m_status && res.m_generation == handle.m_generation;
     }
 
     T *get(const Handle<H> handle)
@@ -117,15 +78,39 @@ template <typename T, typename H> class ResourceManager
         return &m_resources[handle.getIndex()];
     }
 
+    /// Removes (and unloads) resource with the given handle and sets it's state to invalid. It's memory will be reused
+    /// by another resource added in the future.
     bool remove(const Handle<H> handle)
     {
         if (!isValid(handle))
             return false;
 
-        auto &res = m_resources[handle.getIndex()];
-        res.unload();
-        m_free_indices.push(handle.getIndex());
+        doRemove(handle.getIndex());
         return true;
+    }
+
+    /// Removes (and unloads) all resources and sets it's state to invalid. It's memory will be reused by other
+    /// resources added in the future.
+    void removeAll()
+    {
+        for (uint64_t i = 0; i < m_resources.size(); ++i)
+        {
+            if (const auto &res = m_resources[i]; res.m_status)
+            {
+                doRemove(i);
+            }
+        }
+    }
+
+    [[nodiscard]] size_t getSize() const
+    {
+        size_t count = 0;
+        for (const auto &res : m_resources)
+        {
+            if (res.m_status)
+                count++;
+        }
+        return count;
     }
 
     std::vector<Handle<H>> getAllHandles() const
@@ -133,9 +118,9 @@ template <typename T, typename H> class ResourceManager
         std::vector<Handle<H>> result;
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.isLoaded())
+            if (const auto &res = m_resources[i]; res.m_status)
             {
-                result.emplace_back(i, res.getGeneration());
+                result.emplace_back(i, res.m_generation);
             }
         }
         return result;
@@ -145,9 +130,9 @@ template <typename T, typename H> class ResourceManager
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (auto &res = m_resources[i]; res.isLoaded())
+            if (auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<H>(i, res.getGeneration()), res);
+                callback(Handle<H>(i, res.m_generation), res);
             }
         }
     }
@@ -156,41 +141,17 @@ template <typename T, typename H> class ResourceManager
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
-            if (const auto &res = m_resources[i]; res.isLoaded())
+            if (const auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<H>(i, res.getGeneration()), res);
+                callback(Handle<H>(i, res.m_generation), res);
             }
         }
     }
 
-    std::vector<T> &getResources()
-    {
-        return m_resources;
-    }
-
-    const std::vector<T> &getResources() const
-    {
-        return m_resources;
-    }
-
-    [[nodiscard]] size_t getSize() const
-    {
-        size_t count = 0;
-        for (const auto &res : m_resources)
-        {
-            if (res.isLoaded())
-                count++;
-        }
-        return count;
-    }
-
-    [[nodiscard]] size_t getFreeSlotCount() const
-    {
-        return m_free_indices.size();
-    }
-
+    /// Removes all resources and clears the memory.
     void clear()
     {
+        removeAll();
         m_resources.clear();
         while (!m_free_indices.empty())
         {
@@ -199,8 +160,17 @@ template <typename T, typename H> class ResourceManager
     }
 
   private:
+    bool m_auto_load_resource{true};
     std::vector<T> m_resources;
     std::queue<uint64_t> m_free_indices;
+
+    void doRemove(const uint64_t index)
+    {
+        auto &res = m_resources[index];
+        res.unload();
+        res.m_status = 0u;
+        m_free_indices.push(index);
+    }
 };
 } // namespace kirana::core
 

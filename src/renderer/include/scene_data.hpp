@@ -194,12 +194,12 @@ class SceneData
         return m_texture_samplers;
     }
 
-    [[nodiscard]] const Buffer &getTextureDataBuffer() const
+    [[nodiscard]] const BufferHandle &getTextureDataBuffer() const
     {
         return m_buffer_texture_data;
     }
 
-    [[nodiscard]] const Buffer &getTransformsBuffer() const
+    [[nodiscard]] const BufferHandle &getTransformsBuffer() const
     {
         return m_buffer_transforms;
     }
@@ -209,7 +209,7 @@ class SceneData
         return m_buffer_environment_light.isValid();
     }
 
-    [[nodiscard]] const Buffer &getEnvironmentLightBuffer() const
+    [[nodiscard]] const BufferHandle &getEnvironmentLightBuffer() const
     {
         return m_buffer_environment_light;
     }
@@ -235,12 +235,12 @@ class SceneData
                !m_punctual_lights.empty() && !m_punctual_light_instances.empty();
     }
 
-    [[nodiscard]] const Buffer &getPunctualLightsBuffer() const
+    [[nodiscard]] const BufferHandle &getPunctualLightsBuffer() const
     {
         return m_buffer_punctual_lights;
     }
 
-    [[nodiscard]] const Buffer &getPunctualLightInstancesBuffer() const
+    [[nodiscard]] const BufferHandle &getPunctualLightInstancesBuffer() const
     {
         return m_buffer_punctual_light_instances;
     }
@@ -250,21 +250,21 @@ class SceneData
         return m_buffer_materials.isValid() && m_materials.size() > 0;
     }
 
-    [[nodiscard]] const Buffer &getMaterialsBuffer() const
+    [[nodiscard]] const BufferHandle &getMaterialsBuffer() const
     {
         return m_buffer_materials;
     }
 
     [[nodiscard]] bool hasIndexBuffer() const
     {
-        return (m_buffer_index_8.isValid() && m_buffer_index_8.getSize() > 0) ||
-               (m_buffer_index_16.isValid() && m_buffer_index_16.getSize() > 0) ||
-               (m_buffer_index_32.isValid() && m_buffer_index_32.getSize() > 0);
+        return (m_buffer_index_8.isValid()/* && m_buffer_index_8.getSize() > 0*/) ||
+               (m_buffer_index_16.isValid()/* && m_buffer_index_16.getSize() > 0*/) ||
+               (m_buffer_index_32.isValid()/* && m_buffer_index_32.getSize() > 0*/);
     }
 
     [[nodiscard]] bool hasVertexBuffer() const
     {
-        return m_buffer_position.isValid() && m_buffer_position.getSize() > 0;
+        return m_buffer_position.isValid()/* && m_buffer_position.getSize() > 0*/;
     }
 
     [[nodiscard]] bool isValid() const
@@ -273,52 +273,52 @@ class SceneData
         return m_fence.isValid() && m_encoder.isValid() && has_mesh_data;
     }
 
-    [[nodiscard]] const Buffer &getIndexBuffer8() const
+    [[nodiscard]] const BufferHandle &getIndexBuffer8() const
     {
         return m_buffer_index_8;
     }
 
-    [[nodiscard]] const Buffer &getIndexBuffer16() const
+    [[nodiscard]] const BufferHandle &getIndexBuffer16() const
     {
         return m_buffer_index_16;
     }
 
-    [[nodiscard]] const Buffer &getIndexBuffer32() const
+    [[nodiscard]] const BufferHandle &getIndexBuffer32() const
     {
         return m_buffer_index_32;
     }
 
-    [[nodiscard]] const Buffer &getPositionBuffer() const
+    [[nodiscard]] const BufferHandle &getPositionBuffer() const
     {
         return m_buffer_position;
     }
 
-    [[nodiscard]] const Buffer &getNormalBuffer() const
+    [[nodiscard]] const BufferHandle &getNormalBuffer() const
     {
         return m_buffer_normal;
     }
 
-    [[nodiscard]] const Buffer &getUVBuffer() const
+    [[nodiscard]] const BufferHandle &getUVBuffer() const
     {
         return m_buffer_uv;
     }
 
-    [[nodiscard]] const Buffer &getColorBuffer() const
+    [[nodiscard]] const BufferHandle &getColorBuffer() const
     {
         return m_buffer_color;
     }
 
-    [[nodiscard]] const Buffer &getMeshesBuffer() const
+    [[nodiscard]] const BufferHandle &getMeshesBuffer() const
     {
         return m_buffer_meshes;
     }
 
-    [[nodiscard]] const Buffer &getMeshInstancesBuffer() const
+    [[nodiscard]] const BufferHandle &getMeshInstancesBuffer() const
     {
         return m_buffer_mesh_instances;
     }
 
-    [[nodiscard]] const Buffer &getCameraBuffer() const
+    [[nodiscard]] const BufferHandle &getCameraBuffer() const
     {
         return m_buffer_camera;
     }
@@ -340,41 +340,41 @@ class SceneData
     std::vector<Texture> m_textures{};
     std::vector<TextureSampler> m_texture_samplers{};
     std::vector<TextureData> m_texture_data{};
-    Buffer m_buffer_texture_data{};
+    BufferHandle m_buffer_texture_data{};
 
     std::vector<TransformData> m_transforms{};
-    Buffer m_buffer_transforms{};
+    BufferHandle m_buffer_transforms{};
 
     EnvironmentLightData m_environment_light{};
-    Buffer m_buffer_environment_light{};
+    BufferHandle m_buffer_environment_light{};
 
     std::vector<PunctualLightData> m_punctual_lights{};
-    Buffer m_buffer_punctual_lights{};
+    BufferHandle m_buffer_punctual_lights{};
     std::vector<InstanceData> m_punctual_light_instances{};
-    Buffer m_buffer_punctual_light_instances{};
+    BufferHandle m_buffer_punctual_light_instances{};
 
     std::vector<MaterialPBRData> m_materials{};
-    Buffer m_buffer_materials{};
+    BufferHandle m_buffer_materials{};
 
     // Index buffers
-    Buffer m_buffer_index_8{};
-    Buffer m_buffer_index_16{};
-    Buffer m_buffer_index_32{};
+    BufferHandle m_buffer_index_8{};
+    BufferHandle m_buffer_index_16{};
+    BufferHandle m_buffer_index_32{};
     // Vertex buffers
-    Buffer m_buffer_position{};
-    Buffer m_buffer_normal{};
-    Buffer m_buffer_uv{};
-    Buffer m_buffer_color{};
+    BufferHandle m_buffer_position{};
+    BufferHandle m_buffer_normal{};
+    BufferHandle m_buffer_uv{};
+    BufferHandle m_buffer_color{};
     // Mesh Data buffers
     std::vector<MeshData> m_meshes{};
-    Buffer m_buffer_meshes{};
+    BufferHandle m_buffer_meshes{};
     std::vector<InstanceData> m_mesh_instances{};
     std::map<uint32_t, MeshInstancesData> m_mesh_instance_map{}; // (mesh index, mesh instances)
-    Buffer m_buffer_mesh_instances{};
+    BufferHandle m_buffer_mesh_instances{};
 
     // Camera buffer
     CameraData m_camera{};
-    Buffer m_buffer_camera{};
+    BufferHandle m_buffer_camera{};
 
     uint32_t addTextureSampler(const Device &device, const scene::TextureSampler &sampler);
     uint32_t addMesh(const scene::MeshHandle &handle, const scene::Mesh &mesh,

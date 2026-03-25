@@ -6,7 +6,7 @@
 
 #include "common.hpp"
 
-#include <resource_manager.hpp>
+#include <resource.hpp>
 
 namespace kirana::scene
 {

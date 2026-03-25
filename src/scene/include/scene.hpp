@@ -14,6 +14,7 @@
 #include "transform.hpp"
 
 #include <no_copy.hpp>
+#include <resource_manager.hpp>
 
 #include <functional>
 #include <optional>

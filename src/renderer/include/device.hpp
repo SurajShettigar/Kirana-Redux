@@ -13,6 +13,8 @@
 #include "pipeline_compute.hpp"
 #include "pipeline_render.hpp"
 
+#include <resource_manager.hpp>
+
 namespace kirana::renderer
 {
 class Device
@@ -51,6 +53,11 @@ class Device
     [[nodiscard]] bool supportsAsyncTransfer() const
     {
         return m_queue_index_transfer > 0;
+    }
+
+    [[nodiscard]] vk::Device getNativeHandle() const
+    {
+        return m_device;
     }
 
     [[nodiscard]] const Queue &getGraphicsQueue() const
@@ -93,9 +100,11 @@ class Device
         return m_queues[m_queue_index_transfer];
     }
 
-    [[nodiscard]] Buffer createBuffer(const CommandEncoder &encoder, const std::string &name, uint64_t size,
+    [[nodiscard]] BufferHandle createBuffer(const CommandEncoder &encoder, const std::string &name, uint64_t size,
                                       const void *data = nullptr,
                                       BufferUsageFlags usage = BufferUsageFlags::UNKNOWN) const;
+
+    Buffer *getBuffer(BufferHandle handle) const;
 
     [[nodiscard]] Texture createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
                                         TextureFormat format, TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
@@ -161,6 +170,8 @@ class Device
 
     MemoryAllocator m_memory_allocator{};
     DescriptorAllocator m_descriptor_allocator{};
+
+    mutable core::ResourceManager<Buffer, BufferTag> m_resource_manager_buffers{};
 };
 } // namespace kirana::renderer
 #endif // KIRANA_RENDERER_DEVICE_HPP

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include <resource_manager.hpp>
+#include <resource.hpp>
 
 namespace kirana::scene
 {

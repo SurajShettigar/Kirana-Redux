@@ -14,11 +14,11 @@ ImageHandle Scene::addImage(const std::string &name, const std::string &path, co
     ImageHandle handle;
     if (raw_buffer.empty())
     {
-        handle = m_images.add(Image{path});
+        handle = m_images.add(path);
     }
     else
     {
-        handle = m_images.add(Image{path, raw_buffer});
+        handle = m_images.add(path, raw_buffer);
     }
     if (!handle.isValid())
     {
@@ -33,7 +33,7 @@ ImageHandle Scene::addImage(const std::string &name, const std::string &path, co
 TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image, const TextureSampler &sampler,
                                 const TextureTransform &transform, const uint32_t tex_coord)
 {
-    const auto handle = m_textures.add(Texture{image, sampler, transform, tex_coord});
+    const auto handle = m_textures.add(image, sampler, transform, tex_coord);
     if (!handle.isValid())
     {
         return handle;
@@ -46,7 +46,7 @@ TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image
 
 MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &material)
 {
-    const auto handle = m_materials.add(MaterialPBR{material});
+    const auto handle = m_materials.add(material);
     if (!handle.isValid())
     {
         return handle;
@@ -59,7 +59,7 @@ MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &ma
 
 CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
 {
-    const auto handle = m_cameras.add(Camera{camera});
+    const auto handle = m_cameras.add(camera);
     if (!handle.isValid())
     {
         return handle;
@@ -77,7 +77,7 @@ CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
 
 PunctualLightHandle Scene::addPunctualLight(const std::string &name, const PunctualLight &light)
 {
-    const auto handle = m_punctual_lights.add(PunctualLight{light});
+    const auto handle = m_punctual_lights.add(light);
     if (!handle.isValid())
     {
         return handle;
@@ -125,7 +125,7 @@ MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buff
 
     const VertexBufferRange vertices = m_vertex_buffer.extend(vertex_buffer);
 
-    const MeshHandle handle = m_meshes.add(Mesh{indices, vertices, material});
+    const MeshHandle handle = m_meshes.add(indices, vertices, material);
     if (!handle.isValid())
     {
         return handle;
@@ -142,7 +142,7 @@ NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const 
                           const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource,
                           const std::optional<NodeHandle> &parent)
 {
-    const auto handle = m_nodes.add(Node{flags});
+    const auto handle = m_nodes.add(flags);
     if (!handle.isValid())
     {
         return handle;

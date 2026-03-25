@@ -4,7 +4,9 @@
 #ifndef KIRANA_SCENE_LIGHT_HPP
 #define KIRANA_SCENE_LIGHT_HPP
 
-#include <resource_manager.hpp>
+#include <resource.hpp>
+
+#include <unordered_map>
 
 namespace kirana::scene
 {

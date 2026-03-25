@@ -206,15 +206,15 @@ void Renderer::render()
         m_scene_data.forEachRenderable([&](const MeshData &mesh, const MeshInstancesData &instances) {
             if (mesh.index_format == scene::IndexFormat::UINT_8)
             {
-                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer8(), 0, IndexType::UINT8);
+                encoder.bindIndexBuffer(*m_device.getBuffer(m_scene_data.getIndexBuffer8()), 0, IndexType::UINT8);
             }
             else if (mesh.index_format == scene::IndexFormat::UINT_16)
             {
-                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer16(), 0, IndexType::UINT16);
+                encoder.bindIndexBuffer(*m_device.getBuffer(m_scene_data.getIndexBuffer16()), 0, IndexType::UINT16);
             }
             else
             {
-                encoder.bindIndexBuffer(m_scene_data.getIndexBuffer32());
+                encoder.bindIndexBuffer(*m_device.getBuffer(m_scene_data.getIndexBuffer32()));
             }
             encoder.drawIndexed(mesh.index_count, instances.instance_count, mesh.index_offset, 0,
                                 instances.instance_offset);
@@ -302,23 +302,23 @@ bool Renderer::loadScene(const scene::Scene &scene)
         m_set_env =
             m_device.allocateDescriptorSet("Descriptor_Set_Environment", m_layout_env,
                                            {
-                                               ShaderBindingResource{0, &m_scene_data.getCameraBuffer()},
-                                               ShaderBindingResource{1, &m_scene_data.getEnvironmentLightBuffer()},
+                                               ShaderBindingResource{0, m_device.getBuffer(m_scene_data.getCameraBuffer())},
+                                               ShaderBindingResource{1, m_device.getBuffer(m_scene_data.getEnvironmentLightBuffer())},
                                                ShaderBindingResource{2, &m_scene_data.getEnvironmentLightTexture(),
                                                                      &m_scene_data.getEnvironmentLightTextureSampler()},
                                            });
 
         m_set = m_device.allocateDescriptorSet(
             "Descriptor_Set_Basic", m_layout,
-            {ShaderBindingResource{0, &m_scene_data.getCameraBuffer()},
-             ShaderBindingResource{1, &m_scene_data.getPositionBuffer()},
-             ShaderBindingResource{2, &m_scene_data.getNormalBuffer()},
-             ShaderBindingResource{3, &m_scene_data.getUVBuffer()},
-             ShaderBindingResource{4, &m_scene_data.getMeshesBuffer()},
-             ShaderBindingResource{5, &m_scene_data.getTransformsBuffer()},
-             ShaderBindingResource{6, &m_scene_data.getMeshInstancesBuffer()},
-             ShaderBindingResource{7, &m_scene_data.getTextureDataBuffer()},
-             ShaderBindingResource{8, &m_scene_data.getMaterialsBuffer()},
+            {ShaderBindingResource{0, m_device.getBuffer(m_scene_data.getCameraBuffer())},
+             ShaderBindingResource{1, m_device.getBuffer(m_scene_data.getPositionBuffer())},
+             ShaderBindingResource{2, m_device.getBuffer(m_scene_data.getNormalBuffer())},
+             ShaderBindingResource{3, m_device.getBuffer(m_scene_data.getUVBuffer())},
+             ShaderBindingResource{4, m_device.getBuffer(m_scene_data.getMeshesBuffer())},
+             ShaderBindingResource{5, m_device.getBuffer(m_scene_data.getTransformsBuffer())},
+             ShaderBindingResource{6, m_device.getBuffer(m_scene_data.getMeshInstancesBuffer())},
+             ShaderBindingResource{7, m_device.getBuffer(m_scene_data.getTextureDataBuffer())},
+             ShaderBindingResource{8, m_device.getBuffer(m_scene_data.getMaterialsBuffer())},
              ShaderBindingResource{9, m_scene_data.getTextureSamplers().data(),
                                    static_cast<uint32_t>(m_scene_data.getTextureSamplers().size())},
              ShaderBindingResource{10, m_scene_data.getTextures().data(), nullptr,
