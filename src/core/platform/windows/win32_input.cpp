@@ -1,18 +1,13 @@
-// Copyright 2025 Suraj Shettigar
+// Copyright 2026 Suraj Shettigar
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KIRANA_CORE_WIN32_INPUT_HPP
-#define KIRANA_CORE_WIN32_INPUT_HPP
+#include "win32_input.hpp"
 
 #include <windows.h>
 
-#include <iostream>
-#include <unordered_map>
-
-#include "input_constants.hpp"
-
 namespace kirana::core
 {
+
 static const std::unordered_map<KeyboardKey, int> WIN32_KEYBOARD_MAPPING = {
     {KeyboardKey::BACKSPACE, VK_BACK},
     {KeyboardKey::TAB, VK_TAB},
@@ -165,7 +160,7 @@ static LRESULT CALLBACK InputWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-inline bool initializeWin32Input()
+bool initializeWin32Input()
 {
     HINSTANCE instance = GetModuleHandle(nullptr);
     LPCSTR class_name = "InputMessageWindow";
@@ -201,7 +196,7 @@ inline bool initializeWin32Input()
     return status;
 }
 
-inline void pollWin32InputEvents()
+void pollWin32InputEvents()
 {
     MSG msg = {};
     HWND handle = FindWindowEx(HWND_MESSAGE, nullptr, "InputMessageWindow", "InputMessageWindow");
@@ -212,7 +207,7 @@ inline void pollWin32InputEvents()
     }
 }
 
-inline bool getWin32KeyStatus(std::unordered_map<KeyboardKey, KeyAction> &keyboard_status,
+bool getWin32KeyStatus(std::unordered_map<KeyboardKey, KeyAction> &keyboard_status,
                               std::unordered_map<MouseKey, KeyAction> &mouse_status)
 {
     BYTE key_state[256];
@@ -263,7 +258,7 @@ inline bool getWin32KeyStatus(std::unordered_map<KeyboardKey, KeyAction> &keyboa
     return true;
 }
 
-inline bool getWin32MousePosition(MousePosition &mousePosition)
+bool getWin32MousePosition(MousePosition &mousePosition)
 {
     POINT point;
     if (!GetCursorPos(&point))
@@ -274,5 +269,3 @@ inline bool getWin32MousePosition(MousePosition &mousePosition)
     return true;
 }
 }
-
-#endif  // KIRANA_CORE_WIN32_INPUT_HPP

@@ -1,129 +1,119 @@
-// Copyright 2025 Suraj Shettigar
+// Copyright 2026 Suraj Shettigar
 // SPDX-License-Identifier: Apache-2.0
 
 #ifndef KIRANA_CORE_WINDOW_MANAGER_HPP
 #define KIRANA_CORE_WINDOW_MANAGER_HPP
 
-#include <iostream>
-#include <memory>
-
+#include "i_window.hpp"
 #include "no_copy.hpp"
-#include "window.hpp"
+
+#include <memory>
+#include <unordered_map>
 
 namespace kirana::core
 {
-class WindowManager : NoCopy
+///  Creates, tracks, and destroys IWindow instances.
+///  Every window is identified externally by an opaque WindowHandle.
+///
+///  Typical usage:
+///   @code
+///    EventManager  evt_mgr{EventDispatchMode::QUEUED};
+///    WindowManager win_mgr;
+///
+///    auto main = win_mgr.createWindow({ .title="Main", .width=1280, .height=720 },
+///                                    &evt_mgr);
+///    auto hud  = win_mgr.createWindow({ .title="HUD",  .width=400,  .height=300 },
+///                                    &evt_mgr);
+///
+///    while (win_mgr.hasOpenWindows())
+///    {
+///        win_mgr.pollAll();
+///        evt_mgr.pollEvents();   // flush queued events to listeners
+///    }
+///    @endcode
+class WindowManager : NoCopy, EventListener
 {
-public:
-    /**
-     * Any window creation / management is performed through the WindowManager
-     * object. It keeps track of all the windows and polls window events.
-     */
-    WindowManager() = default;
-    ~WindowManager() = default;
-
-    WindowManager(const WindowManager &manager) = delete;
-    WindowManager &operator=(const WindowManager &manager) = delete;
-
-    /**
-     * Calls native window initialization functions before we can proceed with
-     * window creation.
-     * @return true if successful.
-     */
-    bool init();
-    /**
-     * Poll window events such as creation, destruction, moving or resizing. Needs
-     * to be called every frame.
-     * @return true if successfully polled events.
-     */
-    bool pollEvents();
-    /**
-     * Quits and de-initializes native window management.
-     */
-    void quit();
-
-    /// Returns true if at least one window is visible on the screen.
-    [[nodiscard]] bool isAnyWindowActive() const
+  public:
+    /// @param event_manager Optional EventManager to receive window + input events.
+    explicit WindowManager(EventManager *event_manager = nullptr) : m_event_manager{event_manager}
     {
-        if (m_windows.empty())
+        if (m_event_manager)
         {
-            return false;
+            m_event_manager->addListener(this);
         }
-        for (const auto &[_, window] : m_windows)
-        {
-            if (!window->isClosed())
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
-    /// Returns the Window object with the given handle.
-    [[nodiscard]] const Window &getWindow(const WindowHandle handle) const
+    ~WindowManager() override
     {
-        return *m_windows.at(handle).get();
+        closeAll();
     }
 
-    /// Returns the Window object with the given handle.
-    [[nodiscard]] Window &getWindow(const WindowHandle handle)
-    {
-        return *m_windows.at(handle).get();
-    }
+    /// Creates a new window and returns its handle.
+    /// @param desc     Window creation parameters.
+    /// @returns Window handle. Handle will be invalid in case of failure.
+    [[nodiscard]] WindowHandle createWindow(const WindowDesc &desc);
 
-    /// Returns the current window in focus.
-    [[nodiscard]] const Window &getFocusedWindow() const
-    {
-        return getWindow(m_focusedWindow);
-    }
+    /// Closes a window by the given handle.
+    void closeWindow(WindowHandle handle) const;
 
-    /// Returns the current window in focus.
-    [[nodiscard]] Window &getFocusedWindow()
-    {
-        return getWindow(m_focusedWindow);
-    }
+    /// Closes all windows managed by this instance.
+    void closeAll() const;
 
-    /**
-     * Creates a window with the given properties. The window is only created. To
-     * show the window on screen, use the showWindow function.
-     * @param name Name of the window.
-     * @param size Initial size of the window.
-     * @param position Initial position of the window on the screen. (0,0) will be the top-left corner of the screen.
-     * @param parent Handle of the parent window, if any.
-     * @return Handle to the created window. Handle will be -1 if it fails to
-     * create the window.
-     */
-    WindowHandle createWindow(const std::string &name, WindowSize size, WindowPosition position = DEFAULT_WINDOW_POS,
-                              WindowHandle parent = {});
+    /// Poll OS events for every open window.
+    void pollAll();
 
-    /// Displays the window with the given handle on the screen.
-    void showWindow(const WindowHandle handle) const
-    {
-        if (!m_windows.contains(handle))
-        {
-            return;
-        }
-        getWindow(handle).show();
-    }
+    /// Poll OS events for a single window.
+    void poll(WindowHandle handle) const;
 
-    /// Closes the window with the given handle.
-    void closeWindow(const WindowHandle handle)
-    {
-        if (!m_windows.contains(handle))
-        {
-            return;
-        }
-        getWindow(handle).close();
-        // TODO: Add a proper way to clean-up windows handles and event listeners.
-    }
+    /// True if at least one window is still open (not closed by the OS/user).
+    [[nodiscard]] bool hasOpenWindows() const;
 
-private:
-    uint32_t m_window_count = 0;
-    std::unordered_map<WindowHandle, std::unique_ptr<Window>> m_windows = {};
-    WindowHandle m_focusedWindow = {};
+    /// True if the given handle refers to a live window.
+    [[nodiscard]] bool isValid(WindowHandle handle) const;
 
-    void onWindowEvent(WindowHandle handle, WindowEventType type, const WindowEventData &data);
+    [[nodiscard]] bool isOpen(WindowHandle handle) const;
+    [[nodiscard]] bool isFocused(WindowHandle handle) const;
+    [[nodiscard]] bool isMinimized(WindowHandle handle) const;
+    [[nodiscard]] bool isResizable(WindowHandle handle) const;
+    [[nodiscard]] bool isVisible(WindowHandle handle) const;
+    [[nodiscard]] WindowSize getSize(WindowHandle handle) const;
+    [[nodiscard]] WindowPosition getPosition(WindowHandle handle) const;
+    [[nodiscard]] std::string getTitle(WindowHandle handle) const;
+
+    void setTitle(WindowHandle handle, const std::string &title) const;
+    void resize(WindowHandle handle, const WindowSize &size) const;
+    void move(WindowHandle handle, const WindowPosition &position) const;
+    void show(WindowHandle handle) const;
+    void hide(WindowHandle handle) const;
+
+    /// Low-level native handle access (Example use-case: For surface creation (Vulkan, OpenGL, etc.).)
+    /// Cast to the correct type only in platform-specific code.
+    ///
+    ///   Win32:  <b>HWND</b> \n
+    ///   X11:    <b>Window  (XID)</b> \n
+    ///   macOS:  <b>NSWindow*</b> \n
+    [[nodiscard]] void *getNativeWindowHandle(WindowHandle handle) const;
+    /// Low-level native handle access (Example use-case: For surface creation (Vulkan, OpenGL, etc.).)
+    /// Cast to the correct type only in platform-specific code.
+    ///
+    ///   Win32:  <b>HINSTANCE</b> \n
+    ///   X11:    <b>Display*</b> \n
+    ///   macOS:  <b>nullptr</b>  (not needed on Cocoa) \n
+    [[nodiscard]] void *getNativeDisplayHandle(WindowHandle handle) const;
+
+    void onEvent(const Event &event) override;
+
+  private:
+    EventManager *m_event_manager{nullptr};
+    std::unordered_map<WindowHandle, std::unique_ptr<IWindow>> m_windows{};
+    std::vector<WindowHandle> m_destroyed_windows{};
+    WindowHandle m_next_handle{0};
+
+    [[nodiscard]] IWindow *getWindow(WindowHandle handle) const;
+
+    void pruneClosedWindows();
 };
-}
 
-#endif  // KIRANA_CORE_WINDOW_MANAGER_HPP
+} // namespace kirana::core
+
+#endif // KIRANA_CORE_WINDOW_MANAGER_HPP

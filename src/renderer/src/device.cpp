@@ -76,8 +76,8 @@ vk::SurfaceKHR createSurfaceHandle(const vk::Instance instance, const SurfaceDat
     VkWin32SurfaceCreateInfoKHR create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     create_info.pNext = nullptr;
-    create_info.hinstance = *reinterpret_cast<HINSTANCE *>(surface.instance_handle);
-    create_info.hwnd = *reinterpret_cast<HWND *>(surface.window_handle);
+    create_info.hinstance = static_cast<HINSTANCE>(surface.instance_handle);
+    create_info.hwnd = static_cast<HWND>(surface.window_handle);
     vkCreateWin32SurfaceKHR(instance, &create_info, nullptr, &vk_surface);
 #elif PLATFORM == LINUX
     // TODO: Add vulkan surface creation for Linux Platform

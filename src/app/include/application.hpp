@@ -13,9 +13,9 @@
 namespace kirana
 {
 
-class Application : core::NoCopy
+class Application : core::NoCopy, core::EventListener
 {
-public:
+  public:
     Application() = default;
 
     explicit Application(const int argc, char **argv)
@@ -30,28 +30,29 @@ public:
         }
     }
 
-    ~Application()
+    ~Application() override
     {
         clean();
     }
 
     int run();
 
-private:
+    void onEvent(const core::Event &event) override;
+
+  private:
     std::string m_launch_scene_file{};
     std::string m_environment_file{};
 
+    core::EventManager m_event_manager{core::EventDispatchMode::QUEUED};
     core::TimeManager m_time_manager{};
     core::InputManager m_input_manager{};
-    core::WindowManager m_window_manager{};
+    core::WindowManager m_window_manager{&m_event_manager};
     renderer::Renderer m_renderer{};
 
     core::WindowHandle m_main_window{};
     scene::Scene m_scene{};
 
     bool m_is_cleaned{false};
-
-    void onWindowEvent(core::WindowEventType type, const core::WindowEventData &data);
 
     int init();
     void update();
@@ -62,4 +63,4 @@ private:
 
 } // namespace kirana
 
-#endif  // KIRANA_APPLICATION_HPP
+#endif // KIRANA_APPLICATION_HPP

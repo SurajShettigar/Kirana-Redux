@@ -12,17 +12,21 @@
 
 namespace kirana
 {
-void Application::onWindowEvent(const core::WindowEventType type, const core::WindowEventData &data)
+void Application::onEvent(const core::Event &event)
 {
-    if (type == core::WindowEventType::RESIZING)
+    if (event.getType() == core::WindowEvent::getStaticType())
     {
-        const auto aspect_ratio = static_cast<float>(data.size.width) / static_cast<float>(data.size.height);
-        m_scene.getActiveCamera()->setAspectRatio(aspect_ratio);
-        m_renderer.updateCamera(m_scene.getViewMatrix(), m_scene.getProjectionMatrix());
-        m_renderer.resize({static_cast<uint32_t>(data.size.width), static_cast<uint32_t>(data.size.height)});
+        const auto &win_event = dynamic_cast<const core::WindowEvent &>(event);
+        if (win_event.status == core::WindowStatus::RESIZING)
+        {
+            const auto [width, height] = win_event.data.size;
+            const auto aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+            m_scene.getActiveCamera()->setAspectRatio(aspect_ratio);
+            m_renderer.updateCamera(m_scene.getViewMatrix(), m_scene.getProjectionMatrix());
+            m_renderer.resize({static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+        }
     }
 }
-
 
 int Application::init()
 {
@@ -31,21 +35,20 @@ int Application::init()
 
 
     core::Logger::get().init(app_name, core::Logger::Level::L_DEBUG);
+
+    m_event_manager.addListener(this);
     m_time_manager.init();
 
     core::InputManager::init();
 
-    m_window_manager.init();
-    m_main_window = m_window_manager.createWindow("Kirana", {1280, 720});
-    m_window_manager.showWindow(m_main_window);
+    m_main_window = m_window_manager.createWindow(core::WindowDesc{"Kirana", {1280, 720}});
 
-    m_window_manager.getWindow(m_main_window)
-        .addOnWindowEventListener(
-            [&](const core::WindowEventType type, const core::WindowEventData &data) { onWindowEvent(type, data); });
+    void *native_win_handle = m_window_manager.getNativeWindowHandle(m_main_window);
+    void *native_display_handle = m_window_manager.getNativeDisplayHandle(m_main_window);
+    const core::WindowSize win_size = m_window_manager.getSize(m_main_window);
 
-    core::Window &window = m_window_manager.getWindow(m_main_window);
-    const renderer::SurfaceData surface{window.getNativeWindowPointer(), window.getNativeAppInstancePointer()};
-    const renderer::SwapchainData swapchain{renderer::Size2D{window.getSize().width, window.getSize().height},
+    const renderer::SurfaceData surface{native_win_handle, native_display_handle};
+    const renderer::SwapchainData swapchain{renderer::Size2D{win_size.width, win_size.height},
                                             renderer::TextureFormat::B8G8R8A8_UNORM};
 
     renderer::GPUSelectionPreference gpu{renderer::GPUType::DISCRETE};
@@ -67,8 +70,7 @@ int Application::init()
                 scene::TextureSampler{scene::TextureFilterMode::LINEAR, scene::TextureFilterMode::LINEAR});
         }
         core::Logger::get().info("Loaded scene at path: " + info.path);
-        const auto aspect_ratio =
-            static_cast<float>(window.getSize().width) / static_cast<float>(window.getSize().height);
+        const auto aspect_ratio = static_cast<float>(win_size.width) / static_cast<float>(win_size.height);
         if (!m_scene.getActiveCamera())
         {
             const auto cam_transform =
@@ -92,7 +94,8 @@ int Application::init()
 void Application::update()
 {
     m_input_manager.pollInputs();
-    m_window_manager.pollEvents();
+    m_window_manager.pollAll();
+    m_event_manager.pollEvents();
     m_renderer.update();
 }
 
@@ -124,7 +127,7 @@ int Application::run()
 
     if (!status)
     {
-        while (m_window_manager.isAnyWindowActive())
+        while (m_window_manager.hasOpenWindows())
         {
             m_time_manager.tick([&]() {
                 update();

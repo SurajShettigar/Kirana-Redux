@@ -8,17 +8,19 @@
 
 #include "input_constants.hpp"
 #include "no_copy.hpp"
+#include "event_manager.hpp"
 
 namespace kirana::core
 {
 class InputManager : NoCopy
 {
-public:
+    // TODO: Add event based input dispatch through EventManager.
+  public:
     /**
-     * Any input of the application from the input devices (Keyboard, Mouse, and
-     * so on.) is managed by the InputManager.
+     * Any input from the input devices (Keyboard, Mouse, and so on.) is managed by the InputManager.
+     * @param event_manager Optional EventManager to receive input events.
      */
-    InputManager() : m_mouse_pos{0, 0}
+    explicit InputManager(EventManager *event_manager = nullptr) : m_event_manager{event_manager}
     {
         for (size_t i = 0; i < static_cast<size_t>(KeyboardKey::COUNT); i++)
             m_keyboard_status[static_cast<KeyboardKey>(i)] = KeyAction::NONE;
@@ -94,10 +96,11 @@ public:
         return m_mouse_pos;
     }
 
-private:
-    MousePosition m_mouse_pos;
-    std::unordered_map<KeyboardKey, KeyAction> m_keyboard_status;
-    std::unordered_map<MouseKey, KeyAction> m_mouse_status;
+  private:
+    EventManager *m_event_manager{nullptr};
+    MousePosition m_mouse_pos{0, 0};
+    std::unordered_map<KeyboardKey, KeyAction> m_keyboard_status{};
+    std::unordered_map<MouseKey, KeyAction> m_mouse_status{};
 
     [[nodiscard]] bool checkKeyStatus(const KeyboardKey key, const KeyAction action) const
     {
@@ -109,6 +112,6 @@ private:
         return m_mouse_status.at(key) == action;
     }
 };
-}
+} // namespace kirana::core
 
-#endif  // KIRANA_CORE_INPUT_MANAGER_HPP
+#endif // KIRANA_CORE_INPUT_MANAGER_HPP
