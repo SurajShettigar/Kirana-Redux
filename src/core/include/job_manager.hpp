@@ -14,8 +14,6 @@
 #include <variant>
 
 #include "no_copy.hpp"
-#include "handle.hpp"
-#include "resource_manager.hpp"
 
 namespace kirana::core
 {
@@ -25,13 +23,15 @@ struct DispatchInfo
     uint32_t group_index;
 };
 
+using TaskHandle = uint32_t;
+
 typedef std::function<void()> Task;
 typedef std::function<void(DispatchInfo)> Dispatch;
-typedef std::function<void(Handle<Task>)> JobCompleteEventCallback;
+typedef std::function<void(TaskHandle)> JobCompleteEventCallback;
 
 struct Job
 {
-    Handle<Task> handle;
+    TaskHandle handle;
     Task task;
 };
 
@@ -40,7 +40,7 @@ struct Job
  */
 class JobQueue
 {
-public:
+  public:
     /// Add the current job to the queue.
     void queue(const Job &job)
     {
@@ -64,14 +64,14 @@ public:
         return true;
     }
 
-private:
+  private:
     std::deque<Job> m_jobs;
     std::mutex m_mutex;
 };
 
 class JobManager : NoCopy
 {
-public:
+  public:
     JobManager() = default;
 
     ~JobManager()
@@ -92,7 +92,7 @@ public:
      * @param task Function to run.
      * @return Handle to the given task.
      */
-    Handle<Task> run(const Task &task) const;
+    TaskHandle run(const Task &task) const;
 
     /**
      * Dispatch is similar to how a compute shader dispatch would work. It is used
@@ -108,7 +108,7 @@ public:
      * on work and group index.
      * @return Vector of handles equal to the number of parallel group dispatches generated.
      */
-    std::vector<Handle<Task>> dispatch(uint32_t work_size, uint32_t group_size, const Dispatch &callback) const;
+    std::vector<TaskHandle> dispatch(uint32_t work_size, uint32_t group_size, const Dispatch &callback) const;
 
     /// Returns true if any of the job thread is busy.
     bool isBusy() const;
@@ -127,7 +127,7 @@ public:
 
     void clean();
 
-private:
+  private:
     std::atomic<bool> m_is_running = true;
 
     uint32_t m_num_threads = 0;
@@ -142,6 +142,6 @@ private:
 
     mutable std::vector<JobCompleteEventCallback> m_job_complete_listeners;
 };
-} // namespace kirana::utils
+} // namespace kirana::core
 
-#endif  // KIRANA_CORE_JOB_MANAGER_HPP
+#endif // KIRANA_CORE_JOB_MANAGER_HPP

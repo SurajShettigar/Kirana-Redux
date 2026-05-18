@@ -253,7 +253,7 @@ bool SceneData::init(const Device &device, const scene::Scene &scene)
     std::vector<uint8_t> pixel_buffer{};
     scene.forEachImage([&](const scene::ImageHandle handle, const scene::Image &image) {
         const auto tex_index = static_cast<uint32_t>(m_textures.size());
-        const auto tex_name = scene.getImageName(handle);
+        const auto tex_name = image.getName();
         uint32_t num_channels = image.getNumChannels();
         // Most GPUs do not support 3-channel sampled textures. So we use 4-channel pixel buffers.
         num_channels = num_channels == 3 ? 4 : num_channels;

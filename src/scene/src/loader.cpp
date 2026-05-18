@@ -234,6 +234,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(
         std::string mat_name{gltf_material.name.value_or("")};
 
         MaterialPBR material{};
+        material.setName(mat_name);
         material.alpha_mode = getAlphaMode(gltf_material.alpha_mode);
         material.alpha_cutoff = gltf_material.alpha_cutoff;
         material.double_sided = gltf_material.double_sided;
@@ -414,7 +415,7 @@ inline std::unordered_map<uint32_t, MaterialHandle> loadGLTFMaterials(
             }
         }
 
-        materials.insert_or_assign(m_index, out_scene->addMaterial(mat_name, material));
+        materials.insert_or_assign(m_index, out_scene->addMaterial(material));
     }
     return materials;
 }
@@ -650,13 +651,13 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
         if (node.camera && cameras.contains(node.camera.value()))
         {
             const auto &camera_handle = cameras.at(node.camera.value());
-            node_name = node_name.empty() ? out_scene->getCameraName(camera_handle) : node_name;
+            node_name = node_name.empty() ? out_scene->getCamera(camera_handle)->getName() : node_name;
             current_parent = out_scene->addNode(node_name, NodeFlags::NONE, transform, camera_handle, parent_node);
         }
         else if (node.light && lights.contains(node.light.value()))
         {
             const auto &light_handle = lights.at(node.light.value());
-            node_name = node_name.empty() ? out_scene->getPunctualLightName(light_handle) : node_name;
+            node_name = node_name.empty() ? out_scene->getPunctualLight(light_handle)->getName() : node_name;
             current_parent = out_scene->addNode(node_name, NodeFlags::NONE, transform, light_handle, parent_node);
         }
         else if (node.mesh && meshes.contains(node.mesh.value()))
@@ -674,7 +675,7 @@ void loadGLTFNodes(const GLTFDocument &doc, const std::vector<uint32_t> &node_in
             }
             for (const auto &mesh_handle : mesh_handles)
             {
-                node_name = node_name.empty() ? out_scene->getMeshName(mesh_handle) : node_name;
+                node_name = node_name.empty() ? out_scene->getMesh(mesh_handle)->getName() : node_name;
                 const auto handle =
                     out_scene->addNode(node_name, NodeFlags::NONE, transform, mesh_handle, group_handle);
                 if (!current_parent)

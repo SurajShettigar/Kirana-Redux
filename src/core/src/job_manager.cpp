@@ -53,9 +53,9 @@ bool JobManager::init()
     return true;
 }
 
-Handle<Task> JobManager::run(const Task &task) const
+TaskHandle JobManager::run(const Task &task) const
 {
-    const auto handle = Handle<Task>(m_current_job_count);
+    const auto handle = m_current_job_count;
     const auto job = Job{handle, task};
 
     m_current_job_count += 1;
@@ -64,7 +64,7 @@ Handle<Task> JobManager::run(const Task &task) const
     return handle;
 }
 
-std::vector<Handle<Task>> JobManager::dispatch(const uint32_t work_size, const uint32_t group_size,
+std::vector<TaskHandle> JobManager::dispatch(const uint32_t work_size, const uint32_t group_size,
                                                const Dispatch &callback) const
 {
     if (work_size == 0 || group_size == 0)
@@ -72,14 +72,14 @@ std::vector<Handle<Task>> JobManager::dispatch(const uint32_t work_size, const u
 
     const uint32_t group_count = (work_size + group_size - 1) / group_size;
 
-    std::vector<Handle<Task>> handles = {};
+    std::vector<TaskHandle> handles = {};
     handles.reserve(group_count);
     for (uint32_t i = 0; i < group_count; i++)
     {
         const uint32_t w_start = i * group_size;
         const uint32_t w_end = std::min(w_start + group_size, work_size);
 
-        const auto handle = Handle<Task>(m_current_job_count);
+        const auto handle = m_current_job_count;
         auto job = Job{handle};
         // Each job runs a group of user-defined tasks sequentially.
         job.task = [w_start, w_end, i, callback]() {

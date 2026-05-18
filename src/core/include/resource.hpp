@@ -4,22 +4,35 @@
 #ifndef KIRANA_CORE_RESOURCE_HPP
 #define KIRANA_CORE_RESOURCE_HPP
 
-#include "handle.hpp"
+#include <string>
 
 namespace kirana::core
 {
 /// Resource interface with generation and alive tracking
 class IResource
 {
-    template <typename T, typename H> friend class ResourceManager;
+    template <typename T> friend class ResourceManager;
 
   public:
-    IResource() = default;
+    explicit IResource(std::string name) : m_name{std::move(name)}
+    {
+    }
+
     virtual ~IResource() = default;
+
+    [[nodiscard]] const std::string &getName() const
+    {
+        return m_name;
+    }
+
+    void setName(std::string name)
+    {
+        m_name = std::move(name);
+    }
 
     [[nodiscard]] virtual bool isValid() const
     {
-        return m_status && m_generation != HANDLE_MAX_GENERATION;
+        return m_status;
     }
 
     bool load()
@@ -40,9 +53,11 @@ class IResource
     }
 
   protected:
-    uint32_t m_generation{HANDLE_MAX_GENERATION};
+    uint16_t m_generation{std::numeric_limits<uint16_t>::max()};
     uint16_t m_status{0u};
     uint16_t m_is_loaded{0u};
+
+    std::string m_name{};
 
     virtual bool doLoad() = 0;
     virtual void doUnload() = 0;

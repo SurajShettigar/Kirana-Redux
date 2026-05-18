@@ -10,13 +10,13 @@
 
 namespace kirana::scene
 {
-enum class TextureFilterMode: uint8_t
+enum class TextureFilterMode : uint8_t
 {
     NEAREST = 0u,
     LINEAR = 1u,
 };
 
-enum class TextureWrapMode: uint8_t
+enum class TextureWrapMode : uint8_t
 {
     REPEAT = 0u,
     MIRRORED_REPEAT = 1u,
@@ -55,13 +55,16 @@ struct Texture final : core::IResource
     TextureTransform transform{};
     uint32_t tex_coord{0u};
 
-    Texture() = default;
-
-    explicit Texture(const ImageHandle image, const TextureSampler &sampler, const TextureTransform &transform,
-                     const uint32_t tex_coord)
-        : image{image}, sampler{sampler}, transform{transform}, tex_coord{tex_coord}
+    Texture() : IResource{"Texture"}
     {
-
+    }
+    explicit Texture(const std::string &name) : IResource{name}
+    {
+    }
+    explicit Texture(const std::string &name, const ImageHandle image, const TextureSampler &sampler,
+                     const TextureTransform &transform, const uint32_t tex_coord)
+        : IResource{name}, image{image}, sampler{sampler}, transform{transform}, tex_coord{tex_coord}
+    {
     }
 
     [[nodiscard]] bool isValid() const override
@@ -69,7 +72,7 @@ struct Texture final : core::IResource
         return IResource::isValid() && image.isValid();
     }
 
-protected:
+  protected:
     bool doLoad() override
     {
         return true;
@@ -78,6 +81,6 @@ protected:
     {
     }
 };
-}
+} // namespace kirana::scene
 
-#endif //KIRANA_SCENE_TEXTURE_HPP
+#endif // KIRANA_SCENE_TEXTURE_HPP

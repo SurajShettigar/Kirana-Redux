@@ -8,24 +8,24 @@
 #include "common.hpp"
 
 #include <resource.hpp>
+#include <handle.hpp>
 
 namespace kirana::renderer
 {
-struct BufferTag
-{
-};
-
-using BufferHandle = core::Handle<BufferTag>;
+class Buffer;
+using BufferHandle = core::Handle<Buffer>;
 
 class Buffer final : public core::IResource
 {
   public:
-    Buffer() = default;
+    Buffer() : IResource{"Buffer"}
+    {
+    }
     explicit Buffer(const Device *device, const MemoryAllocator *allocator, const CommandEncoder *encoder,
-                    std::string name, uint64_t size, const void *data = nullptr,
-                    BufferUsageFlags usage = BufferUsageFlags::UNKNOWN)
-        : m_device{device}, m_allocator{allocator}, m_encoder{encoder}, m_name{std::move(name)}, m_usage{usage},
-          m_size{size}, m_data{data}, m_is_dirty{m_data != nullptr}
+                    const std::string &name, const uint64_t size, const void *data = nullptr,
+                    const BufferUsageFlags usage = BufferUsageFlags::UNKNOWN)
+        : IResource{name}, m_device{device}, m_allocator{allocator}, m_encoder{encoder}, m_usage{usage}, m_size{size},
+          m_data{data}, m_is_dirty{m_data != nullptr}
     {
     }
 
@@ -34,11 +34,6 @@ class Buffer final : public core::IResource
     [[nodiscard]] bool isValid() const override
     {
         return IResource::isValid() && m_handle != nullptr;
-    }
-
-    [[nodiscard]] const std::string &getName() const
-    {
-        return m_name;
     }
 
     [[nodiscard]] uint64_t getSize() const
@@ -71,7 +66,6 @@ class Buffer final : public core::IResource
     const MemoryAllocator *m_allocator{nullptr};
     const CommandEncoder *m_encoder{nullptr};
 
-    std::string m_name{};
     BufferUsageFlags m_usage{};
     uint64_t m_size{};
 

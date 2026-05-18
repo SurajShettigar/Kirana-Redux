@@ -43,12 +43,16 @@ struct PunctualLight final : core::IResource
     float spot_cone_angle_inner{0.0f};           // radians
     float spot_cone_angle_outer{0.78539816339f}; // radians
 
-    PunctualLight() = default;
-
-    explicit PunctualLight(const PunctualLightType type, const LightUnit unit, const std::array<float, 3> &color,
-                           const float intensity, const float range = -1.0f, const float spot_cone_angle_inner = 0.0f,
-                           const float spot_cone_angle_outer = 0.78539816339f)
-        : type{type}, unit{unit}, color{color}, intensity{intensity}, range{range},
+    PunctualLight() : IResource{"Punctual_Light"}
+    {
+    }
+    explicit PunctualLight(const std::string &name) : IResource{name}
+    {
+    }
+    explicit PunctualLight(const std::string &name, const PunctualLightType type, const LightUnit unit,
+                           const std::array<float, 3> &color, const float intensity, const float range = -1.0f,
+                           const float spot_cone_angle_inner = 0.0f, const float spot_cone_angle_outer = 0.78539816339f)
+        : IResource{name}, type{type}, unit{unit}, color{color}, intensity{intensity}, range{range},
           spot_cone_angle_inner{spot_cone_angle_inner}, spot_cone_angle_outer{spot_cone_angle_outer}
     {
     }

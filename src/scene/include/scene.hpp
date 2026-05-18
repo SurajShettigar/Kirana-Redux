@@ -30,54 +30,46 @@ using MaterialCallback = std::function<void(MaterialHandle handle, const Materia
 using RenderableCallback = std::function<void(NodeHandle node_handle, MeshHandle mesh_handle,
                                               const HierarchyTransform &transform, const Mesh &mesh)>;
 
-class Scene : public core::NoCopy
+class Scene final : public core::IResource, core::NoCopy
 {
   public:
-    Scene() = default;
-    ~Scene() = default;
-
-    explicit Scene(std::string name) : m_name{std::move(name)}
+    Scene() : IResource{"Scene"}
     {
     }
 
-    [[nodiscard]] const std::string &getName() const
-    {
-        return m_name;
-    }
+    ~Scene() override = default;
 
-    void setName(const std::string &name)
+    explicit Scene(const std::string &name) : IResource{name}
     {
-        m_name = name;
     }
-
 
     ImageHandle addImage(const std::string &name, const std::string &path, const std::vector<uint8_t> &raw_buffer = {});
 
     TextureHandle addTexture(const std::string &name, ImageHandle image, const TextureSampler &sampler = {},
                              const TextureTransform &transform = {}, uint32_t tex_coord = 0u);
 
-    MaterialHandle addMaterial(const std::string &name, const MaterialPBR &material);
+    MaterialHandle addMaterial(const MaterialPBR &material);
 
-    CameraHandle addCamera(const std::string &name, const Camera &camera);
+    CameraHandle addCamera(const Camera &camera);
 
     CameraHandle addPerspectiveCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                       const float fov_vertical, const float aspect_ratio = 1.0f)
     {
-        return addCamera(name,
-                         Camera::getPerspective(clipping_planes[0], clipping_planes[1], fov_vertical, aspect_ratio));
+        return addCamera(
+            Camera::getPerspective(name, clipping_planes[0], clipping_planes[1], fov_vertical, aspect_ratio));
     }
 
     CameraHandle addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                        const float size, const float aspect_ratio = 1.0f)
     {
-        return addCamera(name, Camera::getOrthographic(clipping_planes[0], clipping_planes[1], size, aspect_ratio));
+        return addCamera(Camera::getOrthographic(name, clipping_planes[0], clipping_planes[1], size, aspect_ratio));
     }
 
     CameraHandle addOrthographicCamera(const std::string &name, const std::array<float, 2> &clipping_planes,
                                        const std::array<float, 2> &size_2d)
     {
         return addCamera(
-            name, Camera::getOrthographicFromSize2D(clipping_planes[0], clipping_planes[1], size_2d[0], size_2d[1]));
+            Camera::getOrthographicFromSize2D(name, clipping_planes[0], clipping_planes[1], size_2d[0], size_2d[1]));
     }
 
     void setEnvironmentLight(const EnvironmentLight &light)
@@ -105,20 +97,20 @@ class Scene : public core::NoCopy
         return m_environment_light.texture;
     }
 
-    PunctualLightHandle addPunctualLight(const std::string &name, const PunctualLight &light);
+    PunctualLightHandle addPunctualLight(const PunctualLight &light);
 
     PunctualLightHandle addDirectionalLight(
         const std::string &name, const std::array<float, 3> &color, const float intensity,
         const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::DIRECTIONAL))
     {
-        return addPunctualLight(name, PunctualLight{PunctualLightType::DIRECTIONAL, unit, color, intensity});
+        return addPunctualLight(PunctualLight{name, PunctualLightType::DIRECTIONAL, unit, color, intensity});
     }
 
     PunctualLightHandle addPointLight(const std::string &name, const std::array<float, 3> &color, const float intensity,
                                       const float range = -1.0f,
                                       const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::POINT))
     {
-        return addPunctualLight(name, PunctualLight{PunctualLightType::POINT, unit, color, intensity, range});
+        return addPunctualLight(PunctualLight{name, PunctualLightType::POINT, unit, color, intensity, range});
     }
 
     PunctualLightHandle addSpotLight(const std::string &name, const std::array<float, 3> &color, const float intensity,
@@ -126,8 +118,8 @@ class Scene : public core::NoCopy
                                      const float outer_cone_angle = 0.78539816339f,
                                      const LightUnit unit = DEFAULT_LIGHT_UNITS.at(PunctualLightType::SPOT))
     {
-        return addPunctualLight(name, PunctualLight{PunctualLightType::SPOT, unit, color, intensity, range,
-                                                    inner_cone_angle, outer_cone_angle});
+        return addPunctualLight(PunctualLight{name, PunctualLightType::SPOT, unit, color, intensity, range,
+                                              inner_cone_angle, outer_cone_angle});
     }
 
     MeshHandle addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
@@ -142,7 +134,7 @@ class Scene : public core::NoCopy
                              const Transform &transform = Transform{},
                              const std::optional<NodeHandle> &parent = std::nullopt)
     {
-        if (const auto cam_handle = addCamera(name, camera); cam_handle.isValid())
+        if (const auto cam_handle = addCamera(camera); cam_handle.isValid())
         {
             return addNode(name, flags, transform, cam_handle, parent);
         }
@@ -193,7 +185,7 @@ class Scene : public core::NoCopy
                                     const NodeFlags flags = NodeFlags::NONE, const Transform &transform = Transform{},
                                     const std::optional<NodeHandle> &parent = std::nullopt)
     {
-        if (const auto light_handle = addPunctualLight(name, light); light_handle.isValid())
+        if (const auto light_handle = addPunctualLight(light); light_handle.isValid())
         {
             return addNode(name, flags, transform, light_handle, parent);
         }
@@ -255,11 +247,6 @@ class Scene : public core::NoCopy
         return NodeHandle{};
     }
 
-    [[nodiscard]] std::string getImageName(const ImageHandle handle) const
-    {
-        return m_image_names.contains(handle) ? m_image_names.at(handle) : "";
-    }
-
     [[nodiscard]] const Image *getImage(const ImageHandle handle) const
     {
         return m_images.get(handle);
@@ -268,11 +255,6 @@ class Scene : public core::NoCopy
     [[nodiscard]] Image *getImage(const ImageHandle handle)
     {
         return m_images.get(handle);
-    }
-
-    [[nodiscard]] std::string getTextureName(const TextureHandle handle) const
-    {
-        return m_texture_names.contains(handle) ? m_texture_names.at(handle) : "";
     }
 
     [[nodiscard]] const Texture *getTexture(const TextureHandle handle) const
@@ -285,11 +267,6 @@ class Scene : public core::NoCopy
         return m_textures.get(handle);
     }
 
-    [[nodiscard]] std::string getMaterialName(const MaterialHandle handle) const
-    {
-        return m_material_names.contains(handle) ? m_material_names.at(handle) : "";
-    }
-
     [[nodiscard]] const MaterialPBR *getMaterial(const MaterialHandle handle) const
     {
         return m_materials.get(handle);
@@ -298,11 +275,6 @@ class Scene : public core::NoCopy
     [[nodiscard]] MaterialPBR *getMaterial(const MaterialHandle handle)
     {
         return m_materials.get(handle);
-    }
-
-    [[nodiscard]] std::string getCameraName(const CameraHandle handle) const
-    {
-        return m_camera_names.contains(handle) ? m_camera_names.at(handle) : "";
     }
 
     [[nodiscard]] const Camera *getCamera(const CameraHandle handle) const
@@ -378,19 +350,19 @@ class Scene : public core::NoCopy
         }
     }
 
-    const EnvironmentLight &getEnvironmentLight() const
+    [[nodiscard]] const EnvironmentLight &getEnvironmentLight() const
     {
         return m_environment_light;
     }
 
-    [[nodiscard]] std::string getPunctualLightName(const PunctualLightHandle handle) const
+    [[nodiscard]] const PunctualLight *getPunctualLight(const PunctualLightHandle handle) const
     {
-        return m_punctual_light_names.contains(handle) ? m_punctual_light_names.at(handle) : "";
+        return m_punctual_lights.get(handle);
     }
 
-    [[nodiscard]] std::string getMeshName(const MeshHandle handle) const
+    [[nodiscard]] PunctualLight *getPunctualLight(const PunctualLightHandle handle)
     {
-        return m_mesh_names.contains(handle) ? m_mesh_names.at(handle) : "";
+        return m_punctual_lights.get(handle);
     }
 
     [[nodiscard]] const IndexBuffer &getIndexBuffer() const
@@ -403,9 +375,14 @@ class Scene : public core::NoCopy
         return m_vertex_buffer;
     }
 
-    [[nodiscard]] std::string getNodeName(const NodeHandle handle) const
+    [[nodiscard]] const Mesh *getMesh(const MeshHandle handle) const
     {
-        return m_node_names.contains(handle) ? m_node_names.at(handle) : "";
+        return m_meshes.get(handle);
+    }
+
+    [[nodiscard]] Mesh *getMesh(const MeshHandle handle)
+    {
+        return m_meshes.get(handle);
     }
 
     [[nodiscard]] const Node *getNode(const NodeHandle handle) const
@@ -483,32 +460,34 @@ class Scene : public core::NoCopy
         });
     }
 
-  private:
-    std::string m_name{DEFAULT_NAME_SCENE};
+  protected:
+    bool doLoad() override
+    {
+        // TODO: Add scene file loading logic.
+        return true;
+    }
+    void doUnload() override
+    {
+        // TODO: Unload all scene resources.
+    }
 
+  private:
     IndexBuffer m_index_buffer{};
     VertexBuffer m_vertex_buffer{};
 
-    core::ResourceManager<Image, ImageTag> m_images;
-    std::unordered_map<ImageHandle, std::string> m_image_names;
-    core::ResourceManager<Texture, TextureTag> m_textures;
-    std::unordered_map<TextureHandle, std::string> m_texture_names;
-    core::ResourceManager<MaterialPBR, MaterialTag> m_materials;
-    std::unordered_map<MaterialHandle, std::string> m_material_names;
+    core::ResourceManager<Image> m_images;
+    core::ResourceManager<Texture> m_textures;
+    core::ResourceManager<MaterialPBR> m_materials;
 
-    core::ResourceManager<Camera, CameraTag> m_cameras;
-    std::unordered_map<CameraHandle, std::string> m_camera_names;
+    core::ResourceManager<Camera> m_cameras;
 
     EnvironmentLight m_environment_light{};
-    core::ResourceManager<PunctualLight, PunctualLightTag> m_punctual_lights;
-    std::unordered_map<PunctualLightHandle, std::string> m_punctual_light_names;
+    core::ResourceManager<PunctualLight> m_punctual_lights;
 
-    core::ResourceManager<Mesh, MeshTag> m_meshes;
-    std::unordered_map<MeshHandle, std::string> m_mesh_names;
+    core::ResourceManager<Mesh> m_meshes;
 
-    core::ResourceManager<Node, NodeTag> m_nodes;
-    core::ResourceManager<HierarchyTransform, HierarchyTransformTag> m_transforms;
-    std::unordered_map<NodeHandle, std::string> m_node_names;
+    core::ResourceManager<Node> m_nodes;
+    core::ResourceManager<HierarchyTransform> m_transforms;
     std::unordered_map<NodeHandle, HierarchyTransformHandle> m_node_transforms;
 
     CameraHandle m_active_camera{};

@@ -171,7 +171,7 @@ class Device
     MemoryAllocator m_memory_allocator{};
     DescriptorAllocator m_descriptor_allocator{};
 
-    mutable core::ResourceManager<Buffer, BufferTag> m_resource_manager_buffers{};
+    mutable core::ResourceManager<Buffer> m_resource_manager_buffers{};
 };
 } // namespace kirana::renderer
 #endif // KIRANA_RENDERER_DEVICE_HPP

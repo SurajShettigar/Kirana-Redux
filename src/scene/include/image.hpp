@@ -30,25 +30,27 @@ enum class ImageChannelFormat : uint32_t
 class Image final : public core::IResource
 {
   public:
-    // static Image loadFromRawBuffer(const std::string &path, const std::vector<uint8_t> &buffer);
-
-    Image() = default;
+    Image() : IResource{"Image"}
+    {
+    }
 
     /**
      * Loads image information.
+     * @param name Image name.
      * @param path Path to the image file or data URI.
      */
-    explicit Image(std::string path) : m_path{std::move(path)}
+    explicit Image(const std::string &name, std::string path) : IResource{name}, m_path{std::move(path)}
     {
     }
 
     /**
      * Reads the raw image buffer and saves it as a file in the given path with the given extension. This works only if
      * the raw image buffer corresponds to the image format provided in the file extension.
+     * @param name Image name.
      * @param path Path where the image will be saved. Make sure filename contains a valid image extension.
      * @param raw_buffer Raw buffer (containing headers, pixel buffer, etc.) of the image.
      */
-    explicit Image(std::string path, const std::vector<uint8_t> &raw_buffer);
+    explicit Image(const std::string &name, std::string path, const std::vector<uint8_t> &raw_buffer);
 
     [[nodiscard]] bool isValid() const override
     {

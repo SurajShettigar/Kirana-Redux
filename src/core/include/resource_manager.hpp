@@ -5,6 +5,7 @@
 #define KIRANA_CORE_RESOURCE_MANAGER_HPP
 
 #include "resource.hpp"
+#include "handle.hpp"
 
 #include <functional>
 #include <queue>
@@ -12,10 +13,10 @@
 
 namespace kirana::core
 {
+
 /// Manages resources derived from type IResource. Uses generational indices to keep track of resource lifetime.
 /// @tparam T type of the resource.
-/// @tparam H type of the resource handle.
-template <typename T, typename H> class ResourceManager
+template <typename T> class ResourceManager
 {
     static_assert(std::is_base_of_v<IResource, T>, "T must derive from IResource");
 
@@ -26,7 +27,7 @@ template <typename T, typename H> class ResourceManager
     }
     ~ResourceManager() = default;
 
-    template <typename... Args> [[nodiscard]] Handle<H> add(Args &&...args)
+    template <typename... Args> [[nodiscard]] Handle<T> add(Args &&...args)
     {
         uint64_t index;
 
@@ -39,39 +40,38 @@ template <typename T, typename H> class ResourceManager
         else
         {
             index = m_resources.size();
-            if (index > HANDLE_MAX_INDEX)
-            {
-                return Handle<H>();
-            }
             m_resources.emplace_back(std::forward<Args>(args)...);
         }
 
         auto &res = m_resources[index];
         res.m_status = 1u;
-        res.m_generation = res.m_generation == HANDLE_MAX_GENERATION ? 0 : res.m_generation + 1;
+        res.m_generation = res.m_generation == std::numeric_limits<uint16_t>::max() ? 0 : res.m_generation + 1;
         if (m_auto_load_resource)
         {
             res.load();
         }
-        return Handle<H>(index, res.m_generation);
+        return Handle<T>(this, index, res.m_generation);
     }
 
-    [[nodiscard]] bool isValid(const Handle<H> handle) const
+    [[nodiscard]] bool isValid(const Handle<T> handle) const
     {
-        if (!handle.isValid() || handle.getIndex() >= m_resources.size())
+        const auto index = handle.getIndex();
+        if (index >= m_resources.size())
+        {
             return false;
-        const auto &res = m_resources[handle.getIndex()];
-        return res.m_status && res.m_generation == handle.m_generation;
+        }
+        const auto &res = m_resources[index];
+        return res.m_status && res.m_generation == handle.getGeneration();
     }
 
-    T *get(const Handle<H> handle)
+    T *get(const Handle<T> handle)
     {
         if (!isValid(handle))
             return nullptr;
         return &m_resources[handle.getIndex()];
     }
 
-    const T *get(const Handle<H> handle) const
+    const T *get(const Handle<T> handle) const
     {
         if (!isValid(handle))
             return nullptr;
@@ -80,7 +80,7 @@ template <typename T, typename H> class ResourceManager
 
     /// Removes (and unloads) resource with the given handle and sets it's state to invalid. It's memory will be reused
     /// by another resource added in the future.
-    bool remove(const Handle<H> handle)
+    bool remove(const Handle<T> handle)
     {
         if (!isValid(handle))
             return false;
@@ -113,37 +113,37 @@ template <typename T, typename H> class ResourceManager
         return count;
     }
 
-    std::vector<Handle<H>> getAllHandles() const
+    std::vector<Handle<T>> getAllHandles() const
     {
-        std::vector<Handle<H>> result;
+        std::vector<Handle<T>> result;
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
             if (const auto &res = m_resources[i]; res.m_status)
             {
-                result.emplace_back(i, res.m_generation);
+                result.emplace_back(this, i, res.m_generation);
             }
         }
         return result;
     }
 
-    void forEach(const std::function<void(Handle<H>, T &)> &callback)
+    void forEach(const std::function<void(Handle<T>, T &)> &callback)
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
             if (auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<H>(i, res.m_generation), res);
+                callback(Handle<T>(this, i, res.m_generation), res);
             }
         }
     }
 
-    void forEach(const std::function<void(Handle<H>, const T &)> &callback) const
+    void forEach(const std::function<void(Handle<T>, const T &)> &callback) const
     {
         for (uint64_t i = 0; i < m_resources.size(); ++i)
         {
             if (const auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<H>(i, res.m_generation), res);
+                callback(Handle<T>(this, i, res.m_generation), res);
             }
         }
     }
@@ -172,6 +172,16 @@ template <typename T, typename H> class ResourceManager
         m_free_indices.push(index);
     }
 };
-} // namespace kirana::core
 
+template <typename T> bool Handle<T>::isValid() const
+{
+    return m_manager ? m_manager->isValid(*this) : false;
+}
+
+template <typename T> T *Handle<T>::get() const
+{
+    return m_manager ? m_manager->get(*this) : nullptr;
+}
+
+} // namespace kirana::core
 #endif // KIRANA_CORE_RESOURCE_MANAGER_HPP

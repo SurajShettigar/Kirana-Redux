@@ -5,6 +5,7 @@
 #define KIRANA_SCENE_COMMON_HPP
 
 #include <handle.hpp>
+
 #include <vector2.hpp>
 #include <quaternion.hpp>
 
@@ -46,46 +47,25 @@ struct BufferRange
     }
 };
 
-struct ImageTag
-{
-};
+struct Camera;
+using CameraHandle = core::Handle<Camera>;
+class Image;
+using ImageHandle = core::Handle<Image>;
+struct PunctualLight;
+using PunctualLightHandle = core::Handle<PunctualLight>;
+struct MaterialPBR;
+using MaterialHandle = core::Handle<MaterialPBR>;
+struct Mesh;
+using MeshHandle = core::Handle<Mesh>;
+struct Node;
+using NodeHandle = core::Handle<Node>;
+class Scene;
+using SceneHandle = core::Handle<Scene>;
+struct Texture;
+using TextureHandle = core::Handle<Texture>;
+struct HierarchyTransform;
+using HierarchyTransformHandle = core::Handle<HierarchyTransform>;
 
-struct TextureTag
-{
-};
+} // namespace kirana::scene
 
-struct NodeTag
-{
-};
-
-struct HierarchyTransformTag
-{
-};
-
-struct CameraTag
-{
-};
-
-struct PunctualLightTag
-{
-};
-
-struct MaterialTag
-{
-};
-
-struct MeshTag
-{
-};
-
-using ImageHandle = core::Handle<ImageTag>;
-using TextureHandle = core::Handle<TextureTag>;
-using NodeHandle = core::Handle<NodeTag>;
-using HierarchyTransformHandle = core::Handle<HierarchyTransformTag>;
-using CameraHandle = core::Handle<CameraTag>;
-using PunctualLightHandle = core::Handle<PunctualLightTag>;
-using MaterialHandle = core::Handle<MaterialTag>;
-using MeshHandle = core::Handle<MeshTag>;
-}
-
-#endif //KIRANA_SCENE_COMMON_HPP
+#endif // KIRANA_SCENE_COMMON_HPP

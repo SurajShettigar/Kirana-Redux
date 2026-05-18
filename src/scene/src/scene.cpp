@@ -14,59 +14,29 @@ ImageHandle Scene::addImage(const std::string &name, const std::string &path, co
     ImageHandle handle;
     if (raw_buffer.empty())
     {
-        handle = m_images.add(path);
+        handle = m_images.add(name, path);
     }
     else
     {
-        handle = m_images.add(path, raw_buffer);
+        handle = m_images.add(name, path, raw_buffer);
     }
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-    m_image_names.insert_or_assign(handle, name.empty()
-                                               ? DEFAULT_NAME_IMAGE + "_" + std::to_string(handle.getIndex())
-                                               : name);
     return handle;
 }
 
 TextureHandle Scene::addTexture(const std::string &name, const ImageHandle image, const TextureSampler &sampler,
                                 const TextureTransform &transform, const uint32_t tex_coord)
 {
-    const auto handle = m_textures.add(image, sampler, transform, tex_coord);
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-    m_texture_names.insert_or_assign(handle, name.empty()
-                                                 ? DEFAULT_NAME_TEXTURE + "_" + std::to_string(handle.getIndex())
-                                                 : name);
-    return handle;
+    return m_textures.add(name, image, sampler, transform, tex_coord);
 }
 
-MaterialHandle Scene::addMaterial(const std::string &name, const MaterialPBR &material)
+MaterialHandle Scene::addMaterial(const MaterialPBR &material)
 {
-    const auto handle = m_materials.add(material);
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-    m_material_names.insert_or_assign(handle, name.empty()
-                                                  ? DEFAULT_NAME_MATERIAL + "_" + std::to_string(handle.getIndex())
-                                                  : name);
-    return handle;
+    return m_materials.add(material);
 }
 
-CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
+CameraHandle Scene::addCamera(const Camera &camera)
 {
     const auto handle = m_cameras.add(camera);
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-    m_camera_names.insert_or_assign(handle, name.empty()
-                                                ? DEFAULT_NAME_CAMERA + "_" + std::to_string(handle.getIndex())
-                                                : name);
     // Set the current camera as default if it's not set.
     if (!m_active_camera.isValid())
     {
@@ -75,17 +45,9 @@ CameraHandle Scene::addCamera(const std::string &name, const Camera &camera)
     return handle;
 }
 
-PunctualLightHandle Scene::addPunctualLight(const std::string &name, const PunctualLight &light)
+PunctualLightHandle Scene::addPunctualLight(const PunctualLight &light)
 {
-    const auto handle = m_punctual_lights.add(light);
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-    m_punctual_light_names.insert_or_assign(handle, name.empty()
-                                                        ? DEFAULT_NAME_LIGHT + "_" + std::to_string(handle.getIndex())
-                                                        : name);
-    return handle;
+    return m_punctual_lights.add(light);
 }
 
 MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buffer, const VertexBuffer &vertex_buffer,
@@ -125,24 +87,14 @@ MeshHandle Scene::addMesh(const std::string &name, const IndexBuffer &index_buff
 
     const VertexBufferRange vertices = m_vertex_buffer.extend(vertex_buffer);
 
-    const MeshHandle handle = m_meshes.add(indices, vertices, material);
-    if (!handle.isValid())
-    {
-        return handle;
-    }
-
-    m_mesh_names.insert_or_assign(handle, name.empty()
-                                              ? DEFAULT_NAME_MESH + "_" + std::to_string(handle.getIndex())
-                                              : name);
-
-    return handle;
+    return m_meshes.add(name, indices, vertices, material);;
 }
 
 NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const Transform &transform,
                           const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource,
                           const std::optional<NodeHandle> &parent)
 {
-    const auto handle = m_nodes.add(flags);
+    const auto handle = m_nodes.add(name, flags);
     if (!handle.isValid())
     {
         return handle;
@@ -181,9 +133,6 @@ NodeHandle Scene::addNode(const std::string &name, const NodeFlags flags, const 
             global_transform = t_handle->world * transform;
         }
     }
-    m_node_names.insert_or_assign(handle, name.empty()
-                                              ? DEFAULT_NAME_NODE + "_" + std::to_string(handle.getIndex())
-                                              : name);
 
     const auto transform_handle = m_transforms.add(HierarchyTransform{transform, global_transform});
     m_node_transforms.insert_or_assign(handle, transform_handle);

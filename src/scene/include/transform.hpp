@@ -244,9 +244,11 @@ struct HierarchyTransform final : core::IResource
     /// current local transform).
     Transform world{};
 
-    HierarchyTransform() = default;
-
-    explicit HierarchyTransform(const Transform &local, const Transform &world) : local{local}, world{world}
+    HierarchyTransform() : IResource{""}
+    {
+    }
+    explicit HierarchyTransform(const Transform &local, const Transform &world)
+        : IResource{""}, local{local}, world{world}
     {
     }
 

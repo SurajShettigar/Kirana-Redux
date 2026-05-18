@@ -87,15 +87,20 @@ struct Node final : core::IResource
         return resource ? static_cast<NodeType>(resource.value().index() + 1) : NodeType::EMPTY;
     }
 
-    Node() = default;
+    Node() : IResource{"Node"}
+    {
+    }
 
+    explicit Node(const std::string &name) : IResource{name}
+    {
+    }
     explicit Node(
-        const NodeFlags flags, const std::optional<NodeHandle> &parent = std::nullopt,
+        const std::string &name, const NodeFlags flags, const std::optional<NodeHandle> &parent = std::nullopt,
         const std::optional<NodeHandle> &first_child = std::nullopt,
         const std::optional<NodeHandle> &next_sibling = std::nullopt, const uint32_t level = 0,
         const std::optional<std::variant<CameraHandle, PunctualLightHandle, MeshHandle>> &resource = std::nullopt)
-        : IResource{}, flags{flags}, parent{parent}, first_child{first_child}, next_sibling{next_sibling}, level{level},
-          resource{resource}
+        : IResource{name}, flags{flags}, parent{parent}, first_child{first_child}, next_sibling{next_sibling},
+          level{level}, resource{resource}
     {
     }
 

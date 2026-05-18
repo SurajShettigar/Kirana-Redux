@@ -160,7 +160,8 @@ bool Image::doLoad()
     return true;
 }
 
-Image::Image(std::string path, const std::vector<uint8_t> &raw_buffer) : m_path{std::move(path)}
+Image::Image(const std::string &name, std::string path, const std::vector<uint8_t> &raw_buffer)
+    : IResource{name}, m_path{std::move(path)}
 {
     using namespace OIIO;
 

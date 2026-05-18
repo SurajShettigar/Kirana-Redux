@@ -21,38 +21,42 @@ class Camera final : public core::IResource
   public:
     static constexpr float INFINITE_FAR_CLIPPING_PLANE = 1000000.0f;
 
-    static Camera getPerspective(const float near_plane, const float far_plane, const float fov_vertical,
-                                 const float aspect_ratio)
+    static Camera getPerspective(const std::string &name, const float near_plane, const float far_plane,
+                                 const float fov_vertical, const float aspect_ratio)
     {
-        return Camera{CameraType::PERSPECTIVE, near_plane, far_plane, fov_vertical, aspect_ratio};
+        return Camera{name, CameraType::PERSPECTIVE, near_plane, far_plane, fov_vertical, aspect_ratio};
     }
 
-    static Camera getOrthographic(const float near_plane, const float far_plane, const float size,
-                                  const float aspect_ratio)
+    static Camera getOrthographic(const std::string &name, const float near_plane, const float far_plane,
+                                  const float size, const float aspect_ratio)
     {
-        return Camera{CameraType::ORTHOGRAPHIC, near_plane, far_plane, size, aspect_ratio};
+        return Camera{name, CameraType::ORTHOGRAPHIC, near_plane, far_plane, size, aspect_ratio};
     }
 
 
-    static Camera getOrthographicFromBox(const float near_plane, const float far_plane, const float left,
-                                         const float right, const float bottom, const float top)
+    static Camera getOrthographicFromBox(const std::string &name, const float near_plane, const float far_plane,
+                                         const float left, const float right, const float bottom, const float top)
     {
-        return Camera{CameraType::ORTHOGRAPHIC, near_plane, far_plane, (right - left) * 0.5f,
-                      std::fabs((right - left) / (top - bottom))};
+        return Camera{name,      CameraType::ORTHOGRAPHIC, near_plane,
+                      far_plane, (right - left) * 0.5f,    std::fabs((right - left) / (top - bottom))};
     }
 
-    static Camera getOrthographicFromSize2D(const float near_plane, const float far_plane, const float size_x,
-                                            const float size_y)
+    static Camera getOrthographicFromSize2D(const std::string &name, const float near_plane, const float far_plane,
+                                            const float size_x, const float size_y)
     {
-        return Camera{CameraType::ORTHOGRAPHIC, near_plane, far_plane, size_x, size_x / size_y};
+        return Camera{name, CameraType::ORTHOGRAPHIC, near_plane, far_plane, size_x, size_x / size_y};
     }
 
-    Camera() = default;
-
-    Camera(const CameraType type, const float near_plane, const float far_plane, const float fov_vertical_size,
-           const float aspect_ratio)
-        : m_type{type}, m_near_plane{near_plane}, m_far_plane{far_plane}, m_fov_y_size{fov_vertical_size},
-          m_aspect_ratio{aspect_ratio}
+    Camera() : IResource{"Camera"}
+    {
+    }
+    explicit Camera(const std::string &name) : IResource{name}
+    {
+    }
+    explicit Camera(const std::string &name, const CameraType type, const float near_plane, const float far_plane,
+                    const float fov_vertical_size, const float aspect_ratio)
+        : IResource{name}, m_type{type}, m_near_plane{near_plane}, m_far_plane{far_plane},
+          m_fov_y_size{fov_vertical_size}, m_aspect_ratio{aspect_ratio}
     {
     }
 

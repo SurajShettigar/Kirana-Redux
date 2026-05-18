@@ -286,11 +286,15 @@ struct Mesh final : core::IResource
     VertexBufferRange vertices{};
     MaterialHandle material{};
 
-    Mesh() = default;
-
-    explicit Mesh(const IndexBufferRange &indices, const VertexBufferRange &vertices,
+    Mesh() : IResource{"Mesh"}
+    {
+    }
+    explicit Mesh(const std::string &name) : IResource{name}
+    {
+    }
+    explicit Mesh(const std::string &name, const IndexBufferRange &indices, const VertexBufferRange &vertices,
                   const MaterialHandle &material = MaterialHandle{})
-        : indices{indices}, vertices{vertices}, material{material}
+        : IResource{name}, indices{indices}, vertices{vertices}, material{material}
     {
     }
 
