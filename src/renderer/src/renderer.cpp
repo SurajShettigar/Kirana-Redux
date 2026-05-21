@@ -8,6 +8,23 @@
 
 namespace kirana::renderer
 {
+
+inline TextureHandle createRenderTexture(Device &device, const Size2D &size, bool depth = false)
+{
+    if (depth)
+    {
+        return device.createTexture("Render_Target_Depth", size, TextureFormat::D32_SFLOAT,
+                                    TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST,
+                                    TextureLayout::GENERAL, nullptr, ResourceMemoryType::DEVICE,
+                                    ResourceMemoryFlags::DEDICATED_MEMORY);
+    }
+    return device.createTexture("Render_Target_Color", size, TextureFormat::R32G32B32A32_SFLOAT,
+                                TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
+                                    TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE,
+                                TextureLayout::GENERAL, nullptr, ResourceMemoryType::DEVICE,
+                                ResourceMemoryFlags::DEDICATED_MEMORY);
+}
+
 bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainData &swapchain_data,
                     const scene::Scene &scene)
 {
@@ -34,16 +51,10 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_ctxs.emplace_back(RenderContext{fence, encoder, semaphore});
     }
 
-    m_ctxs[0].fence.reset();
-    m_ctxs[0].encoder.begin();
-    m_render_target = m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Color", swapchain_data.size,
-                                             TextureFormat::R32G32B32A32_SFLOAT,
-                                             TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
-                                                 TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
-    m_depth_buffer =
-        m_device.createTexture(m_ctxs[0].encoder, "Render_Target_Depth", swapchain_data.size, TextureFormat::D32_SFLOAT,
-                               TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST);
-    m_device.getGraphicsQueue().submit(m_ctxs[0].encoder.finish(), m_ctxs[0].fence);
+    m_device.beginAllocation();
+    m_render_target = createRenderTexture(m_device, swapchain_data.size, false);
+    m_depth_buffer = createRenderTexture(m_device, swapchain_data.size, true);
+    m_device.endAllocation();
 
     m_layout_env = m_device.createDescriptorLayout("Descriptor_Layout_Environment",
                                                    ShaderStageFlags::VERTEX | ShaderStageFlags::COMPUTE |
@@ -99,8 +110,10 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
     m_shader_tonemap = m_device.createShader("Shader_Tonemap", "shaders/tonemapping.spv", {ShaderStageFlags::COMPUTE});
 
     auto render_state = RenderState{};
-    render_state.color_attachments = {ColorAttachment{m_render_target.getFormat(), ColorBlendState::replace()}};
-    render_state.depth_stencil_attachment = DepthStencilAttachment{m_depth_buffer.getFormat(), DepthStencilState{}};
+    render_state.color_attachments = {
+        ColorAttachment{m_device.getTexture(m_render_target)->getFormat(), ColorBlendState::replace()}};
+    render_state.depth_stencil_attachment =
+        DepthStencilAttachment{m_device.getTexture(m_depth_buffer)->getFormat(), DepthStencilState{}};
 
     render_state.rasterization.cull_mode = CullMode::FRONT;
     m_pipeline_env =
@@ -113,7 +126,7 @@ bool Renderer::init(const DeviceInitializationData &init_data, const SwapchainDa
         m_device.createComputePipeline("Pipeline_Tonemap", m_pipeline_layout_tonemap, m_shader_tonemap);
     m_set_tonemap = m_device.allocateDescriptorSet("Descriptor_Set_Tonemap", m_layout_tonemap,
                                                    {
-                                                       ShaderBindingResource{0, &m_render_target},
+                                                       ShaderBindingResource{0, m_render_target},
                                                    });
 
     loadScene(scene);
@@ -147,29 +160,18 @@ void Renderer::render()
     fence.reset();
 
     // TODO: Add better texture resizing.
-    if (swapchain_texture.getSize() != m_render_target.getSize())
+    if (swapchain_texture.getSize() != m_device.getTexture(m_render_target)->getSize())
     {
         const auto size = swapchain_texture.getSize();
-        m_render_target.destroy();
-        m_depth_buffer.destroy();
+        m_device.destroyTexture(m_render_target);
+        m_device.destroyTexture(m_depth_buffer);
 
-        encoder.begin();
-        m_render_target =
-            m_device.createTexture(encoder, "Render_Target_Color", size, TextureFormat::R32G32B32A32_SFLOAT,
-                                   TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_SRC |
-                                       TextureUsageFlags::TRANSFER_DST | TextureUsageFlags::STORAGE);
-        m_depth_buffer =
-            m_device.createTexture(encoder, "Render_Target_Depth", size, TextureFormat::D32_SFLOAT,
-                                   TextureUsageFlags::DEPTH_STENCIL_ATTACHMENT | TextureUsageFlags::TRANSFER_DST);
+        m_device.beginAllocation();
+        m_render_target = createRenderTexture(m_device, size, false);
+        m_depth_buffer = createRenderTexture(m_device, size, true);
+        m_device.endAllocation();
 
-        queue.submit(encoder.finish(), fence);
-        if (!fence.wait(FENCE_WAIT_TIMEOUT))
-        {
-            return;
-        }
-        fence.reset();
-
-        m_set_tonemap.updateBindingResources(m_layout_tonemap, {ShaderBindingResource{0, &m_render_target}});
+        m_set_tonemap.updateBindingResources(m_layout_tonemap, {ShaderBindingResource{0, m_render_target}});
     }
 
     const auto &render_semaphore = m_ctxs[swapchain_index].semaphore;
@@ -179,29 +181,33 @@ void Renderer::render()
 
     encoder.begin();
 
-    encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
-    encoder.transitionTextureLayout(m_depth_buffer, TextureLayout::GENERAL);
-    encoder.clearTexture(m_render_target, {0.0f, 0.0f, 0.0f, 1.0f});
-    encoder.clearTexture(m_depth_buffer, {1.0f, 0.0f, 0.0f, 0.0f});
+    const Texture &render_target = *m_device.getTexture(m_render_target);
+    const Texture &depth_buffer = *m_device.getTexture(m_depth_buffer);
+    const Size2D render_size = render_target.getSize();
+
+    encoder.transitionTextureLayout(render_target, TextureLayout::GENERAL);
+    encoder.transitionTextureLayout(depth_buffer, TextureLayout::GENERAL);
+    encoder.clearTexture(render_target, {0.0f, 0.0f, 0.0f, 1.0f});
+    encoder.clearTexture(depth_buffer, {1.0f, 0.0f, 0.0f, 0.0f});
     if (m_scene_data.isValid())
     {
-        encoder.transitionTextureLayout(m_render_target, TextureLayout::COLOR_ATTACHMENT_OPTIMAL);
-        encoder.transitionTextureLayout(m_depth_buffer, TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        encoder.transitionTextureLayout(render_target, TextureLayout::COLOR_ATTACHMENT_OPTIMAL);
+        encoder.transitionTextureLayout(depth_buffer, TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Environment");
+        encoder.beginRendering({render_target}, {depth_buffer}, "Environment");
         encoder.bindRenderPipeline(m_pipeline_env);
         encoder.bindDescriptorSet(m_pipeline_layout_env, 0, m_set_env);
-        encoder.setViewport(Rect2D{Offset2D{}, m_render_target.getSize()});
-        encoder.setScissor(Rect2D{Offset2D{}, m_render_target.getSize()});
+        encoder.setViewport(Rect2D{Offset2D{}, render_size});
+        encoder.setScissor(Rect2D{Offset2D{}, render_size});
         encoder.draw(3, 1);
         encoder.endRendering();
 
-        encoder.beginRendering({m_render_target}, {m_depth_buffer}, "Basic");
+        encoder.beginRendering({render_target}, {depth_buffer}, "Basic");
         encoder.bindRenderPipeline(m_pipeline);
         encoder.bindDescriptorSet(m_pipeline_layout, 0, m_set);
 
-        encoder.setViewport(Rect2D{Offset2D{}, m_render_target.getSize()});
-        encoder.setScissor(Rect2D{Offset2D{}, m_render_target.getSize()});
+        encoder.setViewport(Rect2D{Offset2D{}, render_size});
+        encoder.setScissor(Rect2D{Offset2D{}, render_size});
 
         m_scene_data.forEachRenderable([&](const MeshData &mesh, const MeshInstancesData &instances) {
             if (mesh.index_format == scene::IndexFormat::UINT_8)
@@ -222,18 +228,18 @@ void Renderer::render()
         encoder.endRendering();
     }
 
-    encoder.transitionTextureLayout(m_render_target, TextureLayout::GENERAL);
+    encoder.transitionTextureLayout(render_target, TextureLayout::GENERAL);
     encoder.bindComputePipeline(m_pipeline_tonemap);
     encoder.bindDescriptorSet(m_pipeline_layout_tonemap, 0, m_set_tonemap);
-    const auto [width, height] = m_render_target.getSize();
+    const auto [width, height] = render_size;
     const std::array<uint32_t, 3> group_count = {static_cast<uint32_t>(std::ceil(static_cast<float>(width) / 16.0f)),
                                                  static_cast<uint32_t>(std::ceil(static_cast<float>(height) / 16.0f)),
                                                  1};
     encoder.dispatch(group_count);
 
-    encoder.transitionTextureLayout(m_render_target, TextureLayout::TRANSFER_SRC_OPTIMAL);
+    encoder.transitionTextureLayout(render_target, TextureLayout::TRANSFER_SRC_OPTIMAL);
     encoder.transitionTextureLayout(swapchain_texture, TextureLayout::TRANSFER_DST_OPTIMAL);
-    encoder.blitTexture(m_render_target, swapchain_texture);
+    encoder.blitTexture(render_target, swapchain_texture);
     encoder.transitionTextureLayout(swapchain_texture, TextureLayout::PRESENT_SRC);
 
     queue.submit(encoder.finish(), fence);
@@ -256,7 +262,7 @@ void Renderer::clean()
     }
     m_device.waitIdle();
 
-    m_scene_data.destroy();
+    m_scene_data.destroy(m_device);
 
     m_pipeline_tonemap.destroy();
     m_shader_tonemap.destroy();
@@ -273,8 +279,8 @@ void Renderer::clean()
     m_pipeline_layout_env.destroy();
     m_layout_env.destroy();
 
-    m_depth_buffer.destroy();
-    m_render_target.destroy();
+    m_device.destroyTexture(m_depth_buffer);
+    m_device.destroyTexture(m_render_target);
     if (!m_ctxs.empty())
     {
         for (auto &[fence, encoder, semaphore] : m_ctxs)
@@ -302,27 +308,24 @@ bool Renderer::loadScene(const scene::Scene &scene)
         m_set_env =
             m_device.allocateDescriptorSet("Descriptor_Set_Environment", m_layout_env,
                                            {
-                                               ShaderBindingResource{0, m_device.getBuffer(m_scene_data.getCameraBuffer())},
-                                               ShaderBindingResource{1, m_device.getBuffer(m_scene_data.getEnvironmentLightBuffer())},
-                                               ShaderBindingResource{2, &m_scene_data.getEnvironmentLightTexture(),
-                                                                     &m_scene_data.getEnvironmentLightTextureSampler()},
+                                               ShaderBindingResource{0, m_scene_data.getCameraBuffer()},
+                                               ShaderBindingResource{1, m_scene_data.getEnvironmentLightBuffer()},
+                                               ShaderBindingResource{2, m_scene_data.getEnvironmentLightTexture(),
+                                                                     m_scene_data.getEnvironmentLightTextureSampler()},
                                            });
 
-        m_set = m_device.allocateDescriptorSet(
-            "Descriptor_Set_Basic", m_layout,
-            {ShaderBindingResource{0, m_device.getBuffer(m_scene_data.getCameraBuffer())},
-             ShaderBindingResource{1, m_device.getBuffer(m_scene_data.getPositionBuffer())},
-             ShaderBindingResource{2, m_device.getBuffer(m_scene_data.getNormalBuffer())},
-             ShaderBindingResource{3, m_device.getBuffer(m_scene_data.getUVBuffer())},
-             ShaderBindingResource{4, m_device.getBuffer(m_scene_data.getMeshesBuffer())},
-             ShaderBindingResource{5, m_device.getBuffer(m_scene_data.getTransformsBuffer())},
-             ShaderBindingResource{6, m_device.getBuffer(m_scene_data.getMeshInstancesBuffer())},
-             ShaderBindingResource{7, m_device.getBuffer(m_scene_data.getTextureDataBuffer())},
-             ShaderBindingResource{8, m_device.getBuffer(m_scene_data.getMaterialsBuffer())},
-             ShaderBindingResource{9, m_scene_data.getTextureSamplers().data(),
-                                   static_cast<uint32_t>(m_scene_data.getTextureSamplers().size())},
-             ShaderBindingResource{10, m_scene_data.getTextures().data(), nullptr,
-                                   static_cast<uint32_t>(m_scene_data.getTextures().size())}});
+        m_set = m_device.allocateDescriptorSet("Descriptor_Set_Basic", m_layout,
+                                               {ShaderBindingResource{0, m_scene_data.getCameraBuffer()},
+                                                ShaderBindingResource{1, m_scene_data.getPositionBuffer()},
+                                                ShaderBindingResource{2, m_scene_data.getNormalBuffer()},
+                                                ShaderBindingResource{3, m_scene_data.getUVBuffer()},
+                                                ShaderBindingResource{4, m_scene_data.getMeshesBuffer()},
+                                                ShaderBindingResource{5, m_scene_data.getTransformsBuffer()},
+                                                ShaderBindingResource{6, m_scene_data.getMeshInstancesBuffer()},
+                                                ShaderBindingResource{7, m_scene_data.getTextureDataBuffer()},
+                                                ShaderBindingResource{8, m_scene_data.getMaterialsBuffer()},
+                                                ShaderBindingResource{9, m_scene_data.getTextureSamplers()},
+                                                ShaderBindingResource{10, m_scene_data.getTextures()}});
         return true;
     }
     return false;

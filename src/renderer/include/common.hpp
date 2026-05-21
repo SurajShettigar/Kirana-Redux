@@ -103,9 +103,18 @@ struct BufferCopyRegion
 
 struct TextureCopyRegion
 {
-    Offset2D src_offset;
-    Offset2D dst_offset;
-    Size2D size;
+    Offset2D src_offset {};
+    Offset2D dst_offset {};
+    Size2D size {};
+};
+
+struct BufferTextureCopyRegion
+{
+    uint64_t buffer_offset = 0;
+    uint32_t buffer_row_length = 0;
+    uint32_t buffer_image_height = 0;
+    Offset2D img_offset {};
+    Size2D img_size {};
 };
 
 enum class BufferUsageFlags : uint32_t
@@ -326,7 +335,7 @@ constexpr bool isSRGBTextureFormat(const TextureFormat format)
 
 enum class TextureLayout
 {
-    UNKNOWN = 0,
+    UNDEFINED = 0,
     GENERAL = 1,
     COLOR_ATTACHMENT_OPTIMAL = 2,
     DEPTH_STENCIL_ATTACHMENT_OPTIMAL = 3,
@@ -784,7 +793,6 @@ enum class PipelineStageFlags : uint64_t
     LATE_FRAGMENT_TESTS = 0x00000200ull,
     COLOR_ATTACHMENT_OUTPUT = 0x00000400ull,
     COMPUTE_SHADER = 0x00000800ull,
-    ALL_TRANSFER = 0x00001000ull,
     TRANSFER = 0x00001000ull,
     BOTTOM_OF_PIPE = 0x00002000ull,
     HOST = 0x00004000ull,

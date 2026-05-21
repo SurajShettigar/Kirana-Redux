@@ -4,41 +4,65 @@
 #ifndef KIRANA_RENDERER_DESCRIPTOR_SET_HPP
 #define KIRANA_RENDERER_DESCRIPTOR_SET_HPP
 
-#include <descriptor_layout.hpp>
+#include "descriptor_layout.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
 #include "texture_sampler.hpp"
+
+#include <variant>
 
 namespace kirana::renderer
 {
 struct ShaderBindingResource
 {
     uint32_t index = 0;
+    std::variant<std::monostate, std::vector<BufferHandle>, std::vector<TextureHandle>> resources{};
+    std::vector<TextureSamplerHandle> samplers{};
 
-    union {
-        const Buffer *buffer;
-        const Texture *texture;
-    };
-
-    const TextureSampler *sampler;
-
-    uint32_t count = 1;
-
-    explicit ShaderBindingResource(const uint32_t index, const Buffer *buffer, const uint32_t count = 1)
-        : index{index}, buffer{buffer}, sampler{nullptr}, count{count}
+    explicit ShaderBindingResource(const uint32_t index, const BufferHandle buffer)
+        : index{index}, resources{std::vector{buffer}}, samplers{}
     {
     }
 
-    explicit ShaderBindingResource(const uint32_t index, const Texture *texture,
-                                   const TextureSampler *sampler = nullptr, const uint32_t count = 1)
-        : index{index}, texture{texture}, sampler{sampler}, count{count}
+    explicit ShaderBindingResource(const uint32_t index, std::vector<BufferHandle> buffers)
+        : index{index}, resources{std::move(buffers)}, samplers{}
     {
     }
 
-    explicit ShaderBindingResource(const uint32_t index, const TextureSampler *sampler = nullptr,
-                                   const uint32_t count = 1)
-        : index{index}, texture{nullptr}, sampler{sampler}, count{count}
+    explicit ShaderBindingResource(const uint32_t index, const TextureHandle texture,
+                                   const TextureSamplerHandle sampler = {})
+        : index{index}, resources{std::vector{texture}},
+          samplers{sampler.isValid() ? std::vector{sampler} : std::vector<TextureSamplerHandle>{}}
     {
+    }
+
+    explicit ShaderBindingResource(const uint32_t index, std::vector<TextureHandle> textures,
+                                   std::vector<TextureSamplerHandle> samplers = {})
+        : index{index}, resources{std::move(textures)}, samplers{std::move(samplers)}
+    {
+    }
+
+    explicit ShaderBindingResource(const uint32_t index, std::vector<TextureSamplerHandle> samplers)
+        : index{index}, samplers{std::move(samplers)}
+    {
+    }
+
+    bool isBuffer() const
+    {
+        return std::holds_alternative<std::vector<BufferHandle>>(resources);
+    }
+    bool isTexture() const
+    {
+        return std::holds_alternative<std::vector<TextureHandle>>(resources);
+    }
+
+    const std::vector<BufferHandle> &buffers() const
+    {
+        return std::get<std::vector<BufferHandle>>(resources);
+    }
+    const std::vector<TextureHandle> &textures() const
+    {
+        return std::get<std::vector<TextureHandle>>(resources);
     }
 };
 
@@ -69,11 +93,12 @@ class DescriptorSet
                                 const std::vector<ShaderBindingResource> &resources) const;
 
   private:
+    const Device *m_device{nullptr};
+
     std::string m_name{};
-    vk::Device m_device{nullptr};
     vk::DescriptorSet m_handle{nullptr};
 
-    DescriptorSet(vk::Device device, vk::DescriptorSet handle, std::string name);
+    DescriptorSet(const Device *device, std::string name, vk::DescriptorSet handle);
 };
 } // namespace kirana::renderer
 

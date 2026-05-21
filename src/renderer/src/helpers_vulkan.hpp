@@ -540,7 +540,7 @@ constexpr vk::ImageLayout getImageLayout(const TextureLayout layout)
         return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
     case TextureLayout::VIDEO_ENCODE_QUANTIZATION_MAP:
         return vk::ImageLayout::eVideoEncodeQuantizationMapKHR;
-    case TextureLayout::UNKNOWN:
+    case TextureLayout::UNDEFINED:
     default:
         return vk::ImageLayout::eUndefined;
     }
@@ -608,7 +608,7 @@ constexpr TextureLayout getNativeTextureLayout(const vk::ImageLayout layout)
         return TextureLayout::ATTACHMENT_FEEDBACK_LOOP_OPTIMAL;
     case vk::ImageLayout::eUndefined:
     default:
-        return TextureLayout::UNKNOWN;
+        return TextureLayout::UNDEFINED;
     }
 }
 

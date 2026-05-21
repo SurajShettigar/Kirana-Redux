@@ -45,8 +45,8 @@ class Renderer : core::NoCopy
     Device m_device{};
     Swapchain m_swapchain{};
     std::vector<RenderContext> m_ctxs{};
-    Texture m_render_target{};
-    Texture m_depth_buffer{};
+    TextureHandle m_render_target{};
+    TextureHandle m_depth_buffer{};
 
     SceneData m_scene_data{};
 

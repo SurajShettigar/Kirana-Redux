@@ -4,8 +4,12 @@
 #ifndef KIRANA_RENDERER_TEXTURE_SAMPLER_HPP
 #define KIRANA_RENDERER_TEXTURE_SAMPLER_HPP
 
-#include <vulkan/vulkan.hpp>
 #include "common.hpp"
+
+#include <vulkan/vulkan.hpp>
+
+#include <resource.hpp>
+#include <handle.hpp>
 
 namespace kirana::renderer
 {
@@ -26,19 +30,24 @@ struct SamplerData
     }
 };
 
-class TextureSampler
+class TextureSampler;
+using TextureSamplerHandle = core::Handle<TextureSampler>;
+
+class TextureSampler final : public core::IResource
 {
-    friend class Device;
+    friend class ResourceAllocator;
 
-public:
-    TextureSampler() = default;
-    ~TextureSampler() = default;
-
-    void destroy();
-
-    [[nodiscard]] bool isValid() const
+  public:
+    TextureSampler() : IResource{"Texture_Sampler"}
     {
-        return m_handle != nullptr;
+    }
+    ~TextureSampler() override
+    {
+    }
+
+    [[nodiscard]] bool isValid() const override
+    {
+        return IResource::isValid() && m_handle != nullptr;
     }
 
     [[nodiscard]] vk::Sampler getNativeHandle() const
@@ -51,16 +60,25 @@ public:
         return m_data;
     }
 
-private:
-    std::string m_name{};
+  protected:
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
+    {
+    }
 
-    vk::Device m_device{nullptr};
-    vk::Sampler m_handle{nullptr};
-
+  private:
     SamplerData m_data{};
 
-    bool init(vk::Device device, const std::string &name, const SamplerData &data = SamplerData{});
-};
-}
+    vk::Sampler m_handle{nullptr};
 
-#endif //KIRANA_RENDERER_TEXTURE_SAMPLER_HPP
+    explicit TextureSampler(const std::string &name, const SamplerData &data, vk::Sampler sampler)
+        : IResource{name}, m_data{data}, m_handle{sampler}
+    {
+    }
+};
+} // namespace kirana::renderer
+
+#endif // KIRANA_RENDERER_TEXTURE_SAMPLER_HPP

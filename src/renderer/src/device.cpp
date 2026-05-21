@@ -285,16 +285,16 @@ bool Device::init(const DeviceInitializationData &init_data)
     }
 #pragma endregion
 
-#pragma region CREATE_MEMORY_ALLOCATOR
-    if (!m_memory_allocator.init(m_instance, m_gpu, m_device))
+#pragma region CREATE_RESOURCE_ALLOCATOR
+    if (!m_resource_allocator.init(this))
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to initialize memory allocator.");
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to initialize resource allocator.");
         return false;
     }
 #pragma endregion
 
 #pragma region CREATE_DESCRIPTOR_ALLOCATOR
-    if (!m_descriptor_allocator.init(m_device, "Descriptor_Allocator_Default",
+    if (!m_descriptor_allocator.init(this, "Descriptor_Allocator_Default",
                                      {
                                          ShaderBindingTypeRatios{ShaderBindingType::COMBINED_IMAGE_SAMPLER, 0.25f},
                                          ShaderBindingTypeRatios{ShaderBindingType::SAMPLED_IMAGE, 0.25f},
@@ -314,14 +314,13 @@ bool Device::init(const DeviceInitializationData &init_data)
 
 void Device::destroy()
 {
-    m_resource_manager_buffers.clear();
     if (m_descriptor_allocator.isValid())
     {
         m_descriptor_allocator.destroy();
     }
-    if (m_memory_allocator.isValid())
+    if (m_resource_allocator.isValid())
     {
-        m_memory_allocator.destroy();
+        m_resource_allocator.destroy();
     }
     if (m_device)
     {
@@ -345,70 +344,155 @@ void Device::destroy()
     }
 }
 
-BufferHandle Device::createBuffer(const CommandEncoder &encoder, const std::string &name, const uint64_t size,
-                            const void *data, const BufferUsageFlags usage) const
+void Device::beginAllocation()
 {
-    BufferHandle handle;
-    if (m_device)
-    {
-        handle = m_resource_manager_buffers.add(this, &m_memory_allocator, &encoder, name, size, data, usage);
-    }
-    else
-    {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create buffer. Device is not initialized.");
-    }
-    return handle;
+    m_resource_allocator.beginAllocation();
+    m_allocation_started = true;
 }
 
-Buffer *Device::getBuffer(const BufferHandle handle) const
+void Device::endAllocation()
 {
-    return m_resource_manager_buffers.get(handle);
+    m_resource_allocator.endAllocation();
+    m_allocation_started = false;
 }
 
-Texture Device::createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
-                              const TextureFormat format, const TextureUsageFlags usage, const TextureLayout layout,
-                              const void *data) const
+BufferHandle Device::createBuffer(const std::string &name, const uint64_t size, const BufferUsageFlags usage,
+                                  const void *data, const ResourceMemoryType memory_type,
+                                  const ResourceMemoryFlags memory_flags)
 {
-    Texture texture;
-    if (m_device)
+    if (!m_resource_allocator.isValid())
     {
-        texture.init(m_device, &m_memory_allocator, encoder, name, size, format, usage, layout, data);
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create buffer. Resource allocator is not initialized.");
+        return {};
     }
-    else
-    {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create texture. Device is not initialized.");
-    }
-    return texture;
+    return m_resource_allocator.createBuffer(name, size, usage, data, memory_type, memory_flags);
 }
 
-TextureSampler Device::createTextureSampler(const std::string &name, const SamplerData &data) const
+const Buffer *Device::getBuffer(const BufferHandle handle) const
 {
-    TextureSampler sampler;
-    if (m_device)
+    if (!m_resource_allocator.isValid())
     {
-        sampler.init(m_device, name, data);
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to find buffer. Resource allocator is not initialized.");
+        return {};
     }
-    else
-    {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create texture sampler. Device is not initialized.");
-    }
-    return sampler;
+    return m_resource_allocator.getBuffer(handle);
 }
 
-DescriptorAllocator Device::createDescriptorAllocator(const std::string &name,
-                                                      const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
-                                                      const uint32_t max_sets) const
+bool Device::writeBuffer(const BufferHandle handle, const uint64_t size, const void *data)
 {
-    DescriptorAllocator allocator;
-    if (m_device)
+    if (!m_resource_allocator.isValid())
     {
-        allocator.init(m_device, name, binding_type_ratios, max_sets);
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to write buffer. Resource allocator is not initialized.");
+        return false;
     }
-    else
+    bool single_alloc = false;
+    if (!m_allocation_started)
     {
-        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Descriptor Allocator. Device is not initialized.");
+        single_alloc = true;
+        beginAllocation();
     }
-    return allocator;
+    const bool status = m_resource_allocator.writeBuffer(handle, size, data);
+    if (single_alloc)
+    {
+        endAllocation();
+    }
+    return status;
+}
+
+void Device::destroyBuffer(const BufferHandle handle)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to destroy buffer. Resource allocator is not initialized.");
+        return;
+    }
+    m_resource_allocator.destroyBuffer(handle);
+}
+
+TextureHandle Device::createTexture(const std::string &name, const Size2D &size, const TextureFormat format,
+                                    const TextureUsageFlags usage, const TextureLayout layout, const void *data,
+                                    const ResourceMemoryType memory_type, const ResourceMemoryFlags memory_flags)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create texture. Resource allocator is not initialized.");
+        return {};
+    }
+    return m_resource_allocator.createTexture(name, size, format, usage, layout, data, memory_type, memory_flags);
+}
+
+const Texture *Device::getTexture(const TextureHandle handle) const
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to find texture. Resource allocator is not initialized.");
+        return {};
+    }
+    return m_resource_allocator.getTexture(handle);
+}
+
+bool Device::writeImage(const TextureHandle handle, const void *data)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to write texture. Resource allocator is not initialized.");
+        return false;
+    }
+    bool single_alloc = false;
+    if (!m_allocation_started)
+    {
+        single_alloc = true;
+        beginAllocation();
+    }
+    const bool status = m_resource_allocator.writeImage(handle, data);
+    if (single_alloc)
+    {
+        endAllocation();
+    }
+    return status;
+}
+
+void Device::destroyTexture(const TextureHandle handle)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to destroy texture. Resource allocator is not initialized.");
+        return;
+    }
+    m_resource_allocator.destroyTexture(handle);
+}
+
+TextureSamplerHandle Device::createTextureSampler(const std::string &name, const SamplerData &data)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to create texture sampler. Resource allocator is not initialized.");
+        return {};
+    }
+    return m_resource_allocator.createTextureSampler(name, data);
+}
+
+const TextureSampler *Device::getTextureSampler(const TextureSamplerHandle handle) const
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to find texture sampler. Resource allocator is not initialized.");
+        return {};
+    }
+    return m_resource_allocator.getTextureSampler(handle);
+}
+
+void Device::destroyTextureSampler(const TextureSamplerHandle handle)
+{
+    if (!m_resource_allocator.isValid())
+    {
+        core::Logger::error(LOG_CHANNEL_VULKAN,
+                            "Failed to destroy texture sampler. Resource allocator is not initialized.");
+        return;
+    }
+    m_resource_allocator.destroyTextureSampler(handle);
 }
 
 DescriptorLayout Device::createDescriptorLayout(const std::string &name, const ShaderStageFlags shader_stages,
@@ -558,11 +642,6 @@ Fence Device::createFence(const std::string &name) const
         core::Logger::error(LOG_CHANNEL_VULKAN, "Failed to create Fence. Device is not initialized.");
     }
     return fence;
-}
-
-bool Device::tryReleaseTemporaryResources(const Fence &fence) const
-{
-    return m_memory_allocator.tryReleaseTemporaries(fence);
 }
 
 void Device::waitIdle() const

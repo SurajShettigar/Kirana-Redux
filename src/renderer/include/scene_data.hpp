@@ -176,20 +176,20 @@ class SceneData
     SceneData() = default;
     ~SceneData() = default;
 
-    bool init(const Device &device, const scene::Scene &scene);
-    void destroy();
+    bool init(Device &device, const scene::Scene &scene);
+    void destroy(Device &device);
 
     [[nodiscard]] bool hasTextures() const
     {
         return !m_textures.empty() && m_buffer_texture_data.isValid() && !m_texture_data.empty();
     }
 
-    [[nodiscard]] const std::vector<Texture> &getTextures() const
+    [[nodiscard]] const std::vector<TextureHandle> &getTextures() const
     {
         return m_textures;
     }
 
-    [[nodiscard]] const std::vector<TextureSampler> &getTextureSamplers() const
+    [[nodiscard]] const std::vector<TextureSamplerHandle> &getTextureSamplers() const
     {
         return m_texture_samplers;
     }
@@ -219,12 +219,12 @@ class SceneData
         return m_environment_light.texture_index < std::numeric_limits<uint32_t>::max();
     }
 
-    [[nodiscard]] const Texture &getEnvironmentLightTexture() const
+    [[nodiscard]] TextureHandle getEnvironmentLightTexture() const
     {
         return m_textures[m_texture_data[m_environment_light.texture_index].texture_index];
     }
 
-    [[nodiscard]] const TextureSampler &getEnvironmentLightTextureSampler() const
+    [[nodiscard]] const TextureSamplerHandle &getEnvironmentLightTextureSampler() const
     {
         return m_texture_samplers[m_texture_data[m_environment_light.texture_index].sampler_index];
     }
@@ -257,20 +257,19 @@ class SceneData
 
     [[nodiscard]] bool hasIndexBuffer() const
     {
-        return (m_buffer_index_8.isValid()/* && m_buffer_index_8.getSize() > 0*/) ||
-               (m_buffer_index_16.isValid()/* && m_buffer_index_16.getSize() > 0*/) ||
-               (m_buffer_index_32.isValid()/* && m_buffer_index_32.getSize() > 0*/);
+        return (m_buffer_index_8.isValid() /* && m_buffer_index_8.getSize() > 0*/) ||
+               (m_buffer_index_16.isValid() /* && m_buffer_index_16.getSize() > 0*/) ||
+               (m_buffer_index_32.isValid() /* && m_buffer_index_32.getSize() > 0*/);
     }
 
     [[nodiscard]] bool hasVertexBuffer() const
     {
-        return m_buffer_position.isValid()/* && m_buffer_position.getSize() > 0*/;
+        return m_buffer_position.isValid() /* && m_buffer_position.getSize() > 0*/;
     }
 
     [[nodiscard]] bool isValid() const
     {
-        const bool has_mesh_data = hasIndexBuffer() && hasVertexBuffer();
-        return m_fence.isValid() && m_encoder.isValid() && has_mesh_data;
+        return hasIndexBuffer() && hasVertexBuffer();
     }
 
     [[nodiscard]] const BufferHandle &getIndexBuffer8() const
@@ -331,14 +330,11 @@ class SceneData
         }
     }
 
-    bool updateCamera(const Device &device, const scene::Matrix4 &view_matrix, const scene::Matrix4 &projection_matrix);
+    bool updateCamera(Device &device, const scene::Matrix4 &view_matrix, const scene::Matrix4 &projection_matrix);
 
   private:
-    Fence m_fence{};
-    CommandEncoder m_encoder{};
-
-    std::vector<Texture> m_textures{};
-    std::vector<TextureSampler> m_texture_samplers{};
+    std::vector<TextureHandle> m_textures{};
+    std::vector<TextureSamplerHandle> m_texture_samplers{};
     std::vector<TextureData> m_texture_data{};
     BufferHandle m_buffer_texture_data{};
 
@@ -376,7 +372,7 @@ class SceneData
     CameraData m_camera{};
     BufferHandle m_buffer_camera{};
 
-    uint32_t addTextureSampler(const Device &device, const scene::TextureSampler &sampler);
+    uint32_t addTextureSampler(Device &device, const scene::TextureSampler &sampler);
     uint32_t addMesh(const scene::MeshHandle &handle, const scene::Mesh &mesh,
                      const std::unordered_map<scene::MaterialHandle, uint32_t> &material_indices,
                      std::unordered_map<scene::MeshHandle, uint32_t> &out_mesh_indices);

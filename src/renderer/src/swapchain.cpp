@@ -12,8 +12,8 @@ namespace kirana::renderer
 inline vk::Extent2D getSwapchainExtent(const vk::SurfaceCapabilitiesKHR &caps, const Size2D &size)
 {
     auto extent = getExtent2D(size);
-    if (caps.currentExtent.width == std::numeric_limits<uint32_t>::max() && caps.currentExtent.height ==
-        std::numeric_limits<uint32_t>::max())
+    if (caps.currentExtent.width == std::numeric_limits<uint32_t>::max() &&
+        caps.currentExtent.height == std::numeric_limits<uint32_t>::max())
     {
         extent = vk::Extent2D{std::clamp(extent.width, caps.minImageExtent.width, caps.maxImageExtent.width),
                               std::clamp(extent.height, caps.minImageExtent.height, caps.maxImageExtent.height)};
@@ -44,14 +44,14 @@ bool Swapchain::init()
     {
         const auto &image = images[i];
         const std::string image_name = m_name.empty() ? "" : m_name + "_Image_" + std::to_string(i);
-        const auto view_create_info = vk::ImageViewCreateInfo{vk::ImageViewCreateFlags{0}, image,
-                                                              vk::ImageViewType::e2D,
-                                                              m_create_info.imageFormat, vk::ComponentMapping{},
-                                                              vk::ImageSubresourceRange{
-                                                                  vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+        const auto view_create_info = vk::ImageViewCreateInfo{
+            vk::ImageViewCreateFlags{0}, image,
+            vk::ImageViewType::e2D,      m_create_info.imageFormat,
+            vk::ComponentMapping{},      vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
         const vk::ImageView view = m_device.createImageView(view_create_info);
-        m_textures.emplace_back(Texture{m_device, image_name, image, view, m_data.size, m_data.format});
+        m_textures.emplace_back(
+            std::move(Texture{image_name, m_data.size, m_data.format, m_usage, TextureLayout::UNDEFINED, image, view}));
     }
 
     if (!m_name.empty())
@@ -100,23 +100,21 @@ bool Swapchain::init(const vk::PhysicalDevice gpu, const vk::Device device, cons
     }
     else
     {
-        const auto &it = std::find_if(formats.begin(), formats.end(), [&](const auto &f) {
-            return f.format == format && f.colorSpace == color_space;
-        });
+        const auto &it = std::find_if(formats.begin(), formats.end(),
+                                      [&](const auto &f) { return f.format == format && f.colorSpace == color_space; });
         if (it == formats.end())
         {
             format = formats.front().format;
             color_space = formats.front().colorSpace;
             core::Logger::warn(LOG_CHANNEL_VULKAN,
                                "Given swapchain format and/or colorspace is not supported. Switching to: " +
-                               vk::to_string(format) + ", " + vk::to_string(color_space));
+                                   vk::to_string(format) + ", " + vk::to_string(color_space));
         }
     }
 
     {
-        const auto &it = std::find_if(present_modes.begin(), present_modes.end(), [&](const auto &p) {
-            return p == present_mode;
-        });
+        const auto &it =
+            std::find_if(present_modes.begin(), present_modes.end(), [&](const auto &p) { return p == present_mode; });
         if (it == present_modes.end())
         {
             present_mode = present_modes.front();
@@ -129,17 +127,24 @@ bool Swapchain::init(const vk::PhysicalDevice gpu, const vk::Device device, cons
     for (size_t i = 0; i < num_images; ++i)
     {
         m_semaphores.emplace_back();
-        const std::string semaphore_name = "Semaphore_" + m_name.empty() ? "" : m_name + "_" + std::to_string(i);
+        const std::string semaphore_name = "Semaphore_" + (m_name.empty() ? "" : m_name + "_" + std::to_string(i));
         m_semaphores.back().init(m_device, semaphore_name, PipelineStageFlags::TOP_OF_PIPE);
     }
 
-    m_create_info = vk::SwapchainCreateInfoKHR{vk::SwapchainCreateFlagsKHR{0}, m_surface, num_images,
+    m_create_info = vk::SwapchainCreateInfoKHR{vk::SwapchainCreateFlagsKHR{0},
+                                               m_surface,
+                                               num_images,
                                                format,
-                                               color_space, extent, 1,
-                                               vk::ImageUsageFlagBits::eColorAttachment |
-                                               vk::ImageUsageFlagBits::eTransferDst,
-                                               vk::SharingMode::eExclusive, {}, caps.currentTransform,
-                                               vk::CompositeAlphaFlagBitsKHR::eOpaque, present_mode, true};
+                                               color_space,
+                                               extent,
+                                               1,
+                                               getImageUsageFlags(m_usage),
+                                               vk::SharingMode::eExclusive,
+                                               {},
+                                               caps.currentTransform,
+                                               vk::CompositeAlphaFlagBitsKHR::eOpaque,
+                                               present_mode,
+                                               true};
     return init();
 }
 
@@ -154,13 +159,12 @@ void Swapchain::destroy()
                 s.destroy();
             }
             m_semaphores.clear();
-
         }
         if (!m_textures.empty())
         {
             for (const auto &tex : m_textures)
             {
-                m_device.destroyImageView(tex.m_view);
+                m_device.destroyImageView(tex.getNativeViewHandle());
             }
             m_textures.clear();
         }
@@ -237,4 +241,4 @@ SwapchainPresentInfo Swapchain::present() const
 {
     return SwapchainPresentInfo{m_handle, m_swapchain_image_index};
 }
-}
+} // namespace kirana::renderer

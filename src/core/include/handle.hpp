@@ -9,9 +9,6 @@
 
 namespace kirana::core
 {
-
-template <class T> class ResourceManager;
-
 /// An integer-based unique identifier associated with a resource.
 template <class T> class Handle final
 {
@@ -27,13 +24,18 @@ template <class T> class Handle final
     Handle(const Handle &other) = default;
     Handle &operator=(const Handle &other) = default;
 
-    explicit Handle(const ResourceManager<T> *manager, const uint64_t value) : m_manager{manager}, m_value{value}
+    explicit Handle(const uint64_t value) : m_value{value}
     {
     }
 
-    explicit Handle(const ResourceManager<T> *manager, const uint64_t index, const uint16_t generation)
-        : m_manager{manager}, m_index{index}, m_generation{generation}
+    explicit Handle(const uint64_t index, const uint16_t generation)
+        : m_index{index}, m_generation{generation}
     {
+    }
+
+    [[nodiscard]] bool isValid() const
+    {
+        return m_value != std::numeric_limits<uint64_t>::max();
     }
 
     [[nodiscard]] uint64_t getIndex() const
@@ -65,24 +67,7 @@ template <class T> class Handle final
     {
         return isValid();
     }
-
-    T *operator->() const
-    {
-        return get();
-    }
-
-    T &operator*() const
-    {
-        return *get();
-    }
-
-    // The following functions will be defined after ResourceManager declaration. (As it needs resource manager
-    // reference to work).
-    [[nodiscard]] bool isValid() const;
-    [[nodiscard]] T *get() const;
-
   private:
-    const ResourceManager<T> *m_manager{nullptr};
     union {
         struct
         {

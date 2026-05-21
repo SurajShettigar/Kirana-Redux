@@ -4,16 +4,17 @@
 #include "descriptor_set.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "device.hpp"
 
 namespace kirana::renderer
 {
-DescriptorSet::DescriptorSet(const vk::Device device, const vk::DescriptorSet handle, std::string name)
-    : m_name{std::move(name)}, m_device{device}, m_handle{handle}
+DescriptorSet::DescriptorSet(const Device *device, std::string name, const vk::DescriptorSet handle)
+    : m_device{device}, m_name{std::move(name)}, m_handle{handle}
 {
     if (!m_name.empty())
     {
         const auto id = reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(m_handle));
-        setDebugName(m_device, vk::ObjectType::eDescriptorSet, id, m_name);
+        setDebugName(m_device->getNativeHandle(), vk::ObjectType::eDescriptorSet, id, m_name);
     }
 }
 
@@ -32,8 +33,13 @@ void DescriptorSet::updateBindingResources(const DescriptorLayout &layout,
         const auto &binding = layout.getBinding(r.index);
         if (binding.type == ShaderBindingType::STORAGE_BUFFER || binding.type == ShaderBindingType::UNIFORM_BUFFER)
         {
-            const vk::DescriptorBufferInfo buffer_info{r.buffer->getNativeHandle(), 0, vk::WholeSize};
-            buffer_infos.emplace_back(std::vector{buffer_info});
+            std::vector<vk::DescriptorBufferInfo> buffer_info{};
+            for (const auto h : r.buffers())
+            {
+                const auto buf = m_device->getBuffer(h);
+                buffer_info.emplace_back(buf->getNativeHandle(), 0, vk::WholeSize);
+            }
+            buffer_infos.emplace_back(std::move(buffer_info));
             vk::WriteDescriptorSet write{m_handle,           r.index, 0, getDescriptorType(binding.type), {},
                                          buffer_infos.back()};
             writes.emplace_back(write);
@@ -41,34 +47,37 @@ void DescriptorSet::updateBindingResources(const DescriptorLayout &layout,
         else if (binding.type == ShaderBindingType::COMBINED_IMAGE_SAMPLER ||
                  binding.type == ShaderBindingType::SAMPLED_IMAGE || binding.type == ShaderBindingType::STORAGE_IMAGE)
         {
-            const vk::Sampler sampler =
-                binding.type == ShaderBindingType::COMBINED_IMAGE_SAMPLER && r.sampler != nullptr
-                    ? r.sampler->getNativeHandle()
-                    : vk::Sampler{};
-
             std::vector<vk::DescriptorImageInfo> image_info{};
-            for (uint32_t i = 0; i < r.count; i++)
+            const auto &textures = r.textures();
+            const auto &samplers = r.samplers;
+            for (size_t i = 0; i < textures.size(); ++i)
             {
-                const Texture &tex = r.texture[i];
-                image_info.emplace_back(sampler, tex.getNativeViewHandle(), getImageLayout(tex.getLayout()));
+                auto sampler = vk::Sampler{};
+                if (binding.type == ShaderBindingType::COMBINED_IMAGE_SAMPLER && i < samplers.size())
+                {
+                    sampler = m_device->getTextureSampler(samplers[i])->getNativeHandle();
+                }
+                const auto tex = m_device->getTexture(textures[i]);
+                image_info.emplace_back(sampler, tex->getNativeViewHandle(), getImageLayout(tex->getLayout()));
             }
-            image_infos.emplace_back(image_info);
+            image_infos.emplace_back(std::move(image_info));
             vk::WriteDescriptorSet write{m_handle, r.index, 0, getDescriptorType(binding.type), image_infos.back()};
             writes.emplace_back(write);
         }
         else if (binding.type == ShaderBindingType::SAMPLER)
         {
             std::vector<vk::DescriptorImageInfo> image_info{};
-            for (uint32_t i = 0; i < r.count; i++)
+            for (const auto &h : r.samplers)
             {
-                image_info.emplace_back(r.sampler[i].getNativeHandle());
+                const auto sampler = m_device->getTextureSampler(h);
+                image_info.emplace_back(sampler->getNativeHandle());
             }
-            image_infos.emplace_back(image_info);
+            image_infos.emplace_back(std::move(image_info));
             vk::WriteDescriptorSet write{m_handle, r.index, 0, getDescriptorType(binding.type), image_infos.back()};
             writes.emplace_back(write);
         }
     }
-    m_device.updateDescriptorSets(writes, {});
+    m_device->getNativeHandle().updateDescriptorSets(writes, {});
 }
 
 } // namespace kirana::renderer

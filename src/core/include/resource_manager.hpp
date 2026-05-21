@@ -50,7 +50,7 @@ template <typename T> class ResourceManager
         {
             res.load();
         }
-        return Handle<T>(this, index, res.m_generation);
+        return Handle<T>(index, res.m_generation);
     }
 
     [[nodiscard]] bool isValid(const Handle<T> handle) const
@@ -120,7 +120,7 @@ template <typename T> class ResourceManager
         {
             if (const auto &res = m_resources[i]; res.m_status)
             {
-                result.emplace_back(this, i, res.m_generation);
+                result.emplace_back(i, res.m_generation);
             }
         }
         return result;
@@ -132,7 +132,7 @@ template <typename T> class ResourceManager
         {
             if (auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<T>(this, i, res.m_generation), res);
+                callback(Handle<T>(i, res.m_generation), res);
             }
         }
     }
@@ -143,9 +143,19 @@ template <typename T> class ResourceManager
         {
             if (const auto &res = m_resources[i]; res.m_status)
             {
-                callback(Handle<T>(this, i, res.m_generation), res);
+                callback(Handle<T>(i, res.m_generation), res);
             }
         }
+    }
+
+    Handle<T> findIf(const std::function<bool(const T &)> &callback) const
+    {
+        const auto it = std::ranges::find_if(m_resources, callback);
+        if (it == m_resources.end())
+        {
+            return {};
+        }
+        return Handle<T>(std::distance(m_resources.begin(), it), it->m_generation);
     }
 
     /// Removes all resources and clears the memory.
@@ -172,16 +182,5 @@ template <typename T> class ResourceManager
         m_free_indices.push(index);
     }
 };
-
-template <typename T> bool Handle<T>::isValid() const
-{
-    return m_manager ? m_manager->isValid(*this) : false;
-}
-
-template <typename T> T *Handle<T>::get() const
-{
-    return m_manager ? m_manager->get(*this) : nullptr;
-}
-
 } // namespace kirana::core
 #endif // KIRANA_CORE_RESOURCE_MANAGER_HPP

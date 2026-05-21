@@ -28,7 +28,7 @@ class CommandEncoder
 {
     friend class Device;
 
-public:
+  public:
     CommandEncoder() = default;
     ~CommandEncoder() = default;
 
@@ -57,7 +57,7 @@ public:
 
     void copyBuffer(const Buffer &src, const Buffer &dst, const std::vector<BufferCopyRegion> &regions = {}) const;
 
-    void addTextureBarrier(Texture &texture, TextureLayout new_layout, MemoryAccessFlags src_access,
+    void addTextureBarrier(const Texture &texture, TextureLayout new_layout, MemoryAccessFlags src_access,
                            MemoryAccessFlags dst_access, PipelineStageFlags src_stage,
                            PipelineStageFlags dst_stage) const;
 
@@ -67,7 +67,7 @@ public:
      * @param texture Texture whose layout needs to be transitioned. Texture will be updated with the new layout value.
      * @param new_layout Target layout of the texture.
      */
-    void transitionTextureLayout(Texture &texture, TextureLayout new_layout) const;
+    void transitionTextureLayout(const Texture &texture, TextureLayout new_layout) const;
     /**
      * Clears the texture with the given color / depth / stencil values.
      * @param texture The texture to be cleared.
@@ -86,6 +86,9 @@ public:
      * @param dst_region The region of destination texture to copy to. If empty, the entire region is copied.
      */
     void blitTexture(const Texture &src, const Texture &dst, Rect2D src_region = {}, Rect2D dst_region = {}) const;
+
+    void copyBufferToTexture(const Buffer &src, const Texture &dst,
+                             const std::vector<BufferTextureCopyRegion> &regions = {}) const;
 
     void beginRendering(const std::vector<Texture> &color_attachments, const Texture &depth_attachment,
                         const std::string &name = "",
@@ -110,18 +113,18 @@ public:
 
     void endRendering() const;
 
-private:
+  private:
     std::string m_name{};
 
     vk::Device m_device{nullptr};
     vk::CommandPool m_pool{nullptr};
     vk::CommandBuffer m_buffer{nullptr};
 
-    mutable bool m_has_render_label {false};
+    mutable bool m_has_render_label{false};
     mutable vk::PipelineBindPoint m_current_pipeline_bind_point{vk::PipelineBindPoint::eGraphics};
 
     bool init(vk::Device device, const std::string &name, uint32_t queue_family);
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_COMMAND_ENCODER_HPP
+#endif // KIRANA_RENDERER_COMMAND_ENCODER_HPP

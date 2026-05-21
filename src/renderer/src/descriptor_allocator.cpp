@@ -4,12 +4,13 @@
 #include "descriptor_allocator.hpp"
 
 #include "helpers_vulkan.hpp"
+#include "device.hpp"
 
 #include <logger.hpp>
 
 namespace kirana::renderer
 {
-bool DescriptorAllocator::init(const vk::Device device, const std::string &name,
+bool DescriptorAllocator::init(const Device *device, const std::string &name,
                                const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, const uint32_t max_sets)
 {
     m_device = device;
@@ -34,11 +35,11 @@ bool DescriptorAllocator::init(const vk::Device device, const std::string &name,
 
     const auto create_info =
         vk::DescriptorPoolCreateInfo{vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind, max_sets, pool_sizes};
-    m_handle = m_device.createDescriptorPool(create_info);
+    m_handle = m_device->getNativeHandle().createDescriptorPool(create_info);
     if (!m_name.empty())
     {
         const auto handle = reinterpret_cast<uint64_t>(static_cast<VkDescriptorPool>(m_handle));
-        setDebugName(m_device, vk::ObjectType::eDescriptorPool, handle, m_name);
+        setDebugName(m_device->getNativeHandle(), vk::ObjectType::eDescriptorPool, handle, m_name);
     }
     return true;
 }
@@ -47,7 +48,7 @@ void DescriptorAllocator::destroy()
 {
     if (m_device && m_handle)
     {
-        m_device.destroyDescriptorPool(m_handle);
+        m_device->getNativeHandle().destroyDescriptorPool(m_handle);
         m_handle = nullptr;
     }
 }
@@ -63,8 +64,8 @@ DescriptorSet DescriptorAllocator::allocate(const std::string &name, const Descr
 
     allocate_info.pNext = &variable_info;
 
-    const auto vk_set = m_device.allocateDescriptorSets(allocate_info)[0];
-    const auto set = DescriptorSet{m_device, vk_set, name};
+    const auto vk_set = m_device->getNativeHandle().allocateDescriptorSets(allocate_info)[0];
+    const auto set = DescriptorSet{m_device, name, vk_set};
     if (!binding_resources.empty())
     {
         set.updateBindingResources(layout, binding_resources);
@@ -74,7 +75,7 @@ DescriptorSet DescriptorAllocator::allocate(const std::string &name, const Descr
 
 void DescriptorAllocator::reset() const
 {
-    m_device.resetDescriptorPool(m_handle, vk::DescriptorPoolResetFlags{});
+    m_device->getNativeHandle().resetDescriptorPool(m_handle, vk::DescriptorPoolResetFlags{});
 }
 
 } // namespace kirana::renderer

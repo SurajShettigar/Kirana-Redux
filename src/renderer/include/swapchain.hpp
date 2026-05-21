@@ -28,7 +28,7 @@ class Swapchain
 {
     friend class Device;
 
-public:
+  public:
     Swapchain() = default;
     ~Swapchain() = default;
 
@@ -54,9 +54,11 @@ public:
 
     std::optional<SwapchainTextureInfo> getTexture();
     [[nodiscard]] SwapchainPresentInfo present() const;
-private:
+
+  private:
     std::string m_name{};
     SwapchainData m_data{};
+    TextureUsageFlags m_usage{TextureUsageFlags::COLOR_ATTACHMENT | TextureUsageFlags::TRANSFER_DST};
 
     vk::PhysicalDevice m_gpu{nullptr};
     vk::Device m_device{nullptr};
@@ -74,6 +76,6 @@ private:
               const SwapchainData &data);
     bool init();
 };
-}
+} // namespace kirana::renderer
 
-#endif //KIRANA_RENDERER_SWAPCHAIN_HPP
+#endif // KIRANA_RENDERER_SWAPCHAIN_HPP

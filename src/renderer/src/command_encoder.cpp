@@ -17,8 +17,8 @@ bool CommandEncoder::init(const vk::Device device, const std::string &name, cons
 {
     m_device = device;
     m_name = name;
-    const auto pool_create_info = vk::CommandPoolCreateInfo{vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                                            queue_family};
+    const auto pool_create_info =
+        vk::CommandPoolCreateInfo{vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_family};
     m_pool = m_device.createCommandPool(pool_create_info);
 
     const auto buffer_create_info = vk::CommandBufferAllocateInfo{m_pool, vk::CommandBufferLevel::ePrimary, 1};
@@ -69,10 +69,15 @@ void CommandEncoder::addBufferBarrier(const Buffer &buffer, const MemoryAccessFl
                                       const MemoryAccessFlags dst_access, const PipelineStageFlags src_stage,
                                       const PipelineStageFlags dst_stage) const
 {
-    const auto barrier = vk::BufferMemoryBarrier2{getPipelineStageFlags(src_stage), getAccessFlags(src_access),
-                                                  getPipelineStageFlags(dst_stage), getAccessFlags(dst_access),
-                                                  vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
-                                                  buffer.getNativeHandle(), 0, vk::WholeSize};
+    const auto barrier = vk::BufferMemoryBarrier2{getPipelineStageFlags(src_stage),
+                                                  getAccessFlags(src_access),
+                                                  getPipelineStageFlags(dst_stage),
+                                                  getAccessFlags(dst_access),
+                                                  vk::QueueFamilyIgnored,
+                                                  vk::QueueFamilyIgnored,
+                                                  buffer.getNativeHandle(),
+                                                  0,
+                                                  vk::WholeSize};
     vk::DependencyInfo dep_info = {};
     dep_info.setBufferMemoryBarriers({barrier});
     m_buffer.pipelineBarrier2(dep_info);
@@ -96,23 +101,72 @@ void CommandEncoder::copyBuffer(const Buffer &src, const Buffer &dst,
     m_buffer.copyBuffer2(vk::CopyBufferInfo2{src.getNativeHandle(), dst.getNativeHandle(), vk_regions});
 }
 
+void CommandEncoder::addTextureBarrier(const Texture &texture, const TextureLayout new_layout,
+                                       const MemoryAccessFlags src_access, const MemoryAccessFlags dst_access,
+                                       const PipelineStageFlags src_stage, const PipelineStageFlags dst_stage) const
+{
+    const vk::ImageAspectFlags image_aspect =
+        isDepthTextureFormat(texture.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+    const auto subresource =
+        vk::ImageSubresourceRange{image_aspect, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers};
+    const auto barrier = vk::ImageMemoryBarrier2{getPipelineStageFlags(src_stage),
+                                                 getAccessFlags(src_access),
+                                                 getPipelineStageFlags(dst_stage),
+                                                 getAccessFlags(dst_access),
+                                                 getImageLayout(texture.getLayout()),
+                                                 getImageLayout(new_layout),
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::QueueFamilyIgnored,
+                                                 texture.getNativeHandle(),
+                                                 subresource};
+    vk::DependencyInfo dep_info = {};
+    dep_info.setImageMemoryBarriers({barrier});
+    m_buffer.pipelineBarrier2(dep_info);
+    texture.setLayout(new_layout);
+}
+
+
+void CommandEncoder::transitionTextureLayout(const Texture &texture, const TextureLayout new_layout) const
+{
+    transitionImageLayout(m_buffer, texture.getNativeHandle(), getFormat(texture.getFormat()),
+                          getImageLayout(texture.getLayout()), getImageLayout(new_layout));
+    texture.setLayout(new_layout);
+}
+
+void CommandEncoder::clearTexture(const Texture &texture, const std::array<float, 4> &color,
+                                  const uint32_t stencil) const
+{
+    if (isDepthTextureFormat(texture.getFormat()))
+    {
+        m_buffer.clearDepthStencilImage(texture.getNativeHandle(), getImageLayout(texture.getLayout()),
+                                        vk::ClearDepthStencilValue{color[0], stencil},
+                                        vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eDepth, 0,
+                                                                  vk::RemainingMipLevels, 0, vk::RemainingArrayLayers});
+    }
+    else
+    {
+        m_buffer.clearColorImage(texture.getNativeHandle(), getImageLayout(texture.getLayout()),
+                                 vk::ClearColorValue{color},
+                                 vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eColor, 0, vk::RemainingMipLevels,
+                                                           0, vk::RemainingArrayLayers});
+    }
+}
+
 void CommandEncoder::copyTexture(const Texture &src, const Texture &dst,
                                  const std::vector<TextureCopyRegion> &regions) const
 {
-    const vk::ImageAspectFlags src_aspect = isDepthTextureFormat(src.getFormat())
-                                                ? vk::ImageAspectFlagBits::eDepth
-                                                : vk::ImageAspectFlagBits::eColor;
-    const vk::ImageAspectFlags dst_aspect = isDepthTextureFormat(dst.getFormat())
-                                                ? vk::ImageAspectFlagBits::eDepth
-                                                : vk::ImageAspectFlagBits::eColor;
+    const vk::ImageAspectFlags src_aspect =
+        isDepthTextureFormat(src.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+    const vk::ImageAspectFlags dst_aspect =
+        isDepthTextureFormat(dst.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
     const auto src_subresource = vk::ImageSubresourceLayers{src_aspect, 0, 0, 1};
     const auto dst_subresource = vk::ImageSubresourceLayers{dst_aspect, 0, 0, 1};
 
     std::vector<vk::ImageCopy2> vk_regions = {};
     if (regions.empty())
     {
-        vk_regions.emplace_back(src_subresource, vk::Offset3D{0, 0, 0}, dst_subresource,
-                                vk::Offset3D{0, 0, 0}, getExtent3D(src.getSize()));
+        vk_regions.emplace_back(src_subresource, vk::Offset3D{0, 0, 0}, dst_subresource, vk::Offset3D{0, 0, 0},
+                                getExtent3D(src.getSize()));
     }
     else
     {
@@ -126,83 +180,57 @@ void CommandEncoder::copyTexture(const Texture &src, const Texture &dst,
                                            dst.getNativeHandle(), getImageLayout(dst.getLayout()), vk_regions});
 }
 
-void CommandEncoder::addTextureBarrier(Texture &texture, const TextureLayout new_layout,
-                                       const MemoryAccessFlags src_access, const MemoryAccessFlags dst_access,
-                                       const PipelineStageFlags src_stage, const PipelineStageFlags dst_stage) const
-{
-    const vk::ImageAspectFlags image_aspect = isDepthTextureFormat(texture.getFormat())
-                                                  ? vk::ImageAspectFlagBits::eDepth
-                                                  : vk::ImageAspectFlagBits::eColor;
-    const auto subresource = vk::ImageSubresourceRange{image_aspect, 0, vk::RemainingMipLevels, 0,
-                                                       vk::RemainingArrayLayers};
-    const auto barrier = vk::ImageMemoryBarrier2{getPipelineStageFlags(src_stage), getAccessFlags(src_access),
-                                                 getPipelineStageFlags(dst_stage), getAccessFlags(dst_access),
-                                                 getImageLayout(texture.getLayout()), getImageLayout(new_layout),
-                                                 vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
-                                                 texture.getNativeHandle(), subresource};
-    vk::DependencyInfo dep_info = {};
-    dep_info.setImageMemoryBarriers({barrier});
-    m_buffer.pipelineBarrier2(dep_info);
-    texture.m_layout = new_layout;
-}
-
-
-void CommandEncoder::transitionTextureLayout(Texture &texture, const TextureLayout new_layout) const
-{
-    transitionImageLayout(m_buffer, texture.getNativeHandle(), getFormat(texture.getFormat()),
-                          getImageLayout(texture.getLayout()), getImageLayout(new_layout));
-    texture.m_layout = new_layout;
-}
-
-void CommandEncoder::clearTexture(const Texture &texture, const std::array<float, 4> &color,
-                                  const uint32_t stencil) const
-{
-    if (isDepthTextureFormat(texture.getFormat()))
-    {
-        m_buffer.clearDepthStencilImage(texture.getNativeHandle(), getImageLayout(texture.getLayout()),
-                                        vk::ClearDepthStencilValue{color[0], stencil},
-                                        vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eDepth, 0,
-                                                                  vk::RemainingMipLevels,
-                                                                  0, vk::RemainingArrayLayers});
-
-    }
-    else
-    {
-        m_buffer.clearColorImage(texture.getNativeHandle(), getImageLayout(texture.getLayout()),
-                                 vk::ClearColorValue{color},
-                                 vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eColor, 0, vk::RemainingMipLevels,
-                                                           0, vk::RemainingArrayLayers});
-    }
-}
-
-
 void CommandEncoder::blitTexture(const Texture &src, const Texture &dst, Rect2D src_region, Rect2D dst_region) const
 {
-    const auto src_aspect = isDepthTextureFormat(src.getFormat())
-                                ? vk::ImageAspectFlagBits::eDepth
-                                : vk::ImageAspectFlagBits::eColor;
+    const auto src_aspect =
+        isDepthTextureFormat(src.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
     if (!src_region.isValid())
     {
         const auto [width, height] = src.getSize();
         src_region = Rect2D{0, 0, width, height};
     }
 
-    const auto dst_aspect = isDepthTextureFormat(dst.getFormat())
-                                ? vk::ImageAspectFlagBits::eDepth
-                                : vk::ImageAspectFlagBits::eColor;
+    const auto dst_aspect =
+        isDepthTextureFormat(dst.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
     if (!dst_region.isValid())
     {
         const auto [width, height] = dst.getSize();
         dst_region = Rect2D{0, 0, width, height};
     }
 
-    const auto blit_image = vk::ImageBlit2{
-        vk::ImageSubresourceLayers{src_aspect, 0, 0, 1}, getOffset3DFromRect(src_region),
-        vk::ImageSubresourceLayers{dst_aspect, 0, 0, 1}, getOffset3DFromRect(dst_region)};
-    const auto blit_info = vk::BlitImageInfo2{src.getNativeHandle(), getImageLayout(src.getLayout()),
-                                              dst.getNativeHandle(), getImageLayout(dst.getLayout()),
+    const auto blit_image =
+        vk::ImageBlit2{vk::ImageSubresourceLayers{src_aspect, 0, 0, 1}, getOffset3DFromRect(src_region),
+                       vk::ImageSubresourceLayers{dst_aspect, 0, 0, 1}, getOffset3DFromRect(dst_region)};
+    const auto blit_info = vk::BlitImageInfo2{src.getNativeHandle(),
+                                              getImageLayout(src.getLayout()),
+                                              dst.getNativeHandle(),
+                                              getImageLayout(dst.getLayout()),
                                               {blit_image}};
     m_buffer.blitImage2(blit_info);
+}
+
+void CommandEncoder::copyBufferToTexture(const Buffer &src, const Texture &dst,
+                                         const std::vector<BufferTextureCopyRegion> &regions) const
+{
+    const vk::ImageAspectFlags aspect =
+        isDepthTextureFormat(dst.getFormat()) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+    const auto subresource = vk::ImageSubresourceLayers{aspect, 0, 0, 1};
+    std::vector<vk::BufferImageCopy2> vk_regions = {};
+    if (regions.empty())
+    {
+        vk_regions.emplace_back(0, 0, 0, subresource, vk::Offset3D{0, 0, 0}, getExtent3D(dst.getSize()));
+    }
+    else
+    {
+        for (const auto &r : regions)
+        {
+            vk_regions.emplace_back(r.buffer_offset, r.buffer_row_length, r.buffer_image_height, subresource,
+                                    getOffset3D(r.img_offset), getExtent3D(r.img_size));
+        }
+    }
+    const auto copy_info = vk::CopyBufferToImageInfo2{src.getNativeHandle(), dst.getNativeHandle(),
+                                                      getImageLayout(dst.getLayout()), vk_regions};
+    m_buffer.copyBufferToImage2(copy_info);
 }
 
 void CommandEncoder::beginRendering(const std::vector<Texture> &color_attachments, const Texture &depth_attachment,
@@ -267,9 +295,12 @@ void CommandEncoder::bindIndexBuffer(const Buffer &buffer, const uint64_t offset
 
 void CommandEncoder::setViewport(const Rect2D &area, const float min_depth, const float max_depth) const
 {
-    const auto viewport = vk::Viewport{static_cast<float>(area.offset.x), static_cast<float>(area.offset.y),
-                                       static_cast<float>(area.size.width), static_cast<float>(area.size.height),
-                                       min_depth, max_depth};
+    const auto viewport = vk::Viewport{static_cast<float>(area.offset.x),
+                                       static_cast<float>(area.offset.y),
+                                       static_cast<float>(area.size.width),
+                                       static_cast<float>(area.size.height),
+                                       min_depth,
+                                       max_depth};
     m_buffer.setViewport(0, {viewport});
 }
 
@@ -291,8 +322,7 @@ void CommandEncoder::draw(const uint32_t vertex_count, const uint32_t instance_c
 }
 
 void CommandEncoder::drawIndexed(const uint32_t index_count, const uint32_t instance_count, const uint32_t first_index,
-                                 const int32_t vertex_offset,
-                                 const uint32_t first_instance) const
+                                 const int32_t vertex_offset, const uint32_t first_instance) const
 {
     m_buffer.drawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
@@ -308,4 +338,4 @@ void CommandEncoder::endRendering() const
     }
 #endif
 }
-}
+} // namespace kirana::renderer

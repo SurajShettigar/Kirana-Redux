@@ -19,6 +19,7 @@ struct ShaderBindingTypeRatios
     float ratio = 0.0f;
 };
 
+class Device;
 class DescriptorAllocator
 {
     friend class Device;
@@ -44,12 +45,12 @@ class DescriptorAllocator
     void reset() const;
 
   private:
-    std::string m_name{};
+    const Device *m_device{nullptr};
 
-    vk::Device m_device{nullptr};
+    std::string m_name{};
     vk::DescriptorPool m_handle{nullptr};
 
-    bool init(vk::Device device, const std::string &name,
+    bool init(const Device *device, const std::string &name,
               const std::vector<ShaderBindingTypeRatios> &binding_type_ratios, uint32_t max_sets = 16384);
 };
 } // namespace kirana::renderer

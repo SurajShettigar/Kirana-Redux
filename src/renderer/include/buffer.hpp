@@ -4,8 +4,10 @@
 #ifndef KIRANA_RENDERER_BUFFER_HPP
 #define KIRANA_RENDERER_BUFFER_HPP
 
-#include "memory_allocator.hpp"
 #include "common.hpp"
+
+#include <vma/vk_mem_alloc.h>
+#include <vulkan/vulkan.hpp>
 
 #include <resource.hpp>
 #include <handle.hpp>
@@ -17,23 +19,23 @@ using BufferHandle = core::Handle<Buffer>;
 
 class Buffer final : public core::IResource
 {
+    friend class ResourceAllocator;
+
   public:
     Buffer() : IResource{"Buffer"}
     {
     }
-    explicit Buffer(const Device *device, const MemoryAllocator *allocator, const CommandEncoder *encoder,
-                    const std::string &name, const uint64_t size, const void *data = nullptr,
-                    const BufferUsageFlags usage = BufferUsageFlags::UNKNOWN)
-        : IResource{name}, m_device{device}, m_allocator{allocator}, m_encoder{encoder}, m_usage{usage}, m_size{size},
-          m_data{data}, m_is_dirty{m_data != nullptr}
-    {
-    }
-
     ~Buffer() override = default;
+
 
     [[nodiscard]] bool isValid() const override
     {
-        return IResource::isValid() && m_handle != nullptr;
+        return IResource::isValid() && m_handle != nullptr && m_allocation != nullptr;
+    }
+
+    [[nodiscard]] BufferUsageFlags getUsage() const
+    {
+        return m_usage;
     }
 
     [[nodiscard]] uint64_t getSize() const
@@ -46,38 +48,45 @@ class Buffer final : public core::IResource
         return m_handle;
     }
 
-    [[nodiscard]] uint64_t getAddress() const;
-
-    bool write(const CommandEncoder *encoder, const uint64_t size, const void *data)
+    [[nodiscard]] VmaAllocation getNativeAllocation() const
     {
-        m_encoder = encoder;
-        m_size = size;
-        m_data = data;
-        m_is_dirty = true;
-        return load();
+        return m_allocation;
+    }
+
+    [[nodiscard]] const VmaAllocationInfo &getNativeAllocationInfo() const
+    {
+        return m_alloc_info;
+    }
+
+    [[nodiscard]] uint64_t getAddress() const
+    {
+        return m_address;
     }
 
   protected:
-    bool doLoad() override;
-    void doUnload() override;
+    bool doLoad() override
+    {
+        return true;
+    }
+    void doUnload() override
+    {
+    }
 
   private:
-    const Device *m_device{nullptr};
-    const MemoryAllocator *m_allocator{nullptr};
-    const CommandEncoder *m_encoder{nullptr};
-
-    BufferUsageFlags m_usage{};
     uint64_t m_size{};
-
-    const void *m_data{nullptr};
-    bool m_is_dirty{false};
+    BufferUsageFlags m_usage{};
 
     vk::Buffer m_handle{nullptr};
-    AllocationID m_alloc_id{};
+    VmaAllocation m_allocation{nullptr};
+    VmaAllocationInfo m_alloc_info{};
+    uint64_t m_address{};
 
-    bool doCreate();
-    bool doWrite();
-    void doDestroy();
+    explicit Buffer(const std::string &name, const uint64_t size, const BufferUsageFlags usage, vk::Buffer buffer,
+                    VmaAllocation allocation, const VmaAllocationInfo &alloc_info, const uint64_t address)
+        : IResource{name}, m_size{size}, m_usage{usage}, m_handle{buffer}, m_allocation{allocation},
+          m_alloc_info{alloc_info}, m_address{address}
+    {
+    }
 };
 } // namespace kirana::renderer
 

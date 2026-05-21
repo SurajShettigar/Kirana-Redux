@@ -7,13 +7,11 @@
 #include "queue.hpp"
 #include "swapchain.hpp"
 #include "command_encoder.hpp"
-#include "texture_sampler.hpp"
 #include "descriptor_allocator.hpp"
 #include "pipeline_layout.hpp"
 #include "pipeline_compute.hpp"
 #include "pipeline_render.hpp"
-
-#include <resource_manager.hpp>
+#include "resource_allocator.hpp"
 
 namespace kirana::renderer
 {
@@ -33,6 +31,16 @@ class Device
     [[nodiscard]] bool isValid() const
     {
         return m_instance != nullptr && m_device != nullptr && !m_queues.empty();
+    }
+
+    [[nodiscard]] vk::Instance getNativeInstance() const
+    {
+        return m_instance;
+    }
+
+    [[nodiscard]] vk::PhysicalDevice getNativeGPUHandle() const
+    {
+        return m_gpu;
     }
 
     [[nodiscard]] const GPUFeatures &getFeatures() const
@@ -100,23 +108,34 @@ class Device
         return m_queues[m_queue_index_transfer];
     }
 
-    [[nodiscard]] BufferHandle createBuffer(const CommandEncoder &encoder, const std::string &name, uint64_t size,
-                                      const void *data = nullptr,
-                                      BufferUsageFlags usage = BufferUsageFlags::UNKNOWN) const;
+    /// Before any resource creation or writing data from host, this function needs to be called to initialize command
+    /// buffer.
+    void beginAllocation();
+    /// After any resource creation or writing data from host, this function needs to be called to finalize command
+    /// buffer and submit it to a queue.
+    void endAllocation();
 
-    Buffer *getBuffer(BufferHandle handle) const;
+    BufferHandle createBuffer(const std::string &name, uint64_t size, BufferUsageFlags usage,
+                              const void *data = nullptr, ResourceMemoryType memory_type = ResourceMemoryType::AUTO,
+                              ResourceMemoryFlags memory_flags =
+                                  ResourceMemoryFlags::HOST_ACCESS_SEQUENTIAL_WRITE | ResourceMemoryFlags::MAPPED |
+                                  ResourceMemoryFlags::HOST_ACCESS_ALLOW_TRANSFER_INSTEAD);
+    const Buffer *getBuffer(BufferHandle handle) const;
+    bool writeBuffer(BufferHandle handle, uint64_t size, const void *data);
+    void destroyBuffer(BufferHandle handle);
 
-    [[nodiscard]] Texture createTexture(const CommandEncoder &encoder, const std::string &name, const Size2D &size,
-                                        TextureFormat format, TextureUsageFlags usage = TextureUsageFlags::UNKNOWN,
-                                        TextureLayout layout = TextureLayout::GENERAL,
-                                        const void *data = nullptr) const;
+    TextureHandle createTexture(const std::string &name, const Size2D &size, TextureFormat format,
+                                TextureUsageFlags usage, TextureLayout layout = TextureLayout::GENERAL,
+                                const void *data = nullptr, ResourceMemoryType memory_type = ResourceMemoryType::DEVICE,
+                                ResourceMemoryFlags memory_flags = ResourceMemoryFlags::UNKNOWN);
+    const Texture *getTexture(TextureHandle handle) const;
+    bool writeImage(TextureHandle handle, const void *data);
+    void destroyTexture(TextureHandle handle);
 
-    [[nodiscard]] TextureSampler createTextureSampler(const std::string &name,
-                                                      const SamplerData &data = SamplerData{}) const;
-
-    [[nodiscard]] DescriptorAllocator createDescriptorAllocator(
-        const std::string &name, const std::vector<ShaderBindingTypeRatios> &binding_type_ratios,
-        uint32_t max_sets = 1024) const;
+    TextureSamplerHandle createTextureSampler(const std::string &name,
+                                                            const SamplerData &data = SamplerData{});
+    const TextureSampler *getTextureSampler(TextureSamplerHandle handle) const;
+    void destroyTextureSampler(TextureSamplerHandle handle);
 
     [[nodiscard]] DescriptorLayout createDescriptorLayout(const std::string &name, ShaderStageFlags shader_stages,
                                                           const std::vector<ShaderBinding> &bindings = {}) const;
@@ -148,8 +167,6 @@ class Device
 
     [[nodiscard]] Fence createFence(const std::string &name) const;
 
-    bool tryReleaseTemporaryResources(const Fence &fence) const;
-
     void waitIdle() const;
 
   private:
@@ -168,10 +185,10 @@ class Device
     uint32_t m_queue_index_compute{0};
     uint32_t m_queue_index_transfer{0};
 
-    MemoryAllocator m_memory_allocator{};
+    ResourceAllocator m_resource_allocator{};
     DescriptorAllocator m_descriptor_allocator{};
 
-    mutable core::ResourceManager<Buffer> m_resource_manager_buffers{};
+    bool m_allocation_started{false};
 };
 } // namespace kirana::renderer
 #endif // KIRANA_RENDERER_DEVICE_HPP
